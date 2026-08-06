@@ -137,7 +137,8 @@ class _RechargeScreenState extends State<RechargeScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: isSelected
-                                  ? const Color(0xFF1E88E5).withValues(alpha: 0.3)
+                                  ? const Color(0xFF1E88E5)
+                                      .withValues(alpha: 0.3)
                                   : Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
@@ -152,18 +153,15 @@ class _RechargeScreenState extends State<RechargeScreen> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: isSelected ? Colors.white : Colors.black,
                               ),
                             ),
                             Text(
                               '= ${amount['points']} puntos',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isSelected
-                                    ? Colors.white70
-                                    : Colors.grey,
+                                color:
+                                    isSelected ? Colors.white70 : Colors.grey,
                               ),
                             ),
                           ],
@@ -357,7 +355,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
       ),
     );
 
-    final success = await _apiService.rechargePoints(
+    final result = await _apiService.rechargePoints(
       user.id,
       _selectedAmount,
       _selectedPaymentMethod,
@@ -366,7 +364,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
     if (context.mounted) {
       Navigator.pop(context);
 
-      if (success) {
+      if (result.ok) {
         await authService.refreshUser();
         if (!context.mounted) return;
 
@@ -409,8 +407,8 @@ class _RechargeScreenState extends State<RechargeScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al procesar el pago'),
+          SnackBar(
+            content: Text(result.message),
             backgroundColor: Colors.red,
           ),
         );

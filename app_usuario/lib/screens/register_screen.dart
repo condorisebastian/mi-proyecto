@@ -207,7 +207,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ? null
                                 : () async {
                                     if (_formKey.currentState!.validate()) {
-                                      final success = await authService.register(
+                                      final success =
+                                          await authService.register(
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
                                         ci: _ciController.text,
@@ -216,15 +217,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         tipo: _tipo,
                                       );
                                       if (success && context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Registro exitoso. Inicia sesión.'),
-                                            backgroundColor: Colors.green,
-                                          ),
+                                        Navigator.pushNamedAndRemoveUntil(
+                                          context,
+                                          '/home',
+                                          (route) => false,
                                         );
-                                        Navigator.pop(context);
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
