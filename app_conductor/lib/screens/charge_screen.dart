@@ -17,9 +17,6 @@ class _ChargeScreenState extends State<ChargeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
-    final conductor = authService.currentConductor;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cobrar'),
@@ -51,7 +48,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -88,7 +85,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -153,7 +150,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE53935).withOpacity(0.1),
+                color: const Color(0xFFE53935).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -195,6 +192,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
   }
 
   Future<void> _readNFC(BuildContext context) async {
+    if (_isProcessing) return;
     setState(() {
       _isProcessing = true;
     });
@@ -318,14 +316,14 @@ class _ChargeScreenState extends State<ChargeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Pago por $method'),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('¿Cobrar viaje?'),
-            const SizedBox(height: 16),
+            Text('¿Cobrar viaje?'),
+            SizedBox(height: 16),
             Text(
               'Monto: 1 punto',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),

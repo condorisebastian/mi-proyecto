@@ -65,7 +65,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -137,8 +137,8 @@ class _RechargeScreenState extends State<RechargeScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: isSelected
-                                  ? const Color(0xFF1E88E5).withOpacity(0.3)
-                                  : Colors.black.withOpacity(0.05),
+                                  ? const Color(0xFF1E88E5).withValues(alpha: 0.3)
+                                  : Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -182,33 +182,37 @@ class _RechargeScreenState extends State<RechargeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                ..._paymentMethods.map((method) {
-                  final isSelected = _selectedPaymentMethod == method['id'];
+                RadioGroup<String>(
+                  groupValue: _selectedPaymentMethod,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedPaymentMethod = value!;
+                    });
+                  },
+                  child: Column(
+                    children: _paymentMethods.map((method) {
+                      final isSelected = _selectedPaymentMethod == method['id'];
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: RadioListTile<String>(
-                      title: Row(
-                        children: [
-                          Icon(method['icon'],
-                              color: isSelected
-                                  ? const Color(0xFF1E88E5)
-                                  : Colors.grey),
-                          const SizedBox(width: 12),
-                          Text(method['name']),
-                        ],
-                      ),
-                      value: method['id'],
-                      groupValue: _selectedPaymentMethod,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedPaymentMethod = value!;
-                        });
-                      },
-                      activeColor: const Color(0xFF1E88E5),
-                    ),
-                  );
-                }),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: RadioListTile<String>(
+                          title: Row(
+                            children: [
+                              Icon(method['icon'],
+                                  color: isSelected
+                                      ? const Color(0xFF1E88E5)
+                                      : Colors.grey),
+                              const SizedBox(width: 12),
+                              Text(method['name']),
+                            ],
+                          ),
+                          value: method['id'],
+                          activeColor: const Color(0xFF1E88E5),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -334,6 +338,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
         );
       },
     ).then((_) {
+      if (!context.mounted) return;
       _processPayment(context);
     });
   }
@@ -363,6 +368,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
 
       if (success) {
         await authService.refreshUser();
+        if (!context.mounted) return;
 
         showDialog(
           context: context,
