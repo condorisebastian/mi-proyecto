@@ -7,10 +7,10 @@ class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key});
 
   @override
-  State<SummaryScreen> createState() => _SummaryScreenState();
+  State<SummaryScreen> createState() => SummaryScreenState();
 }
 
-class _SummaryScreenState extends State<SummaryScreen> {
+class SummaryScreenState extends State<SummaryScreen> {
   final ApiService _apiService = ApiService();
   Map<String, dynamic> _summary = {};
 
@@ -19,6 +19,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
     super.initState();
     _loadSummary();
   }
+
+  Future<void> reload() => _loadSummary();
 
   Future<void> _loadSummary() async {
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -56,142 +58,147 @@ class _SummaryScreenState extends State<SummaryScreen> {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'RESUMEN DIARIO',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+          child: RefreshIndicator(
+            color: const Color(0xFFE53935),
+            onRefresh: _loadSummary,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'RESUMEN DIARIO',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Placa: ${conductor?.licencia ?? ''}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
+                        const SizedBox(height: 8),
+                        Text(
+                          '${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFE53935),
-                              Color(0xFFC62828),
+                        Text(
+                          'Placa: ${conductor?.licencia ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFE53935),
+                                Color(0xFFC62828),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'COBRADO HOY',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${_summary['total_puntos'] ?? 0} PUNTOS',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '= Bs ${_summary['total_puntos'] ?? 0}.00',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'COBRADO HOY',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${_summary['total_puntos'] ?? 0} PUNTOS',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              '= Bs ${_summary['total_puntos'] ?? 0}.00',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 24),
+                        _buildStatRow(
+                          'Total pasajeros',
+                          '${_summary['total_pasajeros'] ?? 0}',
+                          Icons.people,
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildStatRow(
-                        'Total pasajeros',
-                        '${_summary['total_pasajeros'] ?? 0}',
-                        Icons.people,
-                      ),
-                      const Divider(),
-                      _buildStatRow(
-                        'Estudiantes',
-                        '${_summary['estudiantes'] ?? 0}',
-                        Icons.school,
-                      ),
-                      const Divider(),
-                      _buildStatRow(
-                        'Civiles',
-                        '${_summary['civiles'] ?? 0}',
-                        Icons.person,
-                      ),
-                      const Divider(),
-                      _buildStatRow(
-                        'Adultos Mayores',
-                        '${_summary['mayores'] ?? 0}',
-                        Icons.elderly,
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            _shareSummary();
-                          },
-                          icon: const Icon(Icons.share),
-                          label: const Text('COMPARTIR RESUMEN'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFE53935),
-                            side: const BorderSide(
-                              color: Color(0xFFE53935),
-                              width: 2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        const Divider(),
+                        _buildStatRow(
+                          'Estudiantes',
+                          '${_summary['estudiantes'] ?? 0}',
+                          Icons.school,
+                        ),
+                        const Divider(),
+                        _buildStatRow(
+                          'Civiles',
+                          '${_summary['civiles'] ?? 0}',
+                          Icons.person,
+                        ),
+                        const Divider(),
+                        _buildStatRow(
+                          'Adultos Mayores',
+                          '${_summary['mayores'] ?? 0}',
+                          Icons.elderly,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              _shareSummary();
+                            },
+                            icon: const Icon(Icons.share),
+                            label: const Text('COMPARTIR RESUMEN'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFE53935),
+                              side: const BorderSide(
+                                color: Color(0xFFE53935),
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

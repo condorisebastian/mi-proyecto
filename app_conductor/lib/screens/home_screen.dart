@@ -20,6 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
   Map<String, dynamic> _dailySummary = {};
 
+  final GlobalKey<HistoryScreenState> _historyKey =
+      GlobalKey<HistoryScreenState>();
+  final GlobalKey<SummaryScreenState> _summaryKey =
+      GlobalKey<SummaryScreenState>();
+
   @override
   void initState() {
     super.initState();
@@ -55,8 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildHomeTab(conductor, authService),
           const ChargeScreen(),
-          const HistoryScreen(),
-          const SummaryScreen(),
+          HistoryScreen(key: _historyKey),
+          SummaryScreen(key: _summaryKey),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -65,6 +70,13 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _currentIndex = index;
           });
+          if (index == 0) {
+            _loadDailySummary();
+          } else if (index == 2) {
+            _historyKey.currentState?.reload();
+          } else if (index == 3) {
+            _summaryKey.currentState?.reload();
+          }
         },
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFFE53935),
@@ -125,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Text(
-                        'Placa: ${conductor.licencia}',
+                        'Licencia: ${conductor.licencia}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
@@ -136,8 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: () {
-                      authService.logout();
-                      Navigator.pushReplacementNamed(context, '/');
+                      _confirmLogout(context, authService);
                     },
                   ),
                 ],
@@ -335,8 +346,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _confirmLogout(
+      BuildContext context, AuthService authService) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que deseas cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('CANCELAR'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE53935),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('SALIR'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && context.mounted) {
+      await authService.logout();
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    }
+  }
+
   void _showQRCode(BuildContext context) {
-    final conductor = Provider.of<AuthService>(context, listen: false).currentConductor;
+    final conductor =
+        Provider.of<AuthService>(context, listen: false).currentConductor;
 
     showModalBottomSheet(
       context: context,

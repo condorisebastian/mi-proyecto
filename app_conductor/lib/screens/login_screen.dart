@@ -135,8 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ? null
                                   : () async {
                                       if (_formKey.currentState!.validate()) {
-                                        final success =
-                                            await authService.login(
+                                        final success = await authService.login(
                                           _licenciaController.text,
                                           _passwordController.text,
                                         );
