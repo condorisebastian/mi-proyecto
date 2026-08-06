@@ -70,8 +70,8 @@ router.post('/pay', async (req, res) => {
       .input('metodo_pago', sql.NVarChar, metodoPago)
       .input('tipo_usuario', sql.NVarChar, tipoUsuario)
       .query(
-        `INSERT INTO transacciones (id_usuario, id_conductor, puntos, tipo, metodo_pago)
-         VALUES (@id_usuario, @id_conductor, @puntos, @tipo, @metodo_pago);
+        `INSERT INTO transacciones (id_usuario, id_conductor, puntos, tipo, metodo_pago, tipo_usuario)
+         VALUES (@id_usuario, @id_conductor, @puntos, @tipo, @metodo_pago, @tipo_usuario);
          SELECT SCOPE_IDENTITY() AS id;`
       );
 
@@ -174,9 +174,9 @@ router.get('/summary/:conductorId', async (req, res) => {
       `SELECT
          COUNT(*) AS total_pasajeros,
          ISNULL(SUM(t.puntos), 0) AS total_puntos,
-         ISNULL(SUM(CASE WHEN u.tipo = 'estudiante' THEN 1 ELSE 0 END), 0) AS estudiantes,
-         ISNULL(SUM(CASE WHEN u.tipo = 'civil' THEN 1 ELSE 0 END), 0) AS civiles,
-         ISNULL(SUM(CASE WHEN u.tipo = 'adulto_mayor' THEN 1 ELSE 0 END), 0) AS mayores
+         ISNULL(SUM(CASE WHEN COALESCE(t.tipo_usuario, u.tipo) = 'estudiante' THEN 1 ELSE 0 END), 0) AS estudiantes,
+         ISNULL(SUM(CASE WHEN COALESCE(t.tipo_usuario, u.tipo) = 'civil' THEN 1 ELSE 0 END), 0) AS civiles,
+         ISNULL(SUM(CASE WHEN COALESCE(t.tipo_usuario, u.tipo) = 'adulto_mayor' THEN 1 ELSE 0 END), 0) AS mayores
        FROM transacciones t
        LEFT JOIN usuarios u ON t.id_usuario = u.id
        WHERE t.id_conductor = @id
@@ -202,7 +202,7 @@ router.get('/history/:conductorId', async (req, res) => {
 
     const result = await query(
       `SELECT t.id, t.id_usuario, t.id_conductor, t.puntos, t.tipo, t.metodo_pago, t.estado, t.fecha,
-              u.nombre, u.apellido, u.tipo AS tipo_usuario
+              u.nombre, u.apellido, COALESCE(t.tipo_usuario, u.tipo) AS tipo_usuario
        FROM transacciones t
        LEFT JOIN usuarios u ON t.id_usuario = u.id
        WHERE t.id_conductor = @id
