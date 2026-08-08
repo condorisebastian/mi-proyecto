@@ -54,6 +54,53 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> register({
+    required String nombre,
+    required String apellido,
+    required String ci,
+    required String licencia,
+    required String password,
+    String? telefono,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/register-conductor'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'nombre': nombre,
+              'apellido': apellido,
+              'ci': ci,
+              'licencia': licencia,
+              'password': password,
+              'telefono': telefono,
+            }),
+          )
+          .timeout(AppConfig.timeout);
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        _currentConductor = Conductor.fromJson(data['conductor']);
+        _token = data['token'] as String?;
+        await _saveSession();
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> restoreSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();

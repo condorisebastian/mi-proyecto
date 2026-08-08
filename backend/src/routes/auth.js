@@ -91,6 +91,41 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/register-conductor', async (req, res) => {
+  try {
+    const { nombre, apellido, ci, licencia, password, telefono } = req.body;
+
+    if (!nombre || !apellido || !ci || !licencia || !password) {
+      return res.status(400).json({ error: 'Nombre, apellido, CI, licencia y contraseña son obligatorios' });
+    }
+
+    const exists = await query(
+      'SELECT ci, licencia FROM conductores WHERE ci = @ci OR licencia = @licencia',
+      { ci, licencia }
+    );
+
+    if (exists.recordset.length > 0) {
+      return res.status(400).json({ error: 'El CI o la licencia ya está registrado' });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const result = await query(
+      `INSERT INTO conductores (nombre, apellido, ci, licencia, password, telefono)
+       VALUES (@nombre, @apellido, @ci, @licencia, @password, @telefono);
+       SELECT id, nombre, apellido, ci, licencia, telefono, estado
+       FROM conductores WHERE ci = @ci;`,
+      { nombre, apellido, ci, licencia, password: hashed, telefono: telefono || null }
+    );
+
+    const conductor = result.recordset[0];
+    res.status(201).json({ conductor, token: signToken({ id: conductor.id, rol: 'conductor' }) });
+  } catch (err) {
+    console.error('register-conductor error:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 router.post('/login-conductor', async (req, res) => {
   try {
     const { licencia, password } = req.body;

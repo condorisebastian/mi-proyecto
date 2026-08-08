@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
 
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         initialRoute: auth.isLoggedIn ? '/home' : '/',
         routes: {
           '/': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
         },
       ),
