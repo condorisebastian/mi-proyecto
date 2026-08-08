@@ -7,10 +7,10 @@ class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  State<HistoryScreen> createState() => HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class HistoryScreenState extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
   List<Map<String, dynamic>> _history = [];
 
@@ -19,6 +19,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     _loadHistory();
   }
+
+  Future<void> reload() => _loadHistory();
 
   Future<void> _loadHistory() async {
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -68,35 +70,50 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
               Expanded(
-                child: _history.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.history,
-                              size: 80,
-                              color: Colors.grey[300],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No hay cobros hoy',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[500],
+                child: RefreshIndicator(
+                  color: const Color(0xFFE53935),
+                  onRefresh: _loadHistory,
+                  child: _history.isEmpty
+                      ? LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              child: SizedBox(
+                                height: constraints.maxHeight,
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.history,
+                                        size: 80,
+                                        color: Colors.grey[300],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No hay cobros hoy',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey[500],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            );
+                          },
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(20),
+                          itemCount: _history.length,
+                          itemBuilder: (context, index) {
+                            final item = _history[index];
+                            return _buildHistoryItem(item);
+                          },
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: _history.length,
-                        itemBuilder: (context, index) {
-                          final item = _history[index];
-                          return _buildHistoryItem(item);
-                        },
-                      ),
+                ),
               ),
             ],
           ),
@@ -108,7 +125,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildHistoryItem(Map<String, dynamic> item) {
     final DateTime fecha = DateTime.parse(item['fecha']);
     final int puntos = item['puntos'];
-    final String metodo = item['metodo_pago'] ?? 'NFC';
+    final String metodo = _metodoLabel(item['metodo_pago']);
+    final String tipoUsuario = _tipoLabel(item['tipo_usuario']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -118,7 +136,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -129,7 +147,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -150,7 +168,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                 ),
                 Text(
-                  'Método: $metodo',
+                  '$metodo · $tipoUsuario',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
@@ -170,5 +188,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ],
       ),
     );
+  }
+
+  String _metodoLabel(dynamic metodo) {
+    switch (metodo) {
+      case 'tarjeta_nfc':
+        return 'NFC';
+      case 'qr':
+        return 'QR';
+      default:
+        return 'Efectivo';
+    }
+  }
+
+  String _tipoLabel(dynamic tipo) {
+    switch (tipo) {
+      case 'estudiante':
+        return 'Estudiante';
+      case 'civil':
+        return 'Civil';
+      case 'adulto_mayor':
+        return 'Adulto Mayor';
+      default:
+        return 'Pasajero';
+    }
   }
 }

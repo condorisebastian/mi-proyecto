@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -126,35 +126,34 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: authService.isLoading
-                                  ? null
-                                  : () async {
-                                      if (_formKey.currentState!.validate()) {
-                                        final success =
-                                            await authService.login(
-                                          _licenciaController.text,
-                                          _passwordController.text,
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: authService.isLoading
+                                ? null
+                                : () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      final success = await authService.login(
+                                        _licenciaController.text,
+                                        _passwordController.text,
+                                      );
+                                      if (success && context.mounted) {
+                                        Navigator.pushReplacementNamed(
+                                            context, '/home');
+                                      } else if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Licencia o contraseña incorrectos'),
+                                            backgroundColor: Colors.red,
+                                          ),
                                         );
-                                        if (success && context.mounted) {
-                                          Navigator.pushReplacementNamed(
-                                              context, '/home');
-                                        } else if (context.mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  'Licencia o contraseña incorrectos'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        }
                                       }
-                                    },
+                                    }
+                                  },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE53935),
                                 foregroundColor: Colors.white,
@@ -172,6 +171,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/register');
+                            },
+                            child: const Text(
+                              '¿No tienes cuenta? Regístrate',
+                              style: TextStyle(color: Color(0xFFE53935)),
                             ),
                           ),
                         ],

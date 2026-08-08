@@ -14,18 +14,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
   final _ciController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _licenciaController = TextEditingController();
+  final _telefonoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _tipo = 'estudiante';
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    if (args != null && args['tipo'] != null) {
-      _tipo = args['tipo'];
-    }
+  void dispose() {
+    _nombreController.dispose();
+    _apellidoController.dispose();
+    _ciController.dispose();
+    _licenciaController.dispose();
+    _telefonoController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -34,8 +37,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registro'),
-        backgroundColor: const Color(0xFF1E88E5),
+        title: const Text('Registro Conductor'),
+        backgroundColor: const Color(0xFFE53935),
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -44,7 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
+              Color(0xFFE53935),
               Color(0xFFF5F5F5),
             ],
             stops: [0.0, 0.3],
@@ -74,13 +77,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       children: [
                         const Icon(
-                          Icons.person_add,
+                          Icons.directions_bus,
                           size: 60,
-                          color: Color(0xFF1E88E5),
+                          color: Color(0xFFE53935),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Crear Cuenta',
+                          'Registrar Conductor',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -124,6 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _ciController,
+                          keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: 'Cédula de Identidad',
                             prefixIcon: const Icon(Icons.badge),
@@ -140,24 +144,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: _licenciaController,
                           decoration: InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: const Icon(Icons.email),
+                            labelText: 'Nro. Licencia',
+                            prefixIcon: const Icon(Icons.badge_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Ingrese su email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Email inválido';
+                              return 'Ingrese su licencia';
                             }
                             return null;
                           },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _telefonoController,
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            labelText: 'Teléfono',
+                            prefixIcon: const Icon(Icons.phone),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -212,16 +224,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
                                         ci: _ciController.text,
-                                        email: _emailController.text,
+                                        licencia: _licenciaController.text,
+                                        telefono:
+                                            _telefonoController.text.isEmpty
+                                                ? null
+                                                : _telefonoController.text,
                                         password: _passwordController.text,
-                                        tipo: _tipo,
                                       );
                                       if (success && context.mounted) {
-                                        Navigator.pushNamedAndRemoveUntil(
-                                          context,
-                                          '/home',
-                                          (route) => false,
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Registro exitoso. Inicia sesión.'),
+                                            backgroundColor: Colors.green,
+                                          ),
                                         );
+                                        Navigator.pop(context);
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
@@ -235,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E88E5),
+                              backgroundColor: const Color(0xFFE53935),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

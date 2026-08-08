@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "jest --runInBand --forceExit",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -14,5 +16,9 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }

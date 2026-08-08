@@ -8,11 +8,38 @@ class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  State<HistoryScreen> createState() => HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class HistoryScreenState extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
+  List<Transaction> _transactions = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> reload() => _loadHistory();
+
+  Future<void> _loadHistory() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = authService.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _loading = true;
+    });
+
+    final transactions = await _apiService.getTransactionHistory(user.id);
+    if (!mounted) return;
+    setState(() {
+      _transactions = transactions;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,47 +89,53 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
               Expanded(
-                child: FutureBuilder<List<Transaction>>(
-                  future: _apiService.getTransactionHistory(user?.id ?? 0),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final transactions = snapshot.data ?? [];
-
-                    if (transactions.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.history,
-                              size: 80,
-                              color: Colors.grey[300],
+                child: RefreshIndicator(
+                  color: const Color(0xFF1E88E5),
+                  onRefresh: _loadHistory,
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _transactions.isEmpty
+                          ? LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SingleChildScrollView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  child: SizedBox(
+                                    height: constraints.maxHeight,
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.history,
+                                            size: 80,
+                                            color: Colors.grey[300],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'No hay transacciones',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(20),
+                              itemCount: _transactions.length,
+                              itemBuilder: (context, index) {
+                                return _buildTransactionCard(
+                                    _transactions[index]);
+                              },
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No hay transacciones',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = transactions[index];
-                        return _buildTransactionCard(transaction);
-                      },
-                    );
-                  },
                 ),
               ),
             ],
@@ -121,7 +154,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -163,7 +196,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -175,8 +208,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isPositive
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.orange.withOpacity(0.1),
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

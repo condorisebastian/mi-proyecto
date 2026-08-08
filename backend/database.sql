@@ -58,11 +58,17 @@ CREATE TABLE transacciones (
     puntos INT NOT NULL,
     tipo NVARCHAR(20) NOT NULL CHECK (tipo IN ('cobro_viaje', 'recarga')),
     metodo_pago NVARCHAR(20) NOT NULL CHECK (metodo_pago IN ('tarjeta_nfc', 'qr', 'recarga', 'qr_bancario', 'tigo_money', 'unnocc')),
+    tipo_usuario NVARCHAR(20) NULL CHECK (tipo_usuario IN ('estudiante', 'civil', 'adulto_mayor')),
     estado NVARCHAR(10) DEFAULT 'completada' CHECK (estado IN ('completada', 'fallida', 'pendiente')),
     fecha DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
     FOREIGN KEY (id_conductor) REFERENCES conductores(id)
 );
+GO
+
+-- Migración: agregar columna tipo_usuario a transacciones (entornos existentes)
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'transacciones') AND name = N'tipo_usuario')
+    ALTER TABLE transacciones ADD tipo_usuario NVARCHAR(20) NULL;
 GO
 
 -- Tabla de precios por tipo de usuario
