@@ -4,6 +4,12 @@
 -- Transporte Publico (segun planificacion_bd_xampp.pdf)
 -- Servidor: XAMPP (MariaDB 10.4) | phpMyAdmin: bd `proyecto_cobros`
 -- Contraseña de todos los usuarios de prueba: 123456
+--
+-- Desviaciones sobre el PDF para soportar el flujo real de las apps:
+--   * pasajeros.tipo        -> tarifa por tipo (estudiante/civil/adulto_mayor)
+--   * conductores.ci        -> registro/login de conductor usa CI
+--   * cobros.id_vehiculo/id_ruta NULL -> flujo actual no asigna vehiculo/ruta
+--   * cobros.metodo_pago/tipo_usuario -> paridad con el historial de las apps
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS proyecto_cobros
@@ -46,6 +52,8 @@ CREATE TABLE pasajeros (
   id_pasajero      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_usuario       INT UNSIGNED NOT NULL,
   ci               VARCHAR(20)  NOT NULL UNIQUE,
+  tipo             ENUM('estudiante','civil','adulto_mayor') NOT NULL DEFAULT 'civil'
+                   COMMENT 'define la tarifa del viaje en las apps',
   fecha_nacimiento DATE         NULL,
   direccion        VARCHAR(150) NULL,
   estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
@@ -59,6 +67,8 @@ CREATE TABLE pasajeros (
 CREATE TABLE conductores (
   id_conductor     INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_usuario       INT UNSIGNED NOT NULL,
+  ci               VARCHAR(20)  NOT NULL UNIQUE
+                   COMMENT 'las apps registran/login de conductores por CI',
   numero_licencia  VARCHAR(30)  NOT NULL UNIQUE,
   fecha_vencimiento DATE        NOT NULL,
   estado           ENUM('activo','suspendido','inactivo') NOT NULL DEFAULT 'activo',
@@ -125,7 +135,7 @@ CREATE TABLE recargas (
   id_recarga  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_pasajero INT UNSIGNED NOT NULL,
   monto       DECIMAL(10,2) NOT NULL,
-  metodo_pago ENUM('efectivo','qr','transferencia','tarjeta') NOT NULL DEFAULT 'efectivo',
+  metodo_pago VARCHAR(30)   NOT NULL DEFAULT 'efectivo',
   fecha       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   estado      ENUM('exitosa','anulada') NOT NULL DEFAULT 'exitosa',
   CONSTRAINT fk_recarga_pasajero FOREIGN KEY (id_pasajero)
@@ -138,11 +148,14 @@ CREATE TABLE recargas (
 -- ============================================================
 CREATE TABLE cobros (
   id_cobro           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  id_pasajero        INT UNSIGNED NOT NULL,
+  id_pasajero        INT UNSIGNED NULL
+                     COMMENT 'NULL = viaje sin usuario registrado',
   id_conductor       INT UNSIGNED NOT NULL,
-  id_vehiculo        INT UNSIGNED NOT NULL,
-  id_ruta            INT UNSIGNED NOT NULL,
+  id_vehiculo        INT UNSIGNED NULL COMMENT 'opcional: el flujo actual no asigna vehiculo',
+  id_ruta            INT UNSIGNED NULL COMMENT 'opcional: el flujo actual no asigna ruta',
   monto              DECIMAL(10,2) NOT NULL,
+  metodo_pago        VARCHAR(30)   NOT NULL DEFAULT 'qr',
+  tipo_usuario       VARCHAR(20)   NULL COMMENT 'tipo del pasajero al momento del cobro',
   fecha              DATE          NOT NULL DEFAULT (CURRENT_DATE),
   hora               TIME          NOT NULL DEFAULT (CURRENT_TIME),
   codigo_transaccion VARCHAR(50)   NOT NULL UNIQUE,
@@ -171,15 +184,15 @@ INSERT INTO usuarios (nombre, apellido, correo, telefono, password, rol) VALUES
 ('Juan', 'Perez', 'juan.perez@test.com', '76543210', '$2a$10$s38tCRwnFEZTOHuJEp1/T.GP35V3V8Y8adAiaYgTdmqkQRUty4p0C', 'CONDUCTOR'),
 ('Carlos', 'Rojas', 'carlos.rojas@test.com', '70000001', '$2a$10$s38tCRwnFEZTOHuJEp1/T.GP35V3V8Y8adAiaYgTdmqkQRUty4p0C', 'CONDUCTOR');
 
-INSERT INTO pasajeros (id_usuario, ci, fecha_nacimiento, direccion) VALUES
-((SELECT id_usuario FROM usuarios WHERE correo = 'sebastian@test.com'), '1234567', '2002-05-14', 'Av. Banzer 3er anillo'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'maria@test.com'), '7654321', '1995-09-23', 'Barrio Villa Primero de Mayo'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'pedro@test.com'), '1122334', '1958-03-02', 'Zone Plan 3000'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'ana.vargas@test.com'), '2222222', '1990-11-11', 'Av. Radial 27');
+INSERT INTO pasajeros (id_usuario, ci, tipo, fecha_nacimiento, direccion) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo = 'sebastian@test.com'), '1234567', 'estudiante', '2002-05-14', 'Av. Banzer 3er anillo'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'maria@test.com'), '7654321', 'civil', '1995-09-23', 'Barrio Villa Primero de Mayo'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'pedro@test.com'), '1122334', 'adulto_mayor', '1958-03-02', 'Zone Plan 3000'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'ana.vargas@test.com'), '2222222', 'civil', '1990-11-11', 'Av. Radial 27');
 
-INSERT INTO conductores (id_usuario, numero_licencia, fecha_vencimiento) VALUES
-((SELECT id_usuario FROM usuarios WHERE correo = 'juan.perez@test.com'), 'LIC-12345', '2027-12-31'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'carlos.rojas@test.com'), 'LIC-67890', '2028-06-30');
+INSERT INTO conductores (id_usuario, ci, numero_licencia, fecha_vencimiento) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo = 'juan.perez@test.com'), '9876543', 'LIC-12345', '2027-12-31'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'carlos.rojas@test.com'), '1010101', 'LIC-67890', '2028-06-30');
 
 INSERT INTO vehiculos (placa, modelo, marca, color, capacidad) VALUES
 ('1234-ABC', '2015', 'Mercedes-Benz', 'Blanco', 45),
@@ -205,19 +218,19 @@ INSERT INTO recargas (id_pasajero, monto, metodo_pago) VALUES
 ((SELECT id_pasajero FROM pasajeros WHERE ci = '1234567'), 50.00, 'qr'),
 ((SELECT id_pasajero FROM pasajeros WHERE ci = '7654321'), 30.00, 'efectivo');
 
-INSERT INTO cobros (id_pasajero, id_conductor, id_vehiculo, id_ruta, monto, codigo_transaccion) VALUES
+INSERT INTO cobros (id_pasajero, id_conductor, id_vehiculo, id_ruta, monto, metodo_pago, tipo_usuario, codigo_transaccion) VALUES
 ((SELECT id_pasajero FROM pasajeros WHERE ci = '1234567'),
  (SELECT id_conductor FROM conductores WHERE numero_licencia = 'LIC-12345'),
  (SELECT id_vehiculo FROM vehiculos WHERE placa = '1234-ABC'),
- (SELECT id_ruta FROM rutas WHERE numero = '1'), 2.00, 'TXN-20260821-000001'),
+ (SELECT id_ruta FROM rutas WHERE numero = '1'), 2.00, 'qr', 'estudiante', 'TXN-20260821-000001'),
 ((SELECT id_pasajero FROM pasajeros WHERE ci = '7654321'),
  (SELECT id_conductor FROM conductores WHERE numero_licencia = 'LIC-12345'),
  (SELECT id_vehiculo FROM vehiculos WHERE placa = '1234-ABC'),
- (SELECT id_ruta FROM rutas WHERE numero = '1'), 2.00, 'TXN-20260821-000002'),
+ (SELECT id_ruta FROM rutas WHERE numero = '1'), 2.00, 'qr', 'civil', 'TXN-20260821-000002'),
 ((SELECT id_pasajero FROM pasajeros WHERE ci = '2222222'),
  (SELECT id_conductor FROM conductores WHERE numero_licencia = 'LIC-67890'),
  (SELECT id_vehiculo FROM vehiculos WHERE placa = '5678-DEF'),
- (SELECT id_ruta FROM rutas WHERE numero = '41'), 2.50, 'TXN-20260821-000003');
+ (SELECT id_ruta FROM rutas WHERE numero = '41'), 2.50, 'qr', 'civil', 'TXN-20260821-000003');
 
 -- ============================================================
 -- CONSULTAS UTILES

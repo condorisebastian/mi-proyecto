@@ -38,6 +38,11 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
 
 ## Datos útiles
 
-- Backend Express + SQL Server (`bd_cobros`), JWT, puerto 3000.
+- Backend PHP en `api/` servido por XAMPP (Apache) en `http://localhost/transporte_api`
+  (junction `htdocs\transporte_api` → `api/`). Base de datos MySQL/MariaDB
+  `proyecto_cobros` (phpMyAdmin), esquema en `database/transporte_db.sql`.
+- El backend legacy Node + SQL Server (`backend/`, puerto 3000, `bd_cobros`) quedó
+  obsoleto: ya no se usa.
+- Apps apuntan a `http://127.0.0.1/transporte_api` (en dispositivo físico por USB:
+  `adb reverse tcp:80 tcp:80`; en LAN: IP de la PC, ej. `http://192.168.x.x/transporte_api`).
 - Contraseña de todos los usuarios/conductores de prueba: `123456`.
-- Apps apuntan a `http://192.168.100.7:3000/api` (IP Wi-Fi de la PC de desarrollo).
