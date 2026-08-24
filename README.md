@@ -1,64 +1,56 @@
 # Sistema de Cobro de Transporte
 
-Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con dos apps Flutter y un backend Express + SQL Server.
+Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con dos apps Flutter y un backend PHP + MySQL/MariaDB servido por XAMPP.
 
 ## Arquitectura
 
 ```
 mi-proyecto/
-├── backend/            # API REST (Node.js + Express + SQL Server)
-│   ├── src/            # db, rutas (auth, users, transactions)
-│   ├── tests/          # Tests con Jest + Supertest
-│   ├── database.sql    # Esquema y datos iniciales de bd_cobros
-│   └── .env.example    # Variables de entorno de ejemplo
-├── app_conductor/      # App Flutter del conductor (cobro NFC/QR)
-└── app_usuario/        # App Flutter del pasajero (saldo, recarga, QR)
+├── api/                  # API REST (PHP + MySQL/MariaDB, XAMPP)
+│   ├── config/           # Conexión a la BD
+│   ├── src/              # db, helpers (JWT), rutas (auth, users, transactions)
+│   └── README.md         # Endpoints y despliegue
+├── database/
+│   └── transporte_db.sql # Esquema y datos de prueba de `proyecto_cobros`
+├── app_conductor/        # App Flutter del conductor (cobro QR/NFC)
+├── app_usuario/          # App Flutter del pasajero (saldo, recarga, QR)
+└── backend/              # (OBSOLETO) backend legacy Node + SQL Server; ya no se usa
 ```
 
 ## Requisitos
 
-- Node.js 18+ y npm
-- SQL Server (o Express) con autenticación mixta habilitada
+- XAMPP (Apache + PHP + MySQL/MariaDB)
 - Flutter 3.x para las apps
 
 ## Configuración del backend
 
-1. Crear la base de datos con `backend/database.sql`.
-2. Copiar `backend/.env.example` a `backend/.env` y completar las credenciales:
+1. Importar `database/transporte_db.sql` desde phpMyAdmin (crea la BD `proyecto_cobros` con datos de prueba).
+2. Publicar la API en `htdocs` (junction recomendado, sirve directo desde el repo):
    ```
-   PORT=3000
-   DB_SERVER=localhost\SQLEXPRESS
-   DB_NAME=bd_cobros
-   DB_USER=sa
-   DB_PASSWORD=tu_password
-   JWT_SECRET=tu_secret
+   mklink /J C:\xampp\htdocs\transporte_api <ruta-del-repo>\api
    ```
-3. Instalar y arrancar:
-   ```
-   cd backend
-   npm install
-   npm start
-   ```
-   La API queda en `http://localhost:3000`.
+3. Credenciales de BD en `api/config/database.php` (por defecto: root sin clave).
+4. Verificar: `http://localhost/transporte_api/health`
 
 ### Endpoints principales
 
 | Método | Ruta                              | Descripción                        |
 |--------|-----------------------------------|------------------------------------|
-| POST   | `/api/auth/register`              | Registrar usuario                 |
-| POST   | `/api/auth/login`                 | Login de usuario                  |
-| POST   | `/api/auth/login-conductor`       | Login de conductor                |
-| GET    | `/api/users/:id`                  | Datos de un usuario               |
-| POST   | `/api/transactions/pay`           | Cobrar un viaje                   |
-| POST   | `/api/transactions/recharge`      | Recargar puntos                   |
-| GET    | `/api/transactions/user/:userId`  | Historial del usuario             |
-| GET    | `/api/transactions/summary/:conductorId` | Resumen diario del conductor |
-| GET    | `/api/transactions/history/:conductorId` | Historial diario del conductor |
-| GET    | `/api/health`                     | Health check                      |
+| POST   | `/auth/register`                  | Registrar pasajero                 |
+| POST   | `/auth/login`                     | Login de usuario                   |
+| POST   | `/auth/register-conductor`        | Registrar conductor                |
+| POST   | `/auth/login-conductor`           | Login de conductor                 |
+| GET    | `/users/{id}`                     | Datos/saldo de un usuario          |
+| POST   | `/transactions/pay`               | Cobrar un viaje                    |
+| POST   | `/transactions/recharge`          | Recargar saldo                     |
+| GET    | `/transactions/user/{userId}`     | Historial del usuario              |
+| GET    | `/transactions/summary/{conductorId}` | Resumen diario del conductor   |
+| GET    | `/transactions/history/{conductorId}` | Historial diario del conductor |
+| GET    | `/health`                         | Health check                       |
 
 ## Apps Flutter
 
-Con el backend corriendo y el teléfono en la misma red:
+Con Apache corriendo y la API publicada:
 
 ```
 cd app_conductor   # o app_usuario
@@ -66,20 +58,20 @@ flutter pub get
 flutter run
 ```
 
-El servidor usa una IP fija (`http://192.168.100.7:3000/api`) configurada en
-`lib/services/api_service.dart` y `lib/services/auth_service.dart` de ambas apps.
-Si tu IP cambia, actualiza esos archivos.
+Las apps apuntan por defecto a `http://127.0.0.1/transporte_api`
+(`lib/config.dart`). En dispositivo físico por USB usar `adb reverse tcp:8080 tcp:80`
+y compilar con `--dart-define=API_URL=http://127.0.0.1:8080/transporte_api`;
+en LAN usar la IP de la PC (ej. `http://192.168.x.x/transporte_api`).
 
 ## Credenciales de prueba
 
-Todas las contraseñas de usuarios y conductores son `123456` (definidas en `database.sql`).
+Todas las contraseñas de usuarios y conductores son `123456` (definidas en `database/transporte_db.sql`).
 
 ## Tests
 
 ```
-cd backend && npm test        # Tests del backend
-cd app_conductor && flutter test   # Tests de la app conductor
-cd app_usuario && flutter test     # Tests de la app usuario
+cd app_conductor && flutter analyze && flutter test
+cd app_usuario && flutter analyze && flutter test
 ```
 
 ## Flujo de trabajo con Git
