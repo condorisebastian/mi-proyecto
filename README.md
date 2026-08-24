@@ -58,10 +58,18 @@ flutter pub get
 flutter run
 ```
 
-Las apps apuntan por defecto a `http://127.0.0.1/transporte_api`
-(`lib/config.dart`). En dispositivo físico por USB usar `adb reverse tcp:8080 tcp:80`
-y compilar con `--dart-define=API_URL=http://127.0.0.1:8080/transporte_api`;
-en LAN usar la IP de la PC (ej. `http://192.168.x.x/transporte_api`).
+Las apps apuntan por defecto a la IP LAN de la PC, ej.
+`http://192.168.100.7/transporte_api` (ver `lib/config.dart` de cada app).
+Funcionan por Wi-Fi sin cable USB; solo se requiere:
+
+- PC y teléfono en la misma red Wi-Fi.
+- Apache y MySQL corriendo en XAMPP.
+- Regla de firewall entrante para el puerto 80
+  (`netsh advfirewall firewall add rule name="XAMPP HTTP 80" dir=in action=allow protocol=TCP localport=80`).
+
+Si cambia la IP de la PC, actualizar el `defaultValue` en
+`app_conductor/lib/config.dart` y `app_usuario/lib/config.dart`, o compilar con
+`--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 
 ## Credenciales de prueba
 

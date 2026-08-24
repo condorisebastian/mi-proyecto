@@ -43,6 +43,9 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   `proyecto_cobros` (phpMyAdmin), esquema en `database/transporte_db.sql`.
 - El backend legacy Node + SQL Server (`backend/`, puerto 3000, `bd_cobros`) quedó
   obsoleto: ya no se usa.
-- Apps apuntan a `http://127.0.0.1/transporte_api` (en dispositivo físico por USB:
-  `adb reverse tcp:80 tcp:80`; en LAN: IP de la PC, ej. `http://192.168.x.x/transporte_api`).
+- Apps apuntan a la IP LAN de la PC, ej. `http://192.168.100.7/transporte_api`
+  (`lib/config.dart` de cada app). Funcionan por Wi-Fi sin cable USB; si cambia
+  la IP de la PC, actualizar ambos `config.dart` o compilar con
+  `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
+- Firewall: regla entrante "XAMPP HTTP 80" ya creada (puerto 80 TCP permitido).
 - Contraseña de todos los usuarios/conductores de prueba: `123456`.
