@@ -209,7 +209,8 @@ function handle_transactions(string $method, array $seg): void
                     COALESCE(SUM(c.monto), 0) AS total_puntos,
                     COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'estudiante' THEN 1 ELSE 0 END), 0) AS estudiantes,
                     COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'civil' THEN 1 ELSE 0 END), 0) AS civiles,
-                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'adulto_mayor' THEN 1 ELSE 0 END), 0) AS mayores
+                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'adulto_mayor' THEN 1 ELSE 0 END), 0) AS mayores,
+                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'discapacitado' THEN 1 ELSE 0 END), 0) AS discapacitados
                FROM cobros c
                LEFT JOIN pasajeros p ON p.id_pasajero = c.id_pasajero
               WHERE c.id_conductor = ?
@@ -225,6 +226,7 @@ function handle_transactions(string $method, array $seg): void
             'estudiantes'     => (int)$r['estudiantes'],
             'civiles'         => (int)$r['civiles'],
             'mayores'         => (int)$r['mayores'],
+            'discapacitados'  => (int)$r['discapacitados'],
         ]);
     }
 

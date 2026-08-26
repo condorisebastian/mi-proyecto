@@ -1,0 +1,30 @@
+name: transita_bolivia
+description: "Transita Bolivia - App unificada de transporte para pasajeros y conductores"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  provider: ^6.0.0
+  http: ^1.1.0
+  shared_preferences: ^2.2.0
+  qr_flutter: ^4.1.0
+  flutter_nfc_kit: ^3.6.2
+  ndef: ^0.4.0
+  intl: ^0.18.0
+  mobile_scanner: ^7.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

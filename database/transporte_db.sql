@@ -52,7 +52,7 @@ CREATE TABLE pasajeros (
   id_pasajero      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_usuario       INT UNSIGNED NOT NULL,
   ci               VARCHAR(20)  NOT NULL UNIQUE,
-  tipo             ENUM('estudiante','civil','adulto_mayor') NOT NULL DEFAULT 'civil'
+  tipo             ENUM('estudiante','civil','adulto_mayor','discapacitado') NOT NULL DEFAULT 'civil'
                    COMMENT 'define la tarifa del viaje en las apps',
   fecha_nacimiento DATE         NULL,
   direccion        VARCHAR(150) NULL,
