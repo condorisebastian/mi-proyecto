@@ -6,7 +6,7 @@ import '../config.dart';
 import '../models/conductor.dart';
 
 class DriverAuthService extends ChangeNotifier {
-  static const _kSessionKey = 'session';
+  static const _kSessionKey = 'driver_session';
 
   final String baseUrl = AppConfig.apiUrl;
   Conductor? _currentConductor;

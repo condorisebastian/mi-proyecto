@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
+import 'services/driver_auth_service.dart';
+import 'services/driver_api_service.dart';
 import 'screens/passenger/role_selection_screen.dart';
 import 'screens/passenger/user_type_screen.dart';
 import 'screens/passenger/login_screen.dart';
@@ -13,21 +15,35 @@ import 'screens/driver/home_screen.dart' as driver_home;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   final auth = AuthService();
   await auth.restoreSession();
   ApiService.tokenProvider = () => auth.token;
-  runApp(TransitaBoliviaApp(auth: auth));
+
+  final driverAuth = DriverAuthService();
+  await driverAuth.restoreSession();
+  DriverApiService.tokenProvider = () => driverAuth.token;
+
+  runApp(TransitaBoliviaApp(auth: auth, driverAuth: driverAuth));
 }
 
 class TransitaBoliviaApp extends StatelessWidget {
-  const TransitaBoliviaApp({super.key, required this.auth});
+  const TransitaBoliviaApp({
+    super.key,
+    required this.auth,
+    required this.driverAuth,
+  });
 
   final AuthService auth;
+  final DriverAuthService driverAuth;
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: auth,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: auth),
+        ChangeNotifierProvider.value(value: driverAuth),
+      ],
       child: MaterialApp(
         title: 'Transita Bolivia',
         debugShowCheckedModeBanner: false,
@@ -38,7 +54,11 @@ class TransitaBoliviaApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        initialRoute: auth.isLoggedIn ? '/home' : '/',
+        initialRoute: auth.isLoggedIn
+            ? '/passenger/home'
+            : driverAuth.isLoggedIn
+                ? '/driver/home'
+                : '/',
         routes: {
           '/': (context) => const RoleSelectionScreen(),
           '/passenger/type': (context) => const UserTypeScreen(),
