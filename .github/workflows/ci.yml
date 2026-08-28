@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  php_api:
+    name: API PHP (sintaxis)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar sintaxis PHP
+        run: |
+          if [ -x "$(command -v php)" ]; then
+            find src -name "*.php" -print0 | xargs -0 -n1 php -l
+          else
+            echo "PHP no instalado; omitiendo lint."
+          fi
+
+  flutter:
+    name: Flutter (transita_bolivia)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: transita_bolivia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Obtener dependencias
+        run: flutter pub get
+      - name: Analizar código
+        run: flutter analyze
+      - name: Ejecutar tests
+        run: flutter test

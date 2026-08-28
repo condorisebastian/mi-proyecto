@@ -1,0 +1,12 @@
+# Normaliza saltos de línea y detecta archivos binarios
+* text=auto
+
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.dart text eol=lf
+*.sql  text eol=lf
+*.sh   text eol=lf
+*.png  binary
+*.apk  binary
+*.jar  binary
