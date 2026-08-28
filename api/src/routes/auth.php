@@ -15,7 +15,7 @@ function handle_auth(string $method, array $seg): void
         require_fields($body, ['nombre', 'apellido', 'ci', 'email', 'password', 'tipo']);
         ['nombre' => $nombre, 'apellido' => $apellido, 'ci' => $ci, 'email' => $email, 'password' => $password, 'tipo' => $tipo] = $body;
 
-        if (!in_array($tipo, ['estudiante', 'civil', 'adulto_mayor'], true)) {
+        if (!in_array($tipo, ['estudiante', 'civil', 'adulto_mayor', 'discapacitado'], true)) {
             json_out(['error' => 'Tipo de usuario inválido'], 400);
         }
 
