@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transita_bolivia/services/auth_service.dart';
 import 'package:transita_bolivia/services/api_service.dart';
 import 'package:transita_bolivia/services/driver_auth_service.dart';
@@ -7,6 +8,8 @@ import 'package:transita_bolivia/main.dart';
 
 void main() {
   testWidgets('App renders role selection screen', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+
     final auth = AuthService();
     await auth.restoreSession();
     ApiService.tokenProvider = () => auth.token;

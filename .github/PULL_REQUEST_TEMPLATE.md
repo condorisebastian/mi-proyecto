@@ -17,9 +17,8 @@
 
 ## Verificación
 
-- [ ] Backend: `npm test`
-- [ ] app_conductor: `flutter analyze && flutter test`
-- [ ] app_usuario: `flutter analyze && flutter test`
+- [ ] API PHP (`api/`): sintaxis válida en los archivos modificados
+- [ ] App unificada (`transita_bolivia/`): `flutter analyze && flutter test`
 
 ## Issues relacionados
 
