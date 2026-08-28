@@ -1,6 +1,6 @@
 # Sistema de Cobro de Transporte
 
-Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con dos apps Flutter y un backend PHP + MySQL/MariaDB servido por XAMPP.
+Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con una app Flutter unificada y un backend PHP + MySQL/MariaDB servido por XAMPP.
 
 ## Arquitectura
 
@@ -12,15 +12,13 @@ mi-proyecto/
 │   └── README.md         # Endpoints y despliegue
 ├── database/
 │   └── transporte_db.sql # Esquema y datos de prueba de `proyecto_cobros`
-├── app_conductor/        # App Flutter del conductor (cobro QR/NFC)
-├── app_usuario/          # App Flutter del pasajero (saldo, recarga, QR)
-└── backend/              # (OBSOLETO) backend legacy Node + SQL Server; ya no se usa
+└── transita_bolivia/     # App Flutter unificada (pasajero + conductor)
 ```
 
 ## Requisitos
 
 - XAMPP (Apache + PHP + MySQL/MariaDB)
-- Flutter 3.x para las apps
+- Flutter 3.x para la app
 
 ## Configuración del backend
 
@@ -48,19 +46,24 @@ mi-proyecto/
 | GET    | `/transactions/history/{conductorId}` | Historial diario del conductor |
 | GET    | `/health`                         | Health check                       |
 
-## Apps Flutter
+## App Flutter (transita_bolivia)
+
+App unificada para pasajeros y conductores con selección de rol al iniciar:
+
+- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, recarga, pago de viaje (QR/NFC), tarjeta, historial.
+- **Conductor**: login/registro por licencia, cobro de viajes (QR/NFC), resumen diario, historial.
 
 Con Apache corriendo y la API publicada:
 
 ```
-cd app_conductor   # o app_usuario
+cd transita_bolivia
 flutter pub get
 flutter run
 ```
 
-Las apps apuntan por defecto a la IP LAN de la PC, ej.
-`http://192.168.100.7/transporte_api` (ver `lib/config.dart` de cada app).
-Funcionan por Wi-Fi sin cable USB; solo se requiere:
+La app apunta por defecto a la IP LAN de la PC, ej.
+`http://192.168.100.7/transporte_api` (ver `transita_bolivia/lib/config.dart`).
+Funciona por Wi-Fi sin cable USB; solo se requiere:
 
 - PC y teléfono en la misma red Wi-Fi.
 - Apache y MySQL corriendo en XAMPP.
@@ -68,18 +71,20 @@ Funcionan por Wi-Fi sin cable USB; solo se requiere:
   (`netsh advfirewall firewall add rule name="XAMPP HTTP 80" dir=in action=allow protocol=TCP localport=80`).
 
 Si cambia la IP de la PC, actualizar el `defaultValue` en
-`app_conductor/lib/config.dart` y `app_usuario/lib/config.dart`, o compilar con
+`transita_bolivia/lib/config.dart`, o compilar con
 `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 
 ## Credenciales de prueba
 
 Todas las contraseñas de usuarios y conductores son `123456` (definidas en `database/transporte_db.sql`).
 
+- Pasajero de prueba (CI): `1234567`
+- Conductor de prueba (licencia): `LIC-12345`
+
 ## Tests
 
 ```
-cd app_conductor && flutter analyze && flutter test
-cd app_usuario && flutter analyze && flutter test
+cd transita_bolivia && flutter analyze && flutter test
 ```
 
 ## Flujo de trabajo con Git
