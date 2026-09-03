@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
 import 'services/driver_auth_service.dart';
 import 'services/driver_api_service.dart';
+import 'firebase_options.dart';
 import 'screens/passenger/role_selection_screen.dart';
 import 'screens/passenger/user_type_screen.dart';
 import 'screens/passenger/login_screen.dart';
@@ -15,6 +17,10 @@ import 'screens/driver/home_screen.dart' as driver_home;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   final auth = AuthService();
   await auth.restoreSession();
