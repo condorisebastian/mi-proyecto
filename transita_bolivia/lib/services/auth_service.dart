@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../config.dart';
 import '../models/user.dart';
+import 'firebase_service.dart';
 
 class AuthService extends ChangeNotifier {
   static const _kSessionKey = 'session';
@@ -21,6 +22,13 @@ class AuthService extends ChangeNotifier {
   Future<bool> login(String ci, String password, String tipo) async {
     _isLoading = true;
     notifyListeners();
+
+    if (AppConfig.useFirebase) {
+      final ok = await _loginFirebase(ci, password, tipo);
+      _isLoading = false;
+      notifyListeners();
+      return ok;
+    }
 
     try {
       final response = await http
@@ -55,6 +63,18 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> _loginFirebase(
+      String ci, String password, String tipo) async {
+    final user = await FirebaseService.instance
+        .loginPasajero(ci, password, tipo);
+    if (user == null) return false;
+    if (user.tipo != tipo) return false;
+    _currentUser = user;
+    _token = 'firebase';
+    await _saveSession();
+    return true;
+  }
+
   Future<bool> register({
     required String nombre,
     required String apellido,
@@ -65,6 +85,25 @@ class AuthService extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
+
+    if (AppConfig.useFirebase) {
+      final user = await FirebaseService.instance.registerPasajero(
+        nombre: nombre,
+        apellido: apellido,
+        ci: ci,
+        email: email,
+        password: password,
+        tipo: tipo,
+      );
+      if (user != null) {
+        _currentUser = user;
+        _token = 'firebase';
+        await _saveSession();
+      }
+      _isLoading = false;
+      notifyListeners();
+      return user != null;
+    }
 
     try {
       final response = await http
@@ -104,6 +143,16 @@ class AuthService extends ChangeNotifier {
 
   Future<void> restoreSession() async {
     try {
+      if (AppConfig.useFirebase) {
+        final user = await FirebaseService.instance.currentUser();
+        if (user != null) {
+          _currentUser = user;
+          _token = 'firebase';
+        }
+        notifyListeners();
+        return;
+      }
+
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_kSessionKey);
       if (raw == null) return;
@@ -145,11 +194,23 @@ class AuthService extends ChangeNotifier {
     _currentUser = null;
     _token = null;
     await _clearSession();
+    if (AppConfig.useFirebase) {
+      await FirebaseService.instance.logout();
+    }
     notifyListeners();
   }
 
   Future<void> refreshUser() async {
     if (_currentUser == null) return;
+
+    if (AppConfig.useFirebase) {
+      final user = await FirebaseService.instance.currentUser();
+      if (user != null) {
+        _currentUser = user;
+        notifyListeners();
+      }
+      return;
+    }
 
     try {
       final response = await http.get(
