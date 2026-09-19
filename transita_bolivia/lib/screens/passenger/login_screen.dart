@@ -13,6 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _pinController = TextEditingController(text: '1234');
   String _tipo = 'estudiante';
+  bool _obscurePin = true;
 
   @override
   void didChangeDependencies() {
@@ -101,10 +102,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _pinController,
                           keyboardType: TextInputType.number,
                           maxLength: 4,
-                          obscureText: true,
+                          obscureText: _obscurePin,
                           decoration: InputDecoration(
                             labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscurePin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () =>
+                                  setState(() => _obscurePin = !_obscurePin),
+                            ),
                             counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

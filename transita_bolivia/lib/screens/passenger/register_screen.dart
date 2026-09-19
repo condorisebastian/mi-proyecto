@@ -16,6 +16,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _pinController = TextEditingController();
   final _confirmPinController = TextEditingController();
   String _tipo = 'estudiante';
+  bool _obscurePin = true;
+  bool _obscureConfirmPin = true;
 
   @override
   void didChangeDependencies() {
@@ -124,10 +126,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _pinController,
                           keyboardType: TextInputType.number,
                           maxLength: 4,
-                          obscureText: true,
+                          obscureText: _obscurePin,
                           decoration: InputDecoration(
                             labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscurePin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () =>
+                                  setState(() => _obscurePin = !_obscurePin),
+                            ),
                             counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -145,10 +157,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _confirmPinController,
                           keyboardType: TextInputType.number,
                           maxLength: 4,
-                          obscureText: true,
+                          obscureText: _obscureConfirmPin,
                           decoration: InputDecoration(
                             labelText: 'Confirmar PIN',
                             prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscureConfirmPin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscureConfirmPin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () => setState(
+                                  () => _obscureConfirmPin = !_obscureConfirmPin),
+                            ),
                             counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

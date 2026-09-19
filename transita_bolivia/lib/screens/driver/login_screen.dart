@@ -12,6 +12,7 @@ class DriverLoginScreen extends StatefulWidget {
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _pinController = TextEditingController(text: '5678');
+  bool _obscurePin = true;
 
   @override
   Widget build(BuildContext context) {
@@ -95,10 +96,20 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                             controller: _pinController,
                             keyboardType: TextInputType.number,
                             maxLength: 4,
-                            obscureText: true,
+                            obscureText: _obscurePin,
                             decoration: InputDecoration(
                               labelText: 'PIN (4 dígitos)',
                               prefixIcon: const Icon(Icons.lock),
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscurePin
+                                    ? Icons.visibility_off
+                                    : Icons.visibility),
+                                tooltip: _obscurePin
+                                    ? 'Mostrar PIN'
+                                    : 'Ocultar PIN',
+                                onPressed: () => setState(
+                                    () => _obscurePin = !_obscurePin),
+                              ),
                               counterText: '',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
