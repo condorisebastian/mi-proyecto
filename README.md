@@ -76,6 +76,28 @@ Si cambia la IP de la PC, actualizar el `defaultValue` en
 `transita_bolivia/lib/config.dart`, o compilar con
 `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 
+## Modo Firebase (opcional)
+
+Con `--dart-define=USE_FIREBASE=true` la app usa Cloud Firestore en lugar del
+backend PHP (login/registro por PIN, recargas, pagos, resumen diario):
+
+```
+cd transita_bolivia
+flutter run --dart-define=USE_FIREBASE=true
+```
+
+El acceso por PIN no usa Firebase Auth, por lo que las reglas de Firestore deben
+permitir el acceso cliente. Están versionadas y se despliegan desde
+`transita_bolivia/`:
+
+```
+firebase deploy --only firestore --project transita-bolivia
+```
+
+Archivos: `transita_bolivia/firestore.rules` y `firestore.indexes.json`. Para
+sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
+(requiere `GOOGLE_APPLICATION_CREDENTIALS`).
+
 ## Credenciales de prueba
 
 El acceso es por **PIN único de 4 dígitos** (ya no se usa CI ni contraseña).

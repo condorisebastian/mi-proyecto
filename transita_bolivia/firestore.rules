@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Acceso por PIN sin Firebase Auth: la app (pasajero/conductor) lee y escribe
+// directamente en estas colecciones. El PIN es la unica credencial.
+//
+// ADVERTENCIA: al no usar Firebase Auth, la base queda abierta a quien tenga
+// la API key del proyecto; es equivalente al backend PHP (sin auth fuerte).
+// Si se requiere seguridad real, migrar a Firebase Auth y restringir reglas.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /usuarios/{id} {
+      allow read, write: if true;
+    }
+    match /conductores/{id} {
+      allow read, write: if true;
+    }
+    match /transacciones/{id} {
+      allow read, write: if true;
+    }
+  }
+}

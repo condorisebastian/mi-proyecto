@@ -54,3 +54,7 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   `database/transporte_db.sql` y en Firestore (`usuarios`/`conductores.pin`).
 - Modo Firebase activable con `--dart-define=USE_FIREBASE=true` (login por PIN
   contra Cloud Firestore; el backend PHP queda como fallback).
+- Firestore: reglas e índices versionados en `transita_bolivia/firestore.rules`
+  y `firestore.indexes.json`. El login por PIN (sin Firebase Auth) requiere
+  desplegarlos: `firebase deploy --only firestore --project transita-bolivia`
+  (desde `transita_bolivia/`). Sin reglas, el acceso cliente da PERMISSION_DENIED.

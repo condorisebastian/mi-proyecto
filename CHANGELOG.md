@@ -8,6 +8,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y el p
 ### Añadido
 - Acceso por **PIN único de 4 dígitos** para pasajeros y conductores (reemplaza CI, contraseña y licencia).
 - Integración Firebase opcional (Firestore) con `--dart-define=USE_FIREBASE=true`; login/registro por PIN en la nube.
+- Reglas e índices de Firestore versionados (`firestore.rules`, `firestore.indexes.json`) y desplegados.
 - Script `database/migration_pin.sql` para actualizar una BD existente sin perder datos.
 - Script `tools/firebase/seed_pins.js` para sembrar PINs en Firestore.
 
