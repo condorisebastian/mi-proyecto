@@ -114,6 +114,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.white,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                   IconButton(
@@ -473,6 +481,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       '${user.nombre} ${user.apellido}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 16),

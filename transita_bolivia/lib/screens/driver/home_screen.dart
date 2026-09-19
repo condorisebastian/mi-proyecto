@@ -143,6 +143,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                           color: Colors.white70,
                         ),
                       ),
+                      Text(
+                        'CI: ${conductor.ci.isEmpty ? '—' : conductor.ci}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                   IconButton(
