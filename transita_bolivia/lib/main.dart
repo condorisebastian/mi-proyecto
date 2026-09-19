@@ -7,6 +7,7 @@ import 'services/driver_auth_service.dart';
 import 'services/driver_api_service.dart';
 import 'firebase_options.dart';
 import 'screens/passenger/role_selection_screen.dart';
+import 'screens/passenger/requirements_screen.dart';
 import 'screens/passenger/user_type_screen.dart';
 import 'screens/passenger/login_screen.dart';
 import 'screens/passenger/register_screen.dart';
@@ -67,6 +68,8 @@ class TransitaBoliviaApp extends StatelessWidget {
                 : '/',
         routes: {
           '/': (context) => const RoleSelectionScreen(),
+          '/passenger/requirements': (context) =>
+              const RequirementsScreen(),
           '/passenger/type': (context) => const UserTypeScreen(),
           '/passenger/login': (context) => const LoginScreen(),
           '/passenger/register': (context) => const RegisterScreen(),

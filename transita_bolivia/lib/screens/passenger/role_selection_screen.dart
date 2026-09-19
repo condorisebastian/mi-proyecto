@@ -65,7 +65,39 @@ class RoleSelectionScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/driver/login');
                   },
                 ),
+                const SizedBox(height: 24),
+                _buildRequirementsButton(context),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequirementsButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.pushNamed(context, '/passenger/requirements');
+          },
+          icon: const Icon(Icons.assignment, color: Colors.white),
+          label: const Text(
+            'Requisitos para el registro',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.white, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ),
