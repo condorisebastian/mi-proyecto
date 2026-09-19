@@ -19,13 +19,12 @@ class DriverAuthService extends ChangeNotifier {
   bool get isLoggedIn => _currentConductor != null;
   String? get token => _token;
 
-  Future<bool> login(String licencia, String password) async {
+  Future<bool> login(String pin) async {
     _isLoading = true;
     notifyListeners();
 
     if (AppConfig.useFirebase) {
-      final conductor = await FirebaseService.instance
-          .loginConductor(licencia, password);
+      final conductor = await FirebaseService.instance.loginConductor(pin);
       if (conductor != null) {
         _currentConductor = conductor;
         _token = 'firebase';
@@ -42,8 +41,7 @@ class DriverAuthService extends ChangeNotifier {
             Uri.parse('$baseUrl/auth/login-conductor'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-              'licencia': licencia,
-              'password': password,
+              'pin': pin,
             }),
           )
           .timeout(AppConfig.timeout);
@@ -71,18 +69,29 @@ class DriverAuthService extends ChangeNotifier {
   Future<bool> register({
     required String nombre,
     required String apellido,
-    required String ci,
-    required String licencia,
-    required String password,
+    required String pin,
+    String? licencia,
     String? telefono,
   }) async {
     _isLoading = true;
     notifyListeners();
 
     if (AppConfig.useFirebase) {
+      final conductor = await FirebaseService.instance.registerConductor(
+        nombre: nombre,
+        apellido: apellido,
+        pin: pin,
+        licencia: licencia,
+        telefono: telefono,
+      );
+      if (conductor != null) {
+        _currentConductor = conductor;
+        _token = 'firebase';
+        await _saveSession();
+      }
       _isLoading = false;
       notifyListeners();
-      return false; // Registro de conductor no implementado en Firebase por ahora
+      return conductor != null;
     }
 
     try {
@@ -93,9 +102,8 @@ class DriverAuthService extends ChangeNotifier {
             body: jsonEncode({
               'nombre': nombre,
               'apellido': apellido,
-              'ci': ci,
+              'pin': pin,
               'licencia': licencia,
-              'password': password,
               'telefono': telefono,
             }),
           )

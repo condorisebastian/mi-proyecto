@@ -1,18 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart' as app;
 import '../models/transaction.dart' as app_tx;
 import '../models/conductor.dart';
 
-/// Capa de datos sobre Firebase (Auth + Cloud Firestore).
+/// Capa de datos sobre Firebase (Cloud Firestore).
 ///
-/// Replica el contrato del backend PHP usando Firebase:
-///  - Auth: login/registro por email+contraseña (los usuarios de prueba usan
-///    correos como sebastian@test.com con password 123456). La app pide CI o
-///    licencia, así que primero se resuelve el correo desde Firestore y luego
-///    se autentica en Firebase Auth.
-///  - Firestore: colecciones `usuarios`, `conductores` y `transacciones` con
-///    el modelo de "puntos" que consume la app.
+/// Replica el contrato del backend PHP usando Firebase. El identificador de
+/// acceso es un PIN único de 4 dígitos por usuario:
+///  - Pasajero: se busca en `usuarios` por `pin` (+ `tipo`).
+///  - Conductor: se busca en `conductores` por `pin`.
+/// Las colecciones `usuarios`, `conductores` y `transacciones` usan el modelo
+/// de "puntos" que consume la app.
 class FirebaseService {
   FirebaseService._();
   static final FirebaseService instance = FirebaseService._();
@@ -21,97 +19,70 @@ class FirebaseService {
   static const String _conductoresCollection = 'conductores';
   static const String _transaccionesCollection = 'transacciones';
 
-  fb_auth.FirebaseAuth get _auth => fb_auth.FirebaseAuth.instance;
   FirebaseFirestore get _db => FirebaseFirestore.instance;
 
   // =====================================================================
-  // AUTH
+  // AUTH (por PIN)
   // =====================================================================
 
-  /// Busca el usuario pasajero por CI en Firestore y devuelve su `email`.
-  Future<String?> _emailByCi(String ci) async {
+  /// Verifica si un PIN ya está en uso en `usuarios` o `conductores`.
+  Future<bool> _pinEnUso(String pin) async {
+    final u = await _db
+        .collection(_usersCollection)
+        .where('pin', isEqualTo: pin)
+        .limit(1)
+        .get();
+    if (u.docs.isNotEmpty) return true;
+    final c = await _db
+        .collection(_conductoresCollection)
+        .where('pin', isEqualTo: pin)
+        .limit(1)
+        .get();
+    return c.docs.isNotEmpty;
+  }
+
+  /// Autentica a un pasajero por su PIN único + tipo.
+  Future<app.User?> loginPasajero(String pin, String tipo) async {
     final snap = await _db
         .collection(_usersCollection)
-        .where('ci', isEqualTo: ci)
+        .where('pin', isEqualTo: pin)
         .where('rol', isEqualTo: 'PASAJERO')
         .limit(1)
         .get();
     if (snap.docs.isEmpty) return null;
-    return snap.docs.first.data()['email'] as String?;
+    final user = _userFromMap(snap.docs.first.data());
+    if (user.tipo != tipo) return null;
+    return user;
   }
 
-  /// Busca el conductor por licencia en Firestore. Devuelve el mapa del
-  /// conductor y el email del usuario vinculado (proveniente de `usuarios`).
-  Future<({Map<String, dynamic> conductor, String email})?> _conductorByLicencia(
-      String licencia) async {
-    final condSnap = await _db
+  /// Autentica a un conductor por su PIN único.
+  Future<Conductor?> loginConductor(String pin) async {
+    final snap = await _db
         .collection(_conductoresCollection)
-        .where('licencia', isEqualTo: licencia)
+        .where('pin', isEqualTo: pin)
         .limit(1)
         .get();
-    if (condSnap.docs.isEmpty) return null;
-    final cond = condSnap.docs.first.data();
-    final usuarioId = cond['usuario_id'] as int?;
-    String? email;
-    if (usuarioId != null) {
-      final userDoc = await _db
-          .collection(_usersCollection)
-          .doc('u-$usuarioId')
-          .get();
-      email = userDoc.data()?['email'] as String?;
-    }
-    if (email == null) return null;
-    return (conductor: cond, email: email);
+    if (snap.docs.isEmpty) return null;
+    return _conductorFromMap(snap.docs.first.data());
   }
 
-  /// Autentica a un pasajero por CI + contraseña.
-  Future<app.User?> loginPasajero(String ci, String password, String tipo) async {
-    final email = await _emailByCi(ci);
-    if (email == null) return null;
-    try {
-      await _auth.signInWithEmailAndPassword(
-          email: email, password: password);
-    } catch (_) {
-      return null;
-    }
-    return _fetchUserByEmail(email);
-  }
-
-  /// Autentica a un conductor por licencia + contraseña.
-  Future<Conductor?> loginConductor(String licencia, String password) async {
-    final found = await _conductorByLicencia(licencia);
-    if (found == null) return null;
-    try {
-      await _auth.signInWithEmailAndPassword(
-          email: found.email, password: password);
-    } catch (_) {
-      return null;
-    }
-    return _conductorFromMap(found.conductor);
-  }
-
-  /// Registra un pasajero en Auth + Firestore.
+  /// Registra un pasajero en Firestore con PIN único.
   Future<app.User?> registerPasajero({
     required String nombre,
     required String apellido,
-    required String ci,
-    required String email,
-    required String password,
+    required String pin,
     required String tipo,
   }) async {
-    try {
-      await _auth.createUserWithEmailAndPassword(
-          email: email, password: password);
-    } catch (_) {
-      return null;
-    }
+    if (pin.length != 4) return null;
+    if (await _pinEnUso(pin)) return null;
     final nextId = await _nextId(_usersCollection);
     final doc = {
       'id': nextId,
       'nombre': nombre,
       'apellido': apellido,
-      'ci': ci,
-      'email': email,
+      'ci': '',
+      'email': '',
+      'pin': pin,
       'tipo': tipo,
       'puntos': 0,
       'estado': 'activo',
@@ -125,46 +96,62 @@ class FirebaseService {
     return _userFromMap(doc);
   }
 
-  /// Cierra sesión en Firebase.
-  Future<void> logout() async {
+  /// Registra un conductor en Firestore con PIN único.
+  Future<Conductor?> registerConductor({
+    required String nombre,
+    required String apellido,
+    required String pin,
+    String? licencia,
+    String? telefono,
+  }) async {
+    if (pin.length != 4) return null;
+    if (await _pinEnUso(pin)) return null;
+    final nextId = await _nextId(_conductoresCollection);
+    final lic = licencia ?? 'LIC-$nextId';
+    final doc = {
+      'id': nextId,
+      'nombre': nombre,
+      'apellido': apellido,
+      'ci': '',
+      'pin': pin,
+      'licencia': lic,
+      'telefono': telefono,
+      'estado': 'activo',
+      'usuario_id': null,
+    };
     try {
-      await _auth.signOut();
+      await _db
+          .collection(_conductoresCollection)
+          .doc('c-$nextId')
+          .set(doc);
     } catch (_) {
-      // Ignorar
+      return null;
     }
+    return _conductorFromMap(doc);
+  }
+
+  /// Cierra sesión (Firebase no guarda sesión; la sesión la maneja la app).
+  Future<void> logout() async {
+    // No-op: no hay sesión de Firebase Auth que cerrar.
   }
 
   // =====================================================================
   // DATOS DE USUARIO / PASAJERO
   // =====================================================================
 
-  Future<app.User?> _fetchUserByEmail(String email) async {
-    final snap = await _db
-        .collection(_usersCollection)
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    return _userFromMap(snap.docs.first.data());
-  }
-
-  /// Devuelve el User pasajero con la sesión activa en Firebase.
-  Future<app.User?> currentUser() async {
-    final user = _auth.currentUser;
-    if (user == null) return null;
-    return _fetchUserByEmail(user.email ?? '');
+  /// Devuelve el User pasajero por su id numérico.
+  Future<app.User?> fetchUserById(int userId) async {
+    final doc = await _db.collection(_usersCollection).doc('u-$userId').get();
+    if (!doc.exists) return null;
+    return _userFromMap(doc.data()!);
   }
 
   /// Incrementa (o resta si `delta` es negativo) los puntos del usuario.
-  Future<void> addPuntos(String email, int delta) async {
-    final q = await _db
-        .collection(_usersCollection)
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
-    if (q.docs.isEmpty) return;
-    final ref = q.docs.first.reference;
-    final current = (q.docs.first.data()['puntos'] as num?)?.toInt() ?? 0;
+  Future<void> addPuntos(int userId, int delta) async {
+    final ref = _db.collection(_usersCollection).doc('u-$userId');
+    final doc = await ref.get();
+    if (!doc.exists) return;
+    final current = (doc.data()?['puntos'] as num?)?.toInt() ?? 0;
     await ref.update({'puntos': current + delta});
   }
 
@@ -193,7 +180,6 @@ class FirebaseService {
         .doc('u-$userId')
         .get();
     if (!userDoc.exists) return;
-    final email = userDoc.data()?['email'] as String?;
 
     final nextId = await _nextId(_transaccionesCollection);
     final rec = {
@@ -207,9 +193,7 @@ class FirebaseService {
       'fecha': DateTime.now().toUtc(),
     };
     await _db.collection(_transaccionesCollection).doc('r-$nextId').set(rec);
-    if (email != null) {
-      await addPuntos(email, puntos);
-    }
+    await addPuntos(userId, puntos);
   }
 
   /// Registra el pago de un viaje y descuenta los puntos del pasajero.
@@ -231,7 +215,6 @@ class FirebaseService {
     if (saldo < puntos) {
       return (ok: false, message: 'Saldo insuficiente');
     }
-    final email = data['email'] as String?;
 
     final nextId = await _nextId(_transaccionesCollection);
     final cobro = {
@@ -245,9 +228,7 @@ class FirebaseService {
       'fecha': DateTime.now().toUtc(),
     };
     await _db.collection(_transaccionesCollection).doc('c-$nextId').set(cobro);
-    if (email != null) {
-      await addPuntos(email, -puntos);
-    }
+    await addPuntos(userId, -puntos);
     return (ok: true, message: 'Viaje pagado');
   }
 

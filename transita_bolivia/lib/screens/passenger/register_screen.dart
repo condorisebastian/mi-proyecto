@@ -13,10 +13,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
-  final _ciController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _pinController = TextEditingController();
+  final _confirmPinController = TextEditingController();
   String _tipo = 'estudiante';
 
   @override
@@ -123,77 +121,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _ciController,
-                          decoration: InputDecoration(
-                            labelText: 'Cédula de Identidad',
-                            prefixIcon: const Icon(Icons.badge),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su CI';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: const Icon(Icons.email),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Email inválido';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
+                          controller: _pinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
                           obscureText: true,
                           decoration: InputDecoration(
-                            labelText: 'Contraseña',
+                            labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
-                            }
-                            if (value.length < 6) {
-                              return 'Mínimo 6 caracteres';
+                            if (value == null || value.length != 4) {
+                              return 'El PIN debe tener 4 dígitos';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _confirmPasswordController,
+                          controller: _confirmPinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
                           obscureText: true,
                           decoration: InputDecoration(
-                            labelText: 'Confirmar Contraseña',
+                            labelText: 'Confirmar PIN',
                             prefixIcon: const Icon(Icons.lock_outline),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value != _passwordController.text) {
-                              return 'Las contraseñas no coinciden';
+                            if (value != _pinController.text) {
+                              return 'Los PIN no coinciden';
                             }
                             return null;
                           },
@@ -211,9 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           await authService.register(
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
-                                        ci: _ciController.text,
-                                        email: _emailController.text,
-                                        password: _passwordController.text,
+                                        pin: _pinController.text,
                                         tipo: _tipo,
                                       );
                                       if (success && context.mounted) {
@@ -227,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'Error al registrar. Intente de nuevo.'),
+                                                'No se pudo registrar. El PIN podría estar en uso.'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );

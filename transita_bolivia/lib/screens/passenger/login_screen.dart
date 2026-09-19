@@ -11,8 +11,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _ciController = TextEditingController(text: '1234567');
-  final _passwordController = TextEditingController(text: '123456');
+  final _pinController = TextEditingController(text: '1234');
   String _tipo = 'estudiante';
 
   @override
@@ -99,35 +98,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
                         TextFormField(
-                          controller: _ciController,
-                          decoration: InputDecoration(
-                            labelText: 'Cédula de Identidad',
-                            prefixIcon: const Icon(Icons.badge),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su CI';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
+                          controller: _pinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
                           obscureText: true,
                           decoration: InputDecoration(
-                            labelText: 'Contraseña',
+                            labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
+                            if (value == null || value.length != 4) {
+                              return 'Ingrese su PIN de 4 dígitos';
                             }
                             return null;
                           },
@@ -142,8 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : () async {
                                     if (_formKey.currentState!.validate()) {
                                       final success = await authService.login(
-                                        _ciController.text,
-                                        _passwordController.text,
+                                        _pinController.text,
                                         _tipo,
                                       );
                                       if (success && context.mounted) {
@@ -154,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'CI o contraseña incorrectos'),
+                                                'PIN incorrecto'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );

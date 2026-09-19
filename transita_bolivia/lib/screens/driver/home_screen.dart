@@ -416,7 +416,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               Expanded(
                 child: Center(
                   child: QrImageView(
-                    data: 'CONDUCTOR:${conductor?.id}:${conductor?.licencia}',
+                    data: 'CONDUCTOR:${conductor?.id}',
                     version: QrVersions.auto,
                     size: 250,
                     backgroundColor: Colors.white,

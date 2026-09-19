@@ -19,12 +19,12 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   String? get token => _token;
 
-  Future<bool> login(String ci, String password, String tipo) async {
+  Future<bool> login(String pin, String tipo) async {
     _isLoading = true;
     notifyListeners();
 
     if (AppConfig.useFirebase) {
-      final ok = await _loginFirebase(ci, password, tipo);
+      final ok = await _loginFirebase(pin, tipo);
       _isLoading = false;
       notifyListeners();
       return ok;
@@ -36,8 +36,7 @@ class AuthService extends ChangeNotifier {
             Uri.parse('$baseUrl/auth/login'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-              'ci': ci,
-              'password': password,
+              'pin': pin,
               'tipo': tipo,
             }),
           )
@@ -63,10 +62,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<bool> _loginFirebase(
-      String ci, String password, String tipo) async {
-    final user = await FirebaseService.instance
-        .loginPasajero(ci, password, tipo);
+  Future<bool> _loginFirebase(String pin, String tipo) async {
+    final user = await FirebaseService.instance.loginPasajero(pin, tipo);
     if (user == null) return false;
     if (user.tipo != tipo) return false;
     _currentUser = user;
@@ -78,9 +75,7 @@ class AuthService extends ChangeNotifier {
   Future<bool> register({
     required String nombre,
     required String apellido,
-    required String ci,
-    required String email,
-    required String password,
+    required String pin,
     required String tipo,
   }) async {
     _isLoading = true;
@@ -90,9 +85,7 @@ class AuthService extends ChangeNotifier {
       final user = await FirebaseService.instance.registerPasajero(
         nombre: nombre,
         apellido: apellido,
-        ci: ci,
-        email: email,
-        password: password,
+        pin: pin,
         tipo: tipo,
       );
       if (user != null) {
@@ -113,9 +106,7 @@ class AuthService extends ChangeNotifier {
             body: jsonEncode({
               'nombre': nombre,
               'apellido': apellido,
-              'ci': ci,
-              'email': email,
-              'password': password,
+              'pin': pin,
               'tipo': tipo,
             }),
           )
@@ -143,23 +134,21 @@ class AuthService extends ChangeNotifier {
 
   Future<void> restoreSession() async {
     try {
-      if (AppConfig.useFirebase) {
-        final user = await FirebaseService.instance.currentUser();
-        if (user != null) {
-          _currentUser = user;
-          _token = 'firebase';
-        }
-        notifyListeners();
-        return;
-      }
-
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_kSessionKey);
       if (raw == null) return;
 
       final data = jsonDecode(raw) as Map<String, dynamic>;
       _currentUser = User.fromJson(data['user']);
-      _token = data['token'] as String?;
+
+      if (AppConfig.useFirebase) {
+        final user = await FirebaseService.instance
+            .fetchUserById(_currentUser!.id);
+        if (user != null) _currentUser = user;
+        _token = 'firebase';
+      } else {
+        _token = data['token'] as String?;
+      }
       notifyListeners();
     } catch (e) {
       await _clearSession();
@@ -204,9 +193,11 @@ class AuthService extends ChangeNotifier {
     if (_currentUser == null) return;
 
     if (AppConfig.useFirebase) {
-      final user = await FirebaseService.instance.currentUser();
+      final user = await FirebaseService.instance
+          .fetchUserById(_currentUser!.id);
       if (user != null) {
         _currentUser = user;
+        _token = 'firebase';
         notifyListeners();
       }
       return;

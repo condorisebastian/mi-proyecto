@@ -11,8 +11,7 @@ class DriverLoginScreen extends StatefulWidget {
 
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _licenciaController = TextEditingController(text: 'LIC-12345');
-  final _passwordController = TextEditingController(text: '123456');
+  final _pinController = TextEditingController(text: '5678');
 
   @override
   Widget build(BuildContext context) {
@@ -93,35 +92,21 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           ),
                           const SizedBox(height: 32),
                           TextFormField(
-                            controller: _licenciaController,
-                            decoration: InputDecoration(
-                              labelText: 'Nro. Licencia',
-                              prefixIcon: const Icon(Icons.badge),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Ingrese su licencia';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
+                            controller: _pinController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 4,
                             obscureText: true,
                             decoration: InputDecoration(
-                              labelText: 'Contraseña',
+                              labelText: 'PIN (4 dígitos)',
                               prefixIcon: const Icon(Icons.lock),
+                              counterText: '',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Ingrese su contraseña';
+                              if (value == null || value.length != 4) {
+                                return 'Ingrese su PIN de 4 dígitos';
                               }
                               return null;
                             },
@@ -136,8 +121,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                 : () async {
                                     if (_formKey.currentState!.validate()) {
                                       final success = await authService.login(
-                                        _licenciaController.text,
-                                        _passwordController.text,
+                                        _pinController.text,
                                       );
                                       if (success && context.mounted) {
                                         Navigator.pushReplacementNamed(
@@ -147,7 +131,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'Licencia o contraseña incorrectos'),
+                                                'PIN incorrecto'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );

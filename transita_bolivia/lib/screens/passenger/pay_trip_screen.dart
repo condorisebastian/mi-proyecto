@@ -448,7 +448,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
               Expanded(
                 child: Center(
                   child: QrImageView(
-                    data: 'PASAJERO:${user.id}:${user.ci}',
+                    data: 'PASAJERO:${user.id}',
                     version: QrVersions.auto,
                     size: 250,
                     backgroundColor: Colors.white,

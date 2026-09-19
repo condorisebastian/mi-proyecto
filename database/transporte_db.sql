@@ -51,7 +51,10 @@ CREATE TABLE usuarios (
 CREATE TABLE pasajeros (
   id_pasajero      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_usuario       INT UNSIGNED NOT NULL,
-  ci               VARCHAR(20)  NOT NULL UNIQUE,
+  ci               VARCHAR(20)  NULL UNIQUE
+                   COMMENT 'opcional: el acceso ahora es por PIN',
+  pin              CHAR(4)      NOT NULL UNIQUE
+                   COMMENT 'PIN unico de 4 digitos para iniciar sesion',
   tipo             ENUM('estudiante','civil','adulto_mayor','discapacitado') NOT NULL DEFAULT 'civil'
                    COMMENT 'define la tarifa del viaje en las apps',
   fecha_nacimiento DATE         NULL,
@@ -67,8 +70,10 @@ CREATE TABLE pasajeros (
 CREATE TABLE conductores (
   id_conductor     INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   id_usuario       INT UNSIGNED NOT NULL,
-  ci               VARCHAR(20)  NOT NULL UNIQUE
-                   COMMENT 'las apps registran/login de conductores por CI',
+  ci               VARCHAR(20)  NULL UNIQUE
+                   COMMENT 'opcional: el acceso ahora es por PIN',
+  pin              CHAR(4)      NOT NULL UNIQUE
+                   COMMENT 'PIN unico de 4 digitos para iniciar sesion',
   numero_licencia  VARCHAR(30)  NOT NULL UNIQUE,
   fecha_vencimiento DATE        NOT NULL,
   estado           ENUM('activo','suspendido','inactivo') NOT NULL DEFAULT 'activo',
@@ -184,15 +189,15 @@ INSERT INTO usuarios (nombre, apellido, correo, telefono, password, rol) VALUES
 ('Juan', 'Perez', 'juan.perez@test.com', '76543210', '$2a$10$s38tCRwnFEZTOHuJEp1/T.GP35V3V8Y8adAiaYgTdmqkQRUty4p0C', 'CONDUCTOR'),
 ('Carlos', 'Rojas', 'carlos.rojas@test.com', '70000001', '$2a$10$s38tCRwnFEZTOHuJEp1/T.GP35V3V8Y8adAiaYgTdmqkQRUty4p0C', 'CONDUCTOR');
 
-INSERT INTO pasajeros (id_usuario, ci, tipo, fecha_nacimiento, direccion) VALUES
-((SELECT id_usuario FROM usuarios WHERE correo = 'sebastian@test.com'), '1234567', 'estudiante', '2002-05-14', 'Av. Banzer 3er anillo'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'maria@test.com'), '7654321', 'civil', '1995-09-23', 'Barrio Villa Primero de Mayo'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'pedro@test.com'), '1122334', 'adulto_mayor', '1958-03-02', 'Zone Plan 3000'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'ana.vargas@test.com'), '2222222', 'civil', '1990-11-11', 'Av. Radial 27');
+INSERT INTO pasajeros (id_usuario, ci, pin, tipo, fecha_nacimiento, direccion) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo = 'sebastian@test.com'), '1234567', '1234', 'estudiante', '2002-05-14', 'Av. Banzer 3er anillo'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'maria@test.com'), '7654321', '2345', 'civil', '1995-09-23', 'Barrio Villa Primero de Mayo'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'pedro@test.com'), '1122334', '3456', 'adulto_mayor', '1958-03-02', 'Zone Plan 3000'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'ana.vargas@test.com'), '2222222', '4567', 'civil', '1990-11-11', 'Av. Radial 27');
 
-INSERT INTO conductores (id_usuario, ci, numero_licencia, fecha_vencimiento) VALUES
-((SELECT id_usuario FROM usuarios WHERE correo = 'juan.perez@test.com'), '9876543', 'LIC-12345', '2027-12-31'),
-((SELECT id_usuario FROM usuarios WHERE correo = 'carlos.rojas@test.com'), '1010101', 'LIC-67890', '2028-06-30');
+INSERT INTO conductores (id_usuario, ci, pin, numero_licencia, fecha_vencimiento) VALUES
+((SELECT id_usuario FROM usuarios WHERE correo = 'juan.perez@test.com'), '9876543', '5678', 'LIC-12345', '2027-12-31'),
+((SELECT id_usuario FROM usuarios WHERE correo = 'carlos.rojas@test.com'), '1010101', '6789', 'LIC-67890', '2028-06-30');
 
 INSERT INTO vehiculos (placa, modelo, marca, color, capacidad) VALUES
 ('1234-ABC', '2015', 'Mercedes-Benz', 'Blanco', 45),
