@@ -23,17 +23,27 @@ function handle_auth(string $method, array $seg): void
 
     // ---------- POST /auth/register (pasajero) ----------
     if ($method === 'POST' && $action === 'register') {
-        require_fields($body, ['nombre', 'apellido', 'pin', 'tipo']);
-        ['nombre' => $nombre, 'apellido' => $apellido, 'pin' => $pin, 'tipo' => $tipo] = $body;
+        require_fields($body, ['nombre', 'apellido', 'ci', 'pin', 'tipo']);
+        ['nombre' => $nombre, 'apellido' => $apellido, 'ci' => $ci,
+         'pin' => $pin, 'tipo' => $tipo] = $body;
+        $ci = trim((string)$ci);
 
         if (!in_array($tipo, ['estudiante', 'civil', 'adulto_mayor', 'discapacitado'], true)) {
             json_out(['error' => 'Tipo de usuario inválido'], 400);
+        }
+        if ($ci === '') {
+            json_out(['error' => 'Ingrese su número de carnet'], 400);
         }
         if (!preg_match('/^[0-9]{4}$/', $pin)) {
             json_out(['error' => 'El PIN debe tener 4 dígitos'], 400);
         }
         if ($pinEnUso($pin)) {
             json_out(['error' => 'El PIN ya está en uso'], 400);
+        }
+        $dupCi = $pdo->prepare('SELECT id_pasajero FROM pasajeros WHERE ci = ? LIMIT 1');
+        $dupCi->execute([$ci]);
+        if ($dupCi->fetch()) {
+            json_out(['error' => 'El carnet ya está registrado'], 400);
         }
 
         $hash   = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT);
@@ -48,8 +58,10 @@ function handle_auth(string $method, array $seg): void
             $st->execute([$nombre, $apellido, $correo, $hash]);
             $idUsuario = (int)$pdo->lastInsertId();
 
-            $st = $pdo->prepare('INSERT INTO pasajeros (id_usuario, pin, tipo) VALUES (?, ?, ?)');
-            $st->execute([$idUsuario, $pin, $tipo]);
+            $st = $pdo->prepare(
+                'INSERT INTO pasajeros (id_usuario, ci, pin, tipo) VALUES (?, ?, ?, ?)'
+            );
+            $st->execute([$idUsuario, $ci, $pin, $tipo]);
             $idPasajero = (int)$pdo->lastInsertId();
 
             $st = $pdo->prepare('INSERT INTO saldos (id_pasajero, saldo_actual) VALUES (?, 0)');
@@ -71,7 +83,7 @@ function handle_auth(string $method, array $seg): void
                 'id'      => $idUsuario,
                 'nombre'  => $nombre,
                 'apellido'=> $apellido,
-                'ci'      => '',
+                'ci'      => $ci,
                 'email'   => $correo,
                 'tipo'    => $tipo,
                 'puntos'  => 0,
@@ -88,7 +100,7 @@ function handle_auth(string $method, array $seg): void
 
         $st = $pdo->prepare(
             'SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.estado,
-                    p.tipo, s.saldo_actual
+                    p.ci, p.tipo, s.saldo_actual
              FROM pasajeros p
              JOIN usuarios u ON u.id_usuario = p.id_usuario
              LEFT JOIN saldos s ON s.id_pasajero = p.id_pasajero
@@ -113,7 +125,7 @@ function handle_auth(string $method, array $seg): void
                 'id'      => $id,
                 'nombre'  => $row['nombre'],
                 'apellido'=> $row['apellido'],
-                'ci'      => '',
+                'ci'      => $row['ci'] ?? '',
                 'email'   => $row['correo'],
                 'tipo'    => $row['tipo'],
                 'puntos'  => (int)round((float)$row['saldo_actual']),
@@ -125,16 +137,26 @@ function handle_auth(string $method, array $seg): void
 
     // ---------- POST /auth/register-conductor ----------
     if ($method === 'POST' && $action === 'register-conductor') {
-        require_fields($body, ['nombre', 'apellido', 'pin']);
-        ['nombre' => $nombre, 'apellido' => $apellido, 'pin' => $pin] = $body;
+        require_fields($body, ['nombre', 'apellido', 'ci', 'pin']);
+        ['nombre' => $nombre, 'apellido' => $apellido, 'ci' => $ci,
+         'pin' => $pin] = $body;
+        $ci = trim((string)$ci);
         $licencia = $body['licencia'] ?? null;
         $telefono = $body['telefono'] ?? null;
 
+        if ($ci === '') {
+            json_out(['error' => 'Ingrese su número de carnet'], 400);
+        }
         if (!preg_match('/^[0-9]{4}$/', $pin)) {
             json_out(['error' => 'El PIN debe tener 4 dígitos'], 400);
         }
         if ($pinEnUso($pin)) {
             json_out(['error' => 'El PIN ya está en uso'], 400);
+        }
+        $dupCi = $pdo->prepare('SELECT id_conductor FROM conductores WHERE ci = ? LIMIT 1');
+        $dupCi->execute([$ci]);
+        if ($dupCi->fetch()) {
+            json_out(['error' => 'El carnet ya está registrado'], 400);
         }
         if ($licencia !== null && $licencia !== '') {
             $dup = $pdo->prepare('SELECT id_conductor FROM conductores WHERE numero_licencia = ? LIMIT 1');
@@ -161,10 +183,10 @@ function handle_auth(string $method, array $seg): void
             }
 
             $st = $pdo->prepare(
-                'INSERT INTO conductores (id_usuario, pin, numero_licencia, fecha_vencimiento)
-                 VALUES (?, ?, ?, DATE_ADD(CURDATE(), INTERVAL 5 YEAR))'
+                'INSERT INTO conductores (id_usuario, ci, pin, numero_licencia, fecha_vencimiento)
+                 VALUES (?, ?, ?, ?, DATE_ADD(CURDATE(), INTERVAL 5 YEAR))'
             );
-            $st->execute([$idUsuario, $pin, $licencia]);
+            $st->execute([$idUsuario, $ci, $pin, $licencia]);
             $idConductor = (int)$pdo->lastInsertId();
 
             $pdo->commit();
@@ -178,7 +200,7 @@ function handle_auth(string $method, array $seg): void
                 'id'       => $idConductor,
                 'nombre'   => $nombre,
                 'apellido' => $apellido,
-                'ci'       => '',
+                'ci'       => $ci,
                 'licencia' => $licencia,
                 'telefono' => $telefono,
                 'estado'   => 'activo',
@@ -193,7 +215,7 @@ function handle_auth(string $method, array $seg): void
         ['pin' => $pin] = $body;
 
         $st = $pdo->prepare(
-            'SELECT c.id_conductor, c.numero_licencia, c.estado AS est_cond,
+            'SELECT c.id_conductor, c.ci, c.numero_licencia, c.estado AS est_cond,
                     u.nombre, u.apellido, u.telefono, u.estado AS est_usr
              FROM conductores c
              JOIN usuarios u ON u.id_usuario = c.id_usuario
@@ -215,7 +237,7 @@ function handle_auth(string $method, array $seg): void
                 'id'       => (int)$row['id_conductor'],
                 'nombre'   => $row['nombre'],
                 'apellido' => $row['apellido'],
-                'ci'       => '',
+                'ci'       => $row['ci'] ?? '',
                 'licencia' => $row['numero_licencia'],
                 'telefono' => $row['telefono'],
                 'estado'   => $row['est_cond'],

@@ -171,7 +171,9 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           const SizedBox(height: 12),
                           TextButton(
                             onPressed: () {
-                              Navigator.pushNamed(context, '/driver/register');
+                              Navigator.pushNamed(
+                                  context, '/passenger/requirements',
+                                  arguments: {'role': 'driver'});
                             },
                             child: const Text(
                               '¿No tienes cuenta? Regístrate',

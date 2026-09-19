@@ -23,12 +23,18 @@ class RequirementsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    final role = args?['role'] as String?;
+    final tipo = args?['tipo'] as String?;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Requisitos para el registro'),
         backgroundColor: const Color(0xFF1565C0),
         foregroundColor: Colors.white,
       ),
+      bottomNavigationBar:
+          role == null ? null : _buildContinueBar(context, role, tipo),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -130,6 +136,45 @@ class RequirementsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContinueBar(
+    BuildContext context,
+    String role,
+    String? tipo,
+  ) {
+    final isDriver = role == 'driver';
+    final route = isDriver ? '/driver/register' : '/passenger/register';
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushReplacementNamed(
+                context,
+                route,
+                arguments: isDriver ? null : {'tipo': tipo},
+              );
+            },
+            icon: const Icon(Icons.app_registration),
+            label: const Text(
+              'Ya tengo los requisitos, registrar',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1565C0),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

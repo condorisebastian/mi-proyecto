@@ -75,6 +75,7 @@ class AuthService extends ChangeNotifier {
   Future<bool> register({
     required String nombre,
     required String apellido,
+    required String ci,
     required String pin,
     required String tipo,
   }) async {
@@ -85,6 +86,7 @@ class AuthService extends ChangeNotifier {
       final user = await FirebaseService.instance.registerPasajero(
         nombre: nombre,
         apellido: apellido,
+        ci: ci,
         pin: pin,
         tipo: tipo,
       );
@@ -106,6 +108,7 @@ class AuthService extends ChangeNotifier {
             body: jsonEncode({
               'nombre': nombre,
               'apellido': apellido,
+              'ci': ci,
               'pin': pin,
               'tipo': tipo,
             }),

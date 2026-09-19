@@ -13,6 +13,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
+  final _ciController = TextEditingController();
   final _licenciaController = TextEditingController();
   final _telefonoController = TextEditingController();
   final _pinController = TextEditingController();
@@ -24,6 +25,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   void dispose() {
     _nombreController.dispose();
     _apellidoController.dispose();
+    _ciController.dispose();
     _licenciaController.dispose();
     _telefonoController.dispose();
     _pinController.dispose();
@@ -149,6 +151,26 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
+                          controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
+                          decoration: InputDecoration(
+                            labelText: 'Nro. de Carnet (CI)',
+                            prefixIcon: const Icon(Icons.badge),
+                            counterText: '',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Ingrese su número de carnet';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
                           controller: _pinController,
                           keyboardType: TextInputType.number,
                           maxLength: 4,
@@ -222,6 +244,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                                           await authService.register(
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
+                                        ci: _ciController.text.trim(),
                                         pin: _pinController.text,
                                         licencia:
                                             _licenciaController.text.isEmpty

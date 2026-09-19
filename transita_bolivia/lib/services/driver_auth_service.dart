@@ -69,6 +69,7 @@ class DriverAuthService extends ChangeNotifier {
   Future<bool> register({
     required String nombre,
     required String apellido,
+    required String ci,
     required String pin,
     String? licencia,
     String? telefono,
@@ -80,6 +81,7 @@ class DriverAuthService extends ChangeNotifier {
       final conductor = await FirebaseService.instance.registerConductor(
         nombre: nombre,
         apellido: apellido,
+        ci: ci,
         pin: pin,
         licencia: licencia,
         telefono: telefono,
@@ -102,6 +104,7 @@ class DriverAuthService extends ChangeNotifier {
             body: jsonEncode({
               'nombre': nombre,
               'apellido': apellido,
+              'ci': ci,
               'pin': pin,
               'licencia': licencia,
               'telefono': telefono,

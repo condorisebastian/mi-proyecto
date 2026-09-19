@@ -13,6 +13,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
+  final _ciController = TextEditingController();
   final _pinController = TextEditingController();
   final _confirmPinController = TextEditingController();
   String _tipo = 'estudiante';
@@ -123,6 +124,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
+                          controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
+                          decoration: InputDecoration(
+                            labelText: 'Nro. de Carnet (CI)',
+                            prefixIcon: const Icon(Icons.badge),
+                            counterText: '',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Ingrese su número de carnet';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
                           controller: _pinController,
                           keyboardType: TextInputType.number,
                           maxLength: 4,
@@ -196,6 +217,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           await authService.register(
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
+                                        ci: _ciController.text.trim(),
                                         pin: _pinController.text,
                                         tipo: _tipo,
                                       );

@@ -41,6 +41,16 @@ class FirebaseService {
     return c.docs.isNotEmpty;
   }
 
+  /// Verifica si un CI ya está registrado en la colección indicada.
+  Future<bool> _ciEnUso(String collection, String ci) async {
+    final snap = await _db
+        .collection(collection)
+        .where('ci', isEqualTo: ci)
+        .limit(1)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
   /// Autentica a un pasajero por su PIN único + tipo.
   Future<app.User?> loginPasajero(String pin, String tipo) async {
     final snap = await _db
@@ -70,17 +80,19 @@ class FirebaseService {
   Future<app.User?> registerPasajero({
     required String nombre,
     required String apellido,
+    required String ci,
     required String pin,
     required String tipo,
   }) async {
     if (pin.length != 4) return null;
     if (await _pinEnUso(pin)) return null;
+    if (ci.isNotEmpty && await _ciEnUso(_usersCollection, ci)) return null;
     final nextId = await _nextId(_usersCollection);
     final doc = {
       'id': nextId,
       'nombre': nombre,
       'apellido': apellido,
-      'ci': '',
+      'ci': ci,
       'email': '',
       'pin': pin,
       'tipo': tipo,
@@ -100,19 +112,23 @@ class FirebaseService {
   Future<Conductor?> registerConductor({
     required String nombre,
     required String apellido,
+    required String ci,
     required String pin,
     String? licencia,
     String? telefono,
   }) async {
     if (pin.length != 4) return null;
     if (await _pinEnUso(pin)) return null;
+    if (ci.isNotEmpty && await _ciEnUso(_conductoresCollection, ci)) {
+      return null;
+    }
     final nextId = await _nextId(_conductoresCollection);
     final lic = licencia ?? 'LIC-$nextId';
     final doc = {
       'id': nextId,
       'nombre': nombre,
       'apellido': apellido,
-      'ci': '',
+      'ci': ci,
       'pin': pin,
       'licencia': lic,
       'telefono': telefono,
