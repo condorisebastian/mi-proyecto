@@ -25,7 +25,7 @@ function handle_users(string $method, array $seg): void
             'id'      => (int)$row['id_usuario'],
             'nombre'  => $row['nombre'],
             'apellido'=> $row['apellido'],
-            'ci'      => $row['ci'],
+            'ci'      => $row['ci'] ?? '',
             'email'   => $row['email'],
             'tipo'    => $row['tipo'],
             'puntos'  => (int)round((float)$row['saldo_actual']),

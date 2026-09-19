@@ -8,9 +8,9 @@ API REST del sistema de cobros. Compatible 1:1 con los endpoints del backend leg
 | Metodo | Ruta                            | Descripcion                          |
 |--------|---------------------------------|--------------------------------------|
 | POST   | /auth/register                  | Registro de pasajero                 |
-| POST   | /auth/login                     | Login pasajero (ci+password+tipo)    |
+| POST   | /auth/login                     | Login pasajero (pin+tipo)            |
 | POST   | /auth/register-conductor        | Registro de conductor                |
-| POST   | /auth/login-conductor           | Login conductor (licencia+password)  |
+| POST   | /auth/login-conductor           | Login conductor (pin)                |
 | GET    | /users/{id}                     | Perfil/saldo del usuario             |
 | POST   | /transactions/pay               | Cobro de viaje                       |
 | POST   | /transactions/recharge          | Recarga de saldo                     |
@@ -22,6 +22,7 @@ API REST del sistema de cobros. Compatible 1:1 con los endpoints del backend leg
 ## Despliegue en XAMPP
 
 1. Base de datos: importar `database/transporte_db.sql` (phpMyAdmin o CLI).
+   Si ya existia la BD sin la columna `pin`, importar `database/migration_pin.sql`.
 2. Publicar esta carpeta como `C:\xampp\htdocs\transporte_api`. Opcion recomendada:
    junction para servir directo desde el repo:
 

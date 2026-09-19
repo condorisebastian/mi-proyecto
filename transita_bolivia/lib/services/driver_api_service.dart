@@ -40,7 +40,7 @@ class DriverApiService {
             headers: _headers,
             body: jsonEncode({
               'conductor_id': conductorId,
-              if (userId != null) 'user_id': userId,
+              'user_id': ?userId,
               'tipo_usuario': tipoUsuario,
               'puntos': puntos,
               'metodo_pago': metodoPago,

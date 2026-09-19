@@ -3,11 +3,11 @@
 -- Base de datos MySQL/MariaDB del Sistema de Cobro para
 -- Transporte Publico (segun planificacion_bd_xampp.pdf)
 -- Servidor: XAMPP (MariaDB 10.4) | phpMyAdmin: bd `proyecto_cobros`
--- Contraseña de todos los usuarios de prueba: 123456
+-- Acceso de usuarios de prueba: PIN unico de 4 digitos (ver INSERTs al final)
 --
 -- Desviaciones sobre el PDF para soportar el flujo real de las apps:
 --   * pasajeros.tipo        -> tarifa por tipo (estudiante/civil/adulto_mayor)
---   * conductores.ci        -> registro/login de conductor usa CI
+--   * pasajeros.pin / conductores.pin -> login por PIN (ci queda opcional)
 --   * cobros.id_vehiculo/id_ruta NULL -> flujo actual no asigna vehiculo/ruta
 --   * cobros.metodo_pago/tipo_usuario -> paridad con el historial de las apps
 -- ============================================================
@@ -177,8 +177,9 @@ CREATE TABLE cobros (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- DATOS DE PRUEBA (password de todos: 123456)
--- Hash bcrypt compatible con password_hash()/password_verify() de PHP
+-- DATOS DE PRUEBA (acceso por PIN; ver columna `pin` en pasajeros/conductores)
+-- La columna password conserva un hash bcrypt valido por compatibilidad, pero
+-- el acceso ya no usa contraseña.
 -- ============================================================
 INSERT INTO usuarios (nombre, apellido, correo, telefono, password, rol) VALUES
 ('Administrador', 'Sistema', 'admin@transporte.com', '70000000', '$2a$10$s38tCRwnFEZTOHuJEp1/T.GP35V3V8Y8adAiaYgTdmqkQRUty4p0C', 'ADMIN'),

@@ -48,3 +48,9 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 - Firewall: regla entrante "XAMPP HTTP 80" ya creada (puerto 80 TCP permitido).
 - Contraseña de todos los usuarios/conductores de prueba: `123456`.
+- Acceso en la app: **PIN único de 4 dígitos** (no CI ni contraseña). PINs de
+  prueba: estudiante `1234`, civil `2345`/`4567`, adulto mayor `3456`,
+  conductores `5678`/`6789`, admin `0000`. Definidos en
+  `database/transporte_db.sql` y en Firestore (`usuarios`/`conductores.pin`).
+- Modo Firebase activable con `--dart-define=USE_FIREBASE=true` (login por PIN
+  contra Cloud Firestore; el backend PHP queda como fallback).
