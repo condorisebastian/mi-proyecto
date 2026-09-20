@@ -19,12 +19,13 @@ class DriverAuthService extends ChangeNotifier {
   bool get isLoggedIn => _currentConductor != null;
   String? get token => _token;
 
-  Future<bool> login(String pin) async {
+  Future<bool> login(String pin, {String ci = ''}) async {
     _isLoading = true;
     notifyListeners();
 
     if (AppConfig.useFirebase) {
-      final conductor = await FirebaseService.instance.loginConductor(pin);
+      final conductor =
+          await FirebaseService.instance.loginConductor(pin, ci: ci);
       if (conductor != null) {
         _currentConductor = conductor;
         _token = 'firebase';
@@ -42,6 +43,7 @@ class DriverAuthService extends ChangeNotifier {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'pin': pin,
+              'ci': ci,
             }),
           )
           .timeout(AppConfig.timeout);

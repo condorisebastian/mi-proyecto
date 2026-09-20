@@ -51,8 +51,10 @@ class FirebaseService {
     return snap.docs.isNotEmpty;
   }
 
-  /// Autentica a un pasajero por su PIN único + tipo.
-  Future<app.User?> loginPasajero(String pin, String tipo) async {
+  /// Autentica a un pasajero por su PIN único + tipo (el CI es opcional;
+  /// si se ingresa, debe coincidir con el de la cuenta).
+  Future<app.User?> loginPasajero(String pin, String tipo,
+      {String ci = ''}) async {
     final snap = await _db
         .collection(_usersCollection)
         .where('pin', isEqualTo: pin)
@@ -62,18 +64,23 @@ class FirebaseService {
     if (snap.docs.isEmpty) return null;
     final user = _userFromMap(snap.docs.first.data());
     if (user.tipo != tipo) return null;
+    if (ci.isNotEmpty && user.ci.isNotEmpty && user.ci != ci) return null;
     return user;
   }
 
-  /// Autentica a un conductor por su PIN único.
-  Future<Conductor?> loginConductor(String pin) async {
+  /// Autentica a un conductor por su PIN único (CI opcional).
+  Future<Conductor?> loginConductor(String pin, {String ci = ''}) async {
     final snap = await _db
         .collection(_conductoresCollection)
         .where('pin', isEqualTo: pin)
         .limit(1)
         .get();
     if (snap.docs.isEmpty) return null;
-    return _conductorFromMap(snap.docs.first.data());
+    final conductor = _conductorFromMap(snap.docs.first.data());
+    if (ci.isNotEmpty && conductor.ci.isNotEmpty && conductor.ci != ci) {
+      return null;
+    }
+    return conductor;
   }
 
   /// Registra un pasajero en Firestore con PIN único.
@@ -163,12 +170,17 @@ class FirebaseService {
   }
 
   /// Incrementa (o resta si `delta` es negativo) los puntos del usuario.
+  /// Usa una transacción para evitar pérdidas de actualización (doble gasto).
   Future<void> addPuntos(int userId, int delta) async {
     final ref = _db.collection(_usersCollection).doc('u-$userId');
-    final doc = await ref.get();
-    if (!doc.exists) return;
-    final current = (doc.data()?['puntos'] as num?)?.toInt() ?? 0;
-    await ref.update({'puntos': current + delta});
+    await _db.runTransaction((txn) async {
+      final doc = await txn.get(ref);
+      if (!doc.exists) return;
+      final current = (doc.data()?['puntos'] as num?)?.toInt() ?? 0;
+      final nuevo = current + delta;
+      if (nuevo < 0) return;
+      txn.update(ref, {'puntos': nuevo});
+    });
   }
 
   // =====================================================================
@@ -213,39 +225,47 @@ class FirebaseService {
   }
 
   /// Registra el pago de un viaje y descuenta los puntos del pasajero.
+  /// Todo ocurre en una sola transacción atómica (saldo + cobro).
   Future<({bool ok, String message})> pagarViaje({
     required int userId,
     required int conductorId,
     required int puntos,
     required String metodoPago,
   }) async {
-    final userDoc = await _db
-        .collection(_usersCollection)
-        .doc('u-$userId')
-        .get();
-    if (!userDoc.exists) {
-      return (ok: false, message: 'Usuario no encontrado');
-    }
-    final data = userDoc.data()!;
-    final saldo = (data['puntos'] as num?)?.toInt() ?? 0;
-    if (saldo < puntos) {
-      return (ok: false, message: 'Saldo insuficiente');
-    }
-
     final nextId = await _nextId(_transaccionesCollection);
-    final cobro = {
-      'id': nextId,
-      'id_usuario': userId,
-      'id_conductor': conductorId,
-      'puntos': puntos,
-      'tipo': 'cobro_viaje',
-      'metodo_pago': metodoPago,
-      'estado': 'exitoso',
-      'fecha': DateTime.now().toUtc(),
-    };
-    await _db.collection(_transaccionesCollection).doc('c-$nextId').set(cobro);
-    await addPuntos(userId, -puntos);
-    return (ok: true, message: 'Viaje pagado');
+    final userRef = _db.collection(_usersCollection).doc('u-$userId');
+    final cobroRef = _db
+        .collection(_transaccionesCollection)
+        .doc('c-$nextId');
+
+    try {
+      return await _db.runTransaction((txn) async {
+        final userSnap = await txn.get(userRef);
+        if (!userSnap.exists) {
+          return (ok: false, message: 'Usuario no encontrado');
+        }
+        final data = userSnap.data()!;
+        final saldo = (data['puntos'] as num?)?.toInt() ?? 0;
+        if (saldo < puntos) {
+          return (ok: false, message: 'Saldo insuficiente');
+        }
+
+        txn.update(userRef, {'puntos': saldo - puntos});
+        txn.set(cobroRef, {
+          'id': nextId,
+          'id_usuario': userId,
+          'id_conductor': conductorId,
+          'puntos': puntos,
+          'tipo': 'cobro_viaje',
+          'metodo_pago': metodoPago,
+          'estado': 'exitoso',
+          'fecha': DateTime.now().toUtc(),
+        });
+        return (ok: true, message: 'Viaje pagado');
+      });
+    } catch (_) {
+      return (ok: false, message: 'Error al procesar el pago');
+    }
   }
 
   // =====================================================================

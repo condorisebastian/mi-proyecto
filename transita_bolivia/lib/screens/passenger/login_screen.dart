@@ -11,9 +11,17 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _ciController = TextEditingController();
   final _pinController = TextEditingController(text: '1234');
   String _tipo = 'estudiante';
   bool _obscurePin = true;
+
+  @override
+  void dispose() {
+    _ciController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -99,6 +107,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
                         TextFormField(
+                          controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
+                          decoration: InputDecoration(
+                            labelText: 'Nro. de Carnet (CI)',
+                            prefixIcon: const Icon(Icons.badge),
+                            counterText: '',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
                           controller: _pinController,
                           keyboardType: TextInputType.number,
                           maxLength: 4,
@@ -140,6 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       final success = await authService.login(
                                         _pinController.text,
                                         _tipo,
+                                        ci: _ciController.text.trim(),
                                       );
                                       if (success && context.mounted) {
                                         Navigator.pushReplacementNamed(
@@ -149,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'PIN incorrecto'),
+                                                'Carnet o PIN incorrectos'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );

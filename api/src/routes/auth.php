@@ -97,6 +97,7 @@ function handle_auth(string $method, array $seg): void
     if ($method === 'POST' && $action === 'login') {
         require_fields($body, ['pin', 'tipo']);
         ['pin' => $pin, 'tipo' => $tipo] = $body;
+        $ci = trim((string)($body['ci'] ?? ''));
 
         $st = $pdo->prepare(
             'SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.estado,
@@ -114,6 +115,9 @@ function handle_auth(string $method, array $seg): void
         }
         if ($row['tipo'] !== $tipo) {
             json_out(['error' => 'El tipo de usuario no coincide'], 401);
+        }
+        if ($ci !== '' && $row['ci'] !== null && $row['ci'] !== $ci) {
+            json_out(['error' => 'El número de carnet no coincide'], 401);
         }
         if ($row['estado'] !== 'activo') {
             json_out(['error' => 'El usuario está inactivo'], 403);
@@ -213,6 +217,7 @@ function handle_auth(string $method, array $seg): void
     if ($method === 'POST' && $action === 'login-conductor') {
         require_fields($body, ['pin']);
         ['pin' => $pin] = $body;
+        $ci = trim((string)($body['ci'] ?? ''));
 
         $st = $pdo->prepare(
             'SELECT c.id_conductor, c.ci, c.numero_licencia, c.estado AS est_cond,
@@ -227,6 +232,9 @@ function handle_auth(string $method, array $seg): void
 
         if (!$row) {
             json_out(['error' => 'PIN incorrecto'], 401);
+        }
+        if ($ci !== '' && $row['ci'] !== null && $row['ci'] !== $ci) {
+            json_out(['error' => 'El número de carnet no coincide'], 401);
         }
         if ($row['est_cond'] !== 'activo' || $row['est_usr'] !== 'activo') {
             json_out(['error' => 'El conductor está inactivo'], 403);

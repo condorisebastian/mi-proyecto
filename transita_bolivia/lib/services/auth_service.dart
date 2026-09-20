@@ -19,12 +19,12 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   String? get token => _token;
 
-  Future<bool> login(String pin, String tipo) async {
+  Future<bool> login(String pin, String tipo, {String ci = ''}) async {
     _isLoading = true;
     notifyListeners();
 
     if (AppConfig.useFirebase) {
-      final ok = await _loginFirebase(pin, tipo);
+      final ok = await _loginFirebase(pin, tipo, ci: ci);
       _isLoading = false;
       notifyListeners();
       return ok;
@@ -38,6 +38,7 @@ class AuthService extends ChangeNotifier {
             body: jsonEncode({
               'pin': pin,
               'tipo': tipo,
+              'ci': ci,
             }),
           )
           .timeout(AppConfig.timeout);
@@ -62,8 +63,9 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<bool> _loginFirebase(String pin, String tipo) async {
-    final user = await FirebaseService.instance.loginPasajero(pin, tipo);
+  Future<bool> _loginFirebase(String pin, String tipo, {String ci = ''}) async {
+    final user = await FirebaseService.instance
+        .loginPasajero(pin, tipo, ci: ci);
     if (user == null) return false;
     if (user.tipo != tipo) return false;
     _currentUser = user;

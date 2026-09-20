@@ -11,8 +11,16 @@ class DriverLoginScreen extends StatefulWidget {
 
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _ciController = TextEditingController();
   final _pinController = TextEditingController(text: '5678');
   bool _obscurePin = true;
+
+  @override
+  void dispose() {
+    _ciController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +101,20 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           ),
                           const SizedBox(height: 32),
                           TextFormField(
+                            controller: _ciController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 12,
+                            decoration: InputDecoration(
+                              labelText: 'Nro. de Carnet (CI)',
+                              prefixIcon: const Icon(Icons.badge),
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
                             controller: _pinController,
                             keyboardType: TextInputType.number,
                             maxLength: 4,
@@ -133,6 +155,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                     if (_formKey.currentState!.validate()) {
                                       final success = await authService.login(
                                         _pinController.text,
+                                        ci: _ciController.text.trim(),
                                       );
                                       if (success && context.mounted) {
                                         Navigator.pushReplacementNamed(
@@ -142,7 +165,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'PIN incorrecto'),
+                                                'Carnet o PIN incorrectos'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );
