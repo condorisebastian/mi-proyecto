@@ -13,14 +13,35 @@ function handle_transactions(string $method, array $seg): void
     $action = $seg[1] ?? '';
     $pdo    = db();
     $body   = json_input();
+    $cfg    = require __DIR__ . '/../../config/database.php';
+    $secret = $cfg['jwt_secret'];
+
+    // Conductor autenticado: payload { id, rol => 'conductor' }.
+    $isConductor = function (array $p): bool {
+        return ($p['rol'] ?? '') === 'conductor';
+    };
 
     // ---------- POST /transactions/pay ----------
     if ($method === 'POST' && $action === 'pay') {
+        $payload = bearer_payload($secret);
         $conductorId = (int)($body['conductor_id'] ?? 0);
         $puntos      = (int)($body['puntos'] ?? 0);
+        $userIdIn    = (int)($body['user_id'] ?? 0);
 
         if (!$conductorId || $puntos <= 0) {
             json_out(['error' => 'conductor_id y puntos son obligatorios'], 400);
+        }
+
+        // El cobro lo hace el conductor autenticado (siempre) y si paga un
+        // pasajero vinculado, este debe ser el dueño del token.
+        if ($isConductor($payload)) {
+            if ((int)$payload['id'] !== $conductorId) {
+                json_out(['error' => 'No autorizado'], 401);
+            }
+        } else {
+            if (!$userIdIn || (int)$payload['id'] !== $userIdIn) {
+                json_out(['error' => 'No autorizado'], 401);
+            }
         }
 
         $pdo->beginTransaction();
@@ -91,9 +112,15 @@ function handle_transactions(string $method, array $seg): void
 
     // ---------- POST /transactions/recharge ----------
     if ($method === 'POST' && $action === 'recharge') {
+        $payload = bearer_payload($secret);
         $userId     = (int)($body['user_id'] ?? 0);
         $puntos     = (int)($body['puntos'] ?? 0);
         $metodoPago = $body['metodo_pago'] ?? '';
+
+        // Solo un pasajero puede recargar SU cuenta.
+        if ($isConductor($payload) || (int)$payload['id'] !== $userId) {
+            json_out(['error' => 'No autorizado'], 401);
+        }
 
         if (!$userId || $puntos <= 0) {
             json_out(['error' => 'user_id y puntos son obligatorios'], 400);
@@ -145,6 +172,12 @@ function handle_transactions(string $method, array $seg): void
     // ---------- GET /transactions/user/{userId} ----------
     if ($method === 'GET' && $action === 'user' && isset($seg[2]) && ctype_digit($seg[2])) {
         $userId = (int)$seg[2];
+        $payload = bearer_payload($secret);
+
+        // Solo el dueño de la cuenta ve su historial.
+        if ($isConductor($payload) || (int)$payload['id'] !== $userId) {
+            json_out(['error' => 'No autorizado'], 401);
+        }
 
         $st = $pdo->prepare('SELECT id_pasajero FROM pasajeros WHERE id_usuario = ?');
         $st->execute([$userId]);
@@ -204,6 +237,12 @@ function handle_transactions(string $method, array $seg): void
 
     // ---------- GET /transactions/summary/{conductorId} ----------
     if ($method === 'GET' && $action === 'summary' && isset($seg[2]) && ctype_digit($seg[2])) {
+        $payload = bearer_payload($secret);
+        // Solo el conductor autenticado consulta SU resumen.
+        if (!$isConductor($payload) || (int)$payload['id'] !== (int)$seg[2]) {
+            json_out(['error' => 'No autorizado'], 401);
+        }
+
         $st = $pdo->prepare(
             "SELECT COUNT(*) AS total_pasajeros,
                     COALESCE(SUM(c.monto), 0) AS total_puntos,
@@ -232,6 +271,12 @@ function handle_transactions(string $method, array $seg): void
 
     // ---------- GET /transactions/history/{conductorId} ----------
     if ($method === 'GET' && $action === 'history' && isset($seg[2]) && ctype_digit($seg[2])) {
+        $payload = bearer_payload($secret);
+        // Solo el conductor autenticado consulta SU historial diario.
+        if (!$isConductor($payload) || (int)$payload['id'] !== (int)$seg[2]) {
+            json_out(['error' => 'No autorizado'], 401);
+        }
+
         $st = $pdo->prepare(
             "SELECT c.id_cobro AS id,
                     u.id_usuario AS id_usuario,

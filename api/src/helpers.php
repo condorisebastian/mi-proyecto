@@ -44,3 +44,50 @@ function jwt_sign(array $payload, string $secret, int $ttl): string
     $sig    = b64url_encode(hash_hmac('sha256', "$header.$body", $secret, true));
     return "$header.$body.$sig";
 }
+
+function jwt_verify(string $token, string $secret): ?array
+{
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) return null;
+    [$h, $b, $s] = $parts;
+    if ($h === '' || $b === '' || $s === '') return null;
+
+    $payload = json_decode(b64url_decode($b), true);
+    if (!is_array($payload)) return null;
+
+    $sig = b64url_encode(hash_hmac('sha256', "$h.$b", $secret, true));
+    if (!hash_equals($sig, $s)) return null;
+
+    if (!isset($payload['exp']) || (int)$payload['exp'] < time()) return null;
+    return $payload;
+}
+
+/** Devuelve la cabecera Authorization sin importar cómo la exponga el server. */
+function http_auth_header(): string
+{
+    foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $k) {
+        if (!empty($_SERVER[$k])) return (string)$_SERVER[$k];
+    }
+    if (function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        if (isset($headers['Authorization'])) return $headers['Authorization'];
+    }
+    return '';
+}
+
+/**
+ * Exige un JWT válido y devuelve su payload; si no hay token o es inválido
+ * responde 401. El payload del pasajero trae `id` + `tipo`; el del conductor
+ * trae `id` + `rol => 'conductor'`.
+ */
+function bearer_payload(string $secret): array
+{
+    $auth  = http_auth_header();
+    $match = [];
+    if (preg_match('/^Bearer\s+(.+)$/i', trim($auth), $match)) {
+        $payload = jwt_verify(trim($match[1]), $secret);
+        if (is_array($payload)) return $payload;
+    }
+    json_out(['error' => 'No autorizado'], 401);
+    exit;
+}
