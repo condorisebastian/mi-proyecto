@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import '../../models/transaction.dart';
 import 'recharge_screen.dart';
 import 'pay_trip_screen.dart';
@@ -290,8 +292,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              FutureBuilder<List<Transaction>>(
-                future: _apiService.getTransactionHistory(user.id),
+              StreamBuilder<List<Transaction>>(
+                stream: AppConfig.useFirebase
+                    ? FirebaseService.instance
+                        .transactionHistoryStream(user.id)
+                    : Stream.fromFuture(
+                        _apiService.getTransactionHistory(user.id)),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());

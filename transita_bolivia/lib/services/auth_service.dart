@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 import 'dart:convert';
 import '../config.dart';
 import '../models/user.dart';
@@ -14,11 +15,28 @@ class AuthService extends ChangeNotifier {
   User? _currentUser;
   bool _isLoading = false;
   String? _token;
+  StreamSubscription<User?>? _liveSub;
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
   String? get token => _token;
+
+  /// Suscribe el saldo del pasajero en vivo (solo modo Firebase): cada cambio
+  /// de puntos en Firestore (recarga, pago) se refleja sin recargar la app.
+  void _subscribeLive(int userId) {
+    if (!AppConfig.useFirebase) return;
+    _liveSub?.cancel();
+    _liveSub = FirebaseService.instance.userStream(userId).listen(
+      (user) {
+        if (user != null && _currentUser != null) {
+          _currentUser = user;
+          notifyListeners();
+        }
+      },
+      onError: (_) {},
+    );
+  }
 
   Future<bool> login(String pin, String tipo, {String ci = ''}) async {
     _isLoading = true;
@@ -72,6 +90,7 @@ class AuthService extends ChangeNotifier {
     _currentUser = user;
     _token = 'firebase';
     await _saveSession();
+    _subscribeLive(user.id);
     return true;
   }
 
@@ -97,6 +116,7 @@ class AuthService extends ChangeNotifier {
         _currentUser = user;
         _token = 'firebase';
         await _saveSession();
+        _subscribeLive(user.id);
       }
       _isLoading = false;
       notifyListeners();
@@ -158,6 +178,7 @@ class AuthService extends ChangeNotifier {
             .fetchUserById(_currentUser!.id);
         if (user != null) _currentUser = user;
         _token = 'firebase';
+        _subscribeLive(_currentUser!.id);
       } else {
         _token = data['token'] as String?;
       }
@@ -195,6 +216,8 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _liveSub?.cancel();
+    _liveSub = null;
     _currentUser = null;
     _token = null;
     await _clearSession();
@@ -202,6 +225,12 @@ class AuthService extends ChangeNotifier {
       await FirebaseService.instance.logout();
     }
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _liveSub?.cancel();
+    super.dispose();
   }
 
   Future<void> refreshUser() async {

@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "rol", "order": "ASCENDING" },
+        { "fieldPath": "pin", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "transacciones",
       "queryScope": "COLLECTION",
       "fields": [

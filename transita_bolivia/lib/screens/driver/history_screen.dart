@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 
 class DriverHistoryScreen extends StatefulWidget {
   const DriverHistoryScreen({super.key});
@@ -14,11 +17,31 @@ class DriverHistoryScreen extends StatefulWidget {
 class DriverHistoryScreenState extends State<DriverHistoryScreen> {
   final DriverApiService _apiService = DriverApiService();
   List<Map<String, dynamic>> _history = [];
+  StreamSubscription<List<Map<String, dynamic>>>? _liveSub;
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    final authService = Provider.of<DriverAuthService>(context, listen: false);
+    if (AppConfig.useFirebase && authService.currentConductor != null) {
+      _liveSub = FirebaseService.instance
+          .dailyHistoryStream(authService.currentConductor!.id)
+          .listen((history) {
+        if (mounted) {
+          setState(() {
+            _history = history;
+          });
+        }
+      }, onError: (_) {});
+    } else {
+      _loadHistory();
+    }
+  }
+
+  @override
+  void dispose() {
+    _liveSub?.cancel();
+    super.dispose();
   }
 
   Future<void> reload() => _loadHistory();

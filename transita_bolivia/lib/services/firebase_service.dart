@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart' as app;
 import '../models/transaction.dart' as app_tx;
@@ -231,6 +232,7 @@ class FirebaseService {
     required int conductorId,
     required int puntos,
     required String metodoPago,
+    String? tipoUsuario,
   }) async {
     final nextId = await _nextId(_transaccionesCollection);
     final userRef = _db.collection(_usersCollection).doc('u-$userId');
@@ -260,6 +262,9 @@ class FirebaseService {
           'metodo_pago': metodoPago,
           'estado': 'exitoso',
           'fecha': DateTime.now().toUtc(),
+          'tipo_usuario': tipoUsuario,
+          'nombre_pasajero': data['nombre'],
+          'apellido_pasajero': data['apellido'],
         });
         return (ok: true, message: 'Viaje pagado');
       });
@@ -285,7 +290,8 @@ class FirebaseService {
   }
 
   /// Registra un viaje cobrado por un conductor y descuenta puntos si el
-  /// pasajero está vinculado.
+  /// pasajero está vinculado. Un solo cobro: si hay `userId`, el registro lo
+  /// crea `pagarViaje` dentro de su transacción atómica.
   Future<({bool ok, String message})> registrarCobro({
     required int conductorId,
     required String tipoUsuario,
@@ -294,12 +300,12 @@ class FirebaseService {
     int? userId,
   }) async {
     if (userId != null) {
-      final res = await pagarViaje(
+      return pagarViaje(
           userId: userId,
           conductorId: conductorId,
           puntos: puntos,
-          metodoPago: metodoPago);
-      if (!res.ok) return res;
+          metodoPago: metodoPago,
+          tipoUsuario: tipoUsuario);
     }
     final nextId = await _nextId(_transaccionesCollection);
     final cobro = {
@@ -312,6 +318,8 @@ class FirebaseService {
       'estado': 'exitoso',
       'fecha': DateTime.now().toUtc(),
       'tipo_usuario': tipoUsuario,
+      'nombre_pasajero': '',
+      'apellido_pasajero': '',
     };
     try {
       await _db.collection(_transaccionesCollection).doc('c-$nextId').set(cobro);
@@ -403,7 +411,9 @@ class FirebaseService {
         'metodo_pago': m['metodo_pago'],
         'estado': m['estado'],
         'fecha': _formatFecha(m['fecha']),
-        'nombre': await _nombreByUserId(userId),
+        'nombre': (m['nombre_pasajero'] as String?)?.isNotEmpty == true
+            ? m['nombre_pasajero'] as String
+            : await _nombreByUserId(userId),
         'apellido': '',
         'tipo_usuario': m['tipo_usuario'] ?? '',
       });
@@ -416,6 +426,186 @@ class FirebaseService {
     final doc = await _db.collection(_usersCollection).doc('u-$userId').get();
     if (!doc.exists) return '';
     return (doc.data()?['nombre'] as String?) ?? '';
+  }
+
+  // =====================================================================
+  // TIEMPO REAL (snapshots)
+  // =====================================================================
+
+  /// Saldo/datos del pasajero en vivo (se actualiza al recargar/pagar).
+  Stream<app.User?> userStream(int userId) {
+    return _db
+        .collection(_usersCollection)
+        .doc('u-$userId')
+        .snapshots()
+        .map((ds) => ds.exists ? _userFromMap(ds.data()!) : null);
+  }
+
+  /// Historial del pasajero en vivo (recargas + cobros).
+  Stream<List<app_tx.Transaction>> transactionHistoryStream(int userId) {
+    return _db
+        .collection(_transaccionesCollection)
+        .where('id_usuario', isEqualTo: userId)
+        .orderBy('fecha', descending: true)
+        .snapshots()
+        .map((qs) =>
+            qs.docs.map((d) => _transactionFromMap(d.data())).toList());
+  }
+
+  /// Resumen diario del conductor en vivo.
+  Stream<Map<String, dynamic>> dailySummaryStream(int conductorId) {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+
+    final query = _db
+        .collection(_transaccionesCollection)
+        .where('id_conductor', isEqualTo: conductorId)
+        .where('tipo', isEqualTo: 'cobro_viaje')
+        .where('estado', isEqualTo: 'exitoso')
+        .where('fecha', isGreaterThanOrEqualTo: start)
+        .where('fecha', isLessThan: end);
+
+    return query.snapshots().map((qs) {
+      int totalPasajeros = 0;
+      int totalPuntos = 0;
+      int estudiantes = 0;
+      int civiles = 0;
+      int mayores = 0;
+      int discapacitados = 0;
+
+      for (final d in qs.docs) {
+        final m = d.data();
+        totalPasajeros++;
+        totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
+        final tipo = m['tipo_usuario'] as String? ?? 'civil';
+        switch (tipo) {
+          case 'estudiante':
+            estudiantes++;
+            break;
+          case 'civil':
+            civiles++;
+            break;
+          case 'adulto_mayor':
+            mayores++;
+            break;
+          case 'discapacitado':
+            discapacitados++;
+            break;
+        }
+      }
+
+      return {
+        'total_pasajeros': totalPasajeros,
+        'total_puntos': totalPuntos,
+        'estudiantes': estudiantes,
+        'civiles': civiles,
+        'mayores': mayores,
+        'discapacitados': discapacitados,
+      };
+    });
+  }
+
+  /// Cobros del día en vivo (para el historial del conductor).
+  Stream<List<Map<String, dynamic>>> dailyHistoryStream(int conductorId) {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    final end = start.add(const Duration(days: 1));
+
+    return _db
+        .collection(_transaccionesCollection)
+        .where('id_conductor', isEqualTo: conductorId)
+        .where('tipo', isEqualTo: 'cobro_viaje')
+        .where('estado', isEqualTo: 'exitoso')
+        .where('fecha', isGreaterThanOrEqualTo: start)
+        .where('fecha', isLessThan: end)
+        .orderBy('fecha', descending: true)
+        .snapshots()
+        .map((qs) => qs.docs.map((d) {
+              final m = d.data();
+              return {
+                'id': m['id'],
+                'id_usuario': m['id_usuario'],
+                'id_conductor': m['id_conductor'],
+                'puntos': m['puntos'],
+                'tipo': m['tipo'],
+                'metodo_pago': m['metodo_pago'],
+                'estado': m['estado'],
+                'fecha': _formatFecha(m['fecha']),
+                'nombre': (m['nombre_pasajero'] as String?) ?? '',
+                'apellido': (m['apellido_pasajero'] as String?) ?? '',
+                'tipo_usuario': m['tipo_usuario'] ?? '',
+              };
+            }).toList());
+  }
+
+  // =====================================================================
+  // ADMIN (registros en vivo)
+  // =====================================================================
+
+  /// Crea el usuario ADMIN (PIN 0000) si aún no existe en Firestore.
+  Future<void> ensureAdminUser() async {
+    final ref = _db.collection(_usersCollection).doc('admin');
+    try {
+      final doc = await ref.get();
+      if (doc.exists) return;
+      await ref.set({
+        'id': 0,
+        'nombre': 'Administrador',
+        'apellido': 'Sistema',
+        'ci': '',
+        'email': 'admin@transita.bo',
+        'pin': '0000',
+        'tipo': 'civil',
+        'puntos': 0,
+        'estado': 'activo',
+        'rol': 'ADMIN',
+      });
+    } catch (_) {
+      // Sin acceso no impide el arranque de la app.
+    }
+  }
+
+  /// Autentica al administrador por su PIN.
+  Future<app.User?> loginAdmin(String pin) async {
+    final snap = await _db
+        .collection(_usersCollection)
+        .where('rol', isEqualTo: 'ADMIN')
+        .where('pin', isEqualTo: pin)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    return _userFromMap(snap.docs.first.data());
+  }
+
+  /// Todos los usuarios en vivo (para el panel admin).
+  Stream<List<Map<String, dynamic>>> adminUsuariosStream() {
+    return _db.collection(_usersCollection).snapshots().map((qs) {
+      final list = qs.docs.map((d) => d.data()).toList();
+      list.sort((a, b) => ((b['id'] as num?)?.toInt() ?? 0)
+          .compareTo((a['id'] as num?)?.toInt() ?? 0));
+      return list;
+    });
+  }
+
+  /// Todos los conductores en vivo (para el panel admin).
+  Stream<List<Map<String, dynamic>>> adminConductoresStream() {
+    return _db.collection(_conductoresCollection).snapshots().map((qs) {
+      final list = qs.docs.map((d) => d.data()).toList();
+      list.sort((a, b) => ((b['id'] as num?)?.toInt() ?? 0)
+          .compareTo((a['id'] as num?)?.toInt() ?? 0));
+      return list;
+    });
+  }
+
+  /// Últimas transacciones en vivo (para el panel admin).
+  Stream<List<Map<String, dynamic>>> adminTransaccionesStream() {
+    return _db
+        .collection(_transaccionesCollection)
+        .orderBy('fecha', descending: true)
+        .limit(100)
+        .snapshots()
+        .map((qs) => qs.docs.map((d) => d.data()).toList());
   }
 
   // =====================================================================

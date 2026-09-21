@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 
 class DriverSummaryScreen extends StatefulWidget {
   const DriverSummaryScreen({super.key});
@@ -14,11 +17,31 @@ class DriverSummaryScreen extends StatefulWidget {
 class DriverSummaryScreenState extends State<DriverSummaryScreen> {
   final DriverApiService _apiService = DriverApiService();
   Map<String, dynamic> _summary = {};
+  StreamSubscription<Map<String, dynamic>>? _liveSub;
 
   @override
   void initState() {
     super.initState();
-    _loadSummary();
+    final authService = Provider.of<DriverAuthService>(context, listen: false);
+    if (AppConfig.useFirebase && authService.currentConductor != null) {
+      _liveSub = FirebaseService.instance
+          .dailySummaryStream(authService.currentConductor!.id)
+          .listen((summary) {
+        if (mounted) {
+          setState(() {
+            _summary = summary;
+          });
+        }
+      }, onError: (_) {});
+    } else {
+      _loadSummary();
+    }
+  }
+
+  @override
+  void dispose() {
+    _liveSub?.cancel();
+    super.dispose();
   }
 
   Future<void> reload() => _loadSummary();

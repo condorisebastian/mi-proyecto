@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import 'charge_screen.dart';
 import 'history_screen.dart';
 import 'summary_screen.dart';
@@ -20,6 +23,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   bool _isCharging = false;
   final DriverApiService _apiService = DriverApiService();
   Map<String, dynamic> _dailySummary = {};
+  StreamSubscription<Map<String, dynamic>>? _summarySub;
 
   final GlobalKey<DriverHistoryScreenState> _historyKey =
       GlobalKey<DriverHistoryScreenState>();
@@ -29,7 +33,26 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDailySummary();
+    final authService = Provider.of<DriverAuthService>(context, listen: false);
+    if (AppConfig.useFirebase && authService.currentConductor != null) {
+      _summarySub = FirebaseService.instance
+          .dailySummaryStream(authService.currentConductor!.id)
+          .listen((summary) {
+        if (mounted) {
+          setState(() {
+            _dailySummary = summary;
+          });
+        }
+      }, onError: (_) {});
+    } else {
+      _loadDailySummary();
+    }
+  }
+
+  @override
+  void dispose() {
+    _summarySub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadDailySummary() async {

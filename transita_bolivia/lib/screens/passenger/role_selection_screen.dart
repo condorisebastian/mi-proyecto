@@ -20,9 +20,11 @@ class RoleSelectionScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 const Icon(
                   Icons.directions_bus,
                   size: 100,
@@ -66,9 +68,20 @@ class RoleSelectionScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/driver/login');
                   },
                 ),
+                const SizedBox(height: 16),
+                _buildRoleButton(
+                  context,
+                  icon: Icons.admin_panel_settings,
+                  title: 'Administración',
+                  subtitle: 'Panel con registros en tiempo real',
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/admin/login');
+                  },
+                ),
                 const SizedBox(height: 24),
                 _buildRequirementsButton(context),
-              ],
+                ],
+              ),
             ),
           ),
         ),
