@@ -125,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   IconButton(
+                    tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: () {
                       _confirmLogout(context, authService);

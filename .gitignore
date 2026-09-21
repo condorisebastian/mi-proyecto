@@ -8,3 +8,6 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Seguridad: secreto JWT local (se genera al primer uso)
+api/config/.jwt_secret

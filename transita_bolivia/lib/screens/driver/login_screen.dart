@@ -12,7 +12,7 @@ class DriverLoginScreen extends StatefulWidget {
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _ciController = TextEditingController();
-  final _pinController = TextEditingController(text: '5678');
+  final _pinController = TextEditingController();
   bool _obscurePin = true;
 
   @override

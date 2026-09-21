@@ -8,6 +8,7 @@ import 'firebase_service.dart';
 
 class DriverAuthService extends ChangeNotifier {
   static const _kSessionKey = 'driver_session';
+  static const _kSessionTtl = Duration(hours: 8);
 
   final String baseUrl = AppConfig.apiUrl;
   Conductor? _currentConductor;
@@ -143,6 +144,12 @@ class DriverAuthService extends ChangeNotifier {
         final raw = prefs.getString(_kSessionKey);
         if (raw != null) {
           final data = jsonDecode(raw) as Map<String, dynamic>;
+          final expiresAt = (data['expiresAt'] as int?) ??
+              DateTime.now().millisecondsSinceEpoch;
+          if (expiresAt <= DateTime.now().millisecondsSinceEpoch) {
+            await _clearSession();
+            return;
+          }
           _currentConductor = Conductor.fromJson(data['conductor']);
           _token = 'firebase';
           notifyListeners();
@@ -155,6 +162,12 @@ class DriverAuthService extends ChangeNotifier {
       if (raw == null) return;
 
       final data = jsonDecode(raw) as Map<String, dynamic>;
+      final expiresAt = (data['expiresAt'] as int?) ??
+          DateTime.now().millisecondsSinceEpoch;
+      if (expiresAt <= DateTime.now().millisecondsSinceEpoch) {
+        await _clearSession();
+        return;
+      }
       _currentConductor = Conductor.fromJson(data['conductor']);
       _token = data['token'] as String?;
       notifyListeners();
@@ -171,6 +184,9 @@ class DriverAuthService extends ChangeNotifier {
         jsonEncode({
           'conductor': _currentConductor!.toJson(),
           'token': _token,
+          'expiresAt': DateTime.now()
+              .add(_kSessionTtl)
+              .millisecondsSinceEpoch,
         }),
       );
     } catch (e) {

@@ -153,6 +153,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     ],
                   ),
                   IconButton(
+                    tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: () {
                       _confirmLogout(context, authService);

@@ -21,6 +21,48 @@ function handle_auth(string $method, array $seg): void
         return (bool)$st->fetch();
     };
 
+    // ---------- Anti fuerza bruta (PIN) ----------
+    // Permite 5 intentos fallidos en una ventana de 15 minutos por PIN.
+    $lockDir = sys_get_temp_dir() . '/transporte_pin_locks';
+    if (!is_dir($lockDir)) {
+        @mkdir($lockDir, 0700, true);
+    }
+    $lockFileFor = function (string $pin) use ($lockDir): string {
+        return $lockDir . '/lock_' . preg_replace('/[^0-9a-zA-Z]/', '', $pin) . '.json';
+    };
+    $lockWait = function (string $pin) use ($lockFileFor): ?int {
+        $f = $lockFileFor($pin);
+        if (!is_file($f)) return null;
+        $d = json_decode((string)file_get_contents($f), true);
+        if (!is_array($d)) return null;
+        $window = (int)($d['window'] ?? 0);
+        $count  = (int)($d['count'] ?? 0);
+        if (time() > $window) {
+            @unlink($f);
+            return null;
+        }
+        if ($count >= 5) return (int)ceil($window - time());
+        return null;
+    };
+    $lockFail = function (string $pin) use ($lockFileFor): void {
+        $f    = $lockFileFor($pin);
+        $d    = [];
+        if (is_file($f)) {
+            $candidate = json_decode((string)file_get_contents($f), true);
+            if (is_array($candidate)) $d = $candidate;
+        }
+        $window = (int)($d['window'] ?? 0);
+        if (time() > $window) {
+            $d = ['window' => time() + 900, 'count' => 0];
+        }
+        $d['count'] = (int)($d['count'] ?? 0) + 1;
+        @file_put_contents($f, json_encode($d), LOCK_EX);
+    };
+    $lockClear = function (string $pin) use ($lockFileFor): void {
+        $f = $lockFileFor($pin);
+        if (is_file($f)) @unlink($f);
+    };
+
     // ---------- POST /auth/register (pasajero) ----------
     if ($method === 'POST' && $action === 'register') {
         require_fields($body, ['nombre', 'apellido', 'ci', 'pin', 'tipo']);
@@ -99,6 +141,11 @@ function handle_auth(string $method, array $seg): void
         ['pin' => $pin, 'tipo' => $tipo] = $body;
         $ci = trim((string)($body['ci'] ?? ''));
 
+        $wait = $lockWait($pin);
+        if ($wait !== null) {
+            json_out(['error' => "Demasiados intentos. Intente en {$wait} s"], 429);
+        }
+
         $st = $pdo->prepare(
             'SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.estado,
                     p.ci, p.tipo, s.saldo_actual
@@ -111,17 +158,22 @@ function handle_auth(string $method, array $seg): void
         $st->execute([$pin]);
         $row = $st->fetch();
         if (!$row) {
+            $lockFail($pin);
             json_out(['error' => 'PIN incorrecto'], 401);
         }
         if ($row['tipo'] !== $tipo) {
+            $lockFail($pin);
             json_out(['error' => 'El tipo de usuario no coincide'], 401);
         }
         if ($ci !== '' && $row['ci'] !== null && $row['ci'] !== $ci) {
+            $lockFail($pin);
             json_out(['error' => 'El número de carnet no coincide'], 401);
         }
         if ($row['estado'] !== 'activo') {
+            $lockFail($pin);
             json_out(['error' => 'El usuario está inactivo'], 403);
         }
+        $lockClear($pin);
 
         $id = (int)$row['id_usuario'];
         json_out([
@@ -219,6 +271,11 @@ function handle_auth(string $method, array $seg): void
         ['pin' => $pin] = $body;
         $ci = trim((string)($body['ci'] ?? ''));
 
+        $wait = $lockWait($pin);
+        if ($wait !== null) {
+            json_out(['error' => "Demasiados intentos. Intente en {$wait} s"], 429);
+        }
+
         $st = $pdo->prepare(
             'SELECT c.id_conductor, c.ci, c.numero_licencia, c.estado AS est_cond,
                     u.nombre, u.apellido, u.telefono, u.estado AS est_usr
@@ -231,14 +288,18 @@ function handle_auth(string $method, array $seg): void
         $row = $st->fetch();
 
         if (!$row) {
+            $lockFail($pin);
             json_out(['error' => 'PIN incorrecto'], 401);
         }
         if ($ci !== '' && $row['ci'] !== null && $row['ci'] !== $ci) {
+            $lockFail($pin);
             json_out(['error' => 'El número de carnet no coincide'], 401);
         }
         if ($row['est_cond'] !== 'activo' || $row['est_usr'] !== 'activo') {
+            $lockFail($pin);
             json_out(['error' => 'El conductor está inactivo'], 403);
         }
+        $lockClear($pin);
 
         json_out([
             'conductor' => [

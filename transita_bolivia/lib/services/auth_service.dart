@@ -8,6 +8,7 @@ import 'firebase_service.dart';
 
 class AuthService extends ChangeNotifier {
   static const _kSessionKey = 'session';
+  static const _kSessionTtl = Duration(hours: 8);
 
   final String baseUrl = AppConfig.apiUrl;
   User? _currentUser;
@@ -144,6 +145,12 @@ class AuthService extends ChangeNotifier {
       if (raw == null) return;
 
       final data = jsonDecode(raw) as Map<String, dynamic>;
+      final expiresAt =
+          (data['expiresAt'] as int?) ?? DateTime.now().millisecondsSinceEpoch;
+      if (expiresAt <= DateTime.now().millisecondsSinceEpoch) {
+        await _clearSession();
+        return;
+      }
       _currentUser = User.fromJson(data['user']);
 
       if (AppConfig.useFirebase) {
@@ -168,6 +175,9 @@ class AuthService extends ChangeNotifier {
         jsonEncode({
           'user': _currentUser!.toJson(),
           'token': _token,
+          'expiresAt': DateTime.now()
+              .add(_kSessionTtl)
+              .millisecondsSinceEpoch,
         }),
       );
     } catch (e) {
