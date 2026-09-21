@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
 import 'services/api_service.dart';
 import 'services/driver_auth_service.dart';
 import 'services/driver_api_service.dart';
+import 'config.dart';
 import 'firebase_options.dart';
 import 'screens/passenger/role_selection_screen.dart';
 import 'screens/passenger/requirements_screen.dart';
@@ -16,12 +18,27 @@ import 'screens/driver/login_screen.dart' as driver_login;
 import 'screens/driver/register_screen.dart' as driver_register;
 import 'screens/driver/home_screen.dart' as driver_home;
 
+/// Identidad mínima de la app frente a Firestore (login anónimo).
+/// Mientras el acceso sea por PIN (sin Firebase Auth), esto permite que las
+/// reglas exijan `request.auth != null` en lugar de permitir acceso abierto.
+Future<void> _ensureFirebaseIdentity() async {
+  if (!AppConfig.useFirebase) return;
+  try {
+    if (FirebaseAuth.instance.currentUser == null) {
+      await FirebaseAuth.instance.signInAnonymously();
+    }
+  } catch (_) {
+    // Sin identidad anónima la app sigue leyendo si las reglas lo permiten.
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await _ensureFirebaseIdentity();
 
   final auth = AuthService();
   await auth.restoreSession();

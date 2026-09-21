@@ -18,12 +18,32 @@ if ($jwtSecret === false || $jwtSecret === '') {
     }
 }
 
+// Credenciales de BD: NUNCA hardcodeadas en el repositorio.
+// Prioridad: env DB_USER/DB_PASS > archivo local config/.db_creds.php
+// (generado por api/setup_db_user.php, ignorado por git) > root local (XAMPP).
+$dbUser = 'root';
+$dbPass = '';
+$envDbUser = getenv('DB_USER');
+if ($envDbUser !== false && $envDbUser !== '') {
+    $dbUser = $envDbUser;
+    $dbPass = getenv('DB_PASS') !== false ? (string)getenv('DB_PASS') : '';
+} else {
+    $credsFile = __DIR__ . '/.db_creds.php';
+    if (is_file($credsFile)) {
+        $local = require $credsFile;
+        if (is_array($local) && isset($local['user'])) {
+            $dbUser = $local['user'];
+            $dbPass = $local['password'] ?? '';
+        }
+    }
+}
+
 return [
     'db' => [
         'host'     => '127.0.0.1',
         'database' => 'proyecto_cobros',
-        'user'     => 'root',
-        'password' => '',
+        'user'     => $dbUser,
+        'password' => $dbPass,
         'charset'  => 'utf8mb4',
     ],
     // Secreto JWT compartido con las apps (8h de validez)

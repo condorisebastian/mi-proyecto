@@ -1,21 +1,32 @@
 rules_version = '2';
 
-// Acceso por PIN sin Firebase Auth: la app (pasajero/conductor) lee y escribe
-// directamente en estas colecciones. El PIN es la unica credencial.
+// Acceso por PIN sin Firebase Auth. La app crea una identidad anonima
+// (signInAnonymously) al iniciar, por lo que las reglas exigen
+// `request.auth != null`: sin la app/proyecto no hay acceso.
 //
-// ADVERTENCIA: al no usar Firebase Auth, la base queda abierta a quien tenga
-// la API key del proyecto; es equivalente al backend PHP (sin auth fuerte).
-// Si se requiere seguridad real, migrar a Firebase Auth y restringir reglas.
+// El modelo de "puntos" requiere que la app lea, cree y (solo en `usuarios`)
+// actualice el campo `puntos` del pasajero autenticado por PIN.
+// Si se requiere seguridad real (duena unica de cada documento), migrar a
+// Firebase Auth (correo/fono) y atar cada documento a su `uid`.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /usuarios/{id} {
-      allow read, write: if true;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // Solo se permite actualizar el saldo de puntos (no otros campos).
+      allow update: if request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['puntos']);
+      allow delete: if false;
     }
     match /conductores/{id} {
-      allow read, write: if true;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
     }
     match /transacciones/{id} {
-      allow read, write: if true;
+      allow read, create: if request.auth != null;
+      allow update, delete: if false;
     }
   }
 }

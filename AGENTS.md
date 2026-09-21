@@ -58,3 +58,11 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   y `firestore.indexes.json`. El login por PIN (sin Firebase Auth) requiere
   desplegarlos: `firebase deploy --only firestore --project transita-bolivia`
   (desde `transita_bolivia/`). Sin reglas, el acceso cliente da PERMISSION_DENIED.
+- Las reglas exigen identidad: la app hace `signInAnonymously()` al iniciar
+  (`firebase_auth`). **Orden importante**: instalar la app actualizada en los
+  equipos ANTES de desplegar las reglas, o el cliente quedará bloqueado.
+- Backend PHP/MySQL: el usuario de BD por defecto es `root` sin clave (XAMPP).
+  Para producción ejecutar `php api/setup_db_user.php` (crea `transporte_app`
+  con privilegios mínimos y guarda credenciales en `api/config/.db_creds.php`,
+  gitignored). El secreto JWT se lee de `JWT_SECRET` o se autogenera en
+  `api/config/.jwt_secret` (gitignored) al primer uso.

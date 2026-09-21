@@ -11,3 +11,5 @@ Thumbs.db
 
 # Seguridad: secreto JWT local (se genera al primer uso)
 api/config/.jwt_secret
+# Seguridad: credenciales de BD del usuario limitado (setup_db_user.php)
+api/config/.db_creds.php
