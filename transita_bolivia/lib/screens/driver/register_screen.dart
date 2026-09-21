@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 
@@ -16,8 +17,10 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
   final _ciController = TextEditingController();
   final _licenciaController = TextEditingController();
   final _telefonoController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _pinController = TextEditingController();
+  final _confirmPinController = TextEditingController();
+  bool _obscurePin = true;
+  bool _obscureConfirmPin = true;
 
   @override
   void dispose() {
@@ -26,8 +29,8 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
     _ciController.dispose();
     _licenciaController.dispose();
     _telefonoController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _pinController.dispose();
+    _confirmPinController.dispose();
     super.dispose();
   }
 
@@ -38,7 +41,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro Conductor'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -47,8 +50,8 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -79,7 +82,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                         const Icon(
                           Icons.directions_bus,
                           size: 60,
-                          color: Color(0xFFE53935),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -126,38 +129,14 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _ciController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Cédula de Identidad',
-                            prefixIcon: const Icon(Icons.badge),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su CI';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
                           controller: _licenciaController,
                           decoration: InputDecoration(
-                            labelText: 'Nro. Licencia',
+                            labelText: 'Nro. Licencia (opcional)',
                             prefixIcon: const Icon(Icons.badge_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su licencia';
-                            }
-                            return null;
-                          },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -173,39 +152,82 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
+                          controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
                           decoration: InputDecoration(
-                            labelText: 'Contraseña',
-                            prefixIcon: const Icon(Icons.lock),
+                            labelText: 'Nro. de Carnet (CI)',
+                            prefixIcon: const Icon(Icons.badge),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
-                            }
-                            if (value.length < 6) {
-                              return 'Mínimo 6 caracteres';
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Ingrese su número de carnet';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: true,
+                          controller: _pinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          obscureText: _obscurePin,
                           decoration: InputDecoration(
-                            labelText: 'Confirmar Contraseña',
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            labelText: 'PIN (4 dígitos)',
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscurePin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () =>
+                                  setState(() => _obscurePin = !_obscurePin),
+                            ),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value != _passwordController.text) {
-                              return 'Las contraseñas no coinciden';
+                            if (value == null || value.length != 4) {
+                              return 'El PIN debe tener 4 dígitos';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _confirmPinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          obscureText: _obscureConfirmPin,
+                          decoration: InputDecoration(
+                            labelText: 'Confirmar PIN',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscureConfirmPin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscureConfirmPin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () => setState(
+                                  () => _obscureConfirmPin = !_obscureConfirmPin),
+                            ),
+                            counterText: '',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value != _pinController.text) {
+                              return 'Los PIN no coinciden';
                             }
                             return null;
                           },
@@ -223,13 +245,16 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                                           await authService.register(
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
-                                        ci: _ciController.text,
-                                        licencia: _licenciaController.text,
+                                        ci: _ciController.text.trim(),
+                                        pin: _pinController.text,
+                                        licencia:
+                                            _licenciaController.text.isEmpty
+                                                ? null
+                                                : _licenciaController.text,
                                         telefono:
                                             _telefonoController.text.isEmpty
                                                 ? null
                                                 : _telefonoController.text,
-                                        password: _passwordController.text,
                                       );
                                       if (success && context.mounted) {
                                         ScaffoldMessenger.of(context)
@@ -246,7 +271,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'Error al registrar. Intente de nuevo.'),
+                                                'No se pudo registrar. El PIN podría estar en uso.'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );
@@ -254,7 +279,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE53935),
+                              backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

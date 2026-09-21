@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 
@@ -14,10 +15,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nombreController = TextEditingController();
   final _apellidoController = TextEditingController();
   final _ciController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _pinController = TextEditingController();
+  final _confirmPinController = TextEditingController();
   String _tipo = 'estudiante';
+  bool _obscurePin = true;
+  bool _obscureConfirmPin = true;
 
   @override
   void didChangeDependencies() {
@@ -35,7 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -44,8 +46,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -76,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const Icon(
                           Icons.person_add,
                           size: 60,
-                          color: Color(0xFF1E88E5),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -124,76 +126,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
                           decoration: InputDecoration(
-                            labelText: 'Cédula de Identidad',
+                            labelText: 'Nro. de Carnet (CI)',
                             prefixIcon: const Icon(Icons.badge),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su CI';
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Ingrese su número de carnet';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          controller: _pinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          obscureText: _obscurePin,
                           decoration: InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: const Icon(Icons.email),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Email inválido';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: 'Contraseña',
+                            labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscurePin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () =>
+                                  setState(() => _obscurePin = !_obscurePin),
+                            ),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
-                            }
-                            if (value.length < 6) {
-                              return 'Mínimo 6 caracteres';
+                            if (value == null || value.length != 4) {
+                              return 'El PIN debe tener 4 dígitos';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: true,
+                          controller: _confirmPinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          obscureText: _obscureConfirmPin,
                           decoration: InputDecoration(
-                            labelText: 'Confirmar Contraseña',
+                            labelText: 'Confirmar PIN',
                             prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscureConfirmPin
+                                  ? Icons.visibility_off
+                                  : Icons.visibility),
+                              tooltip: _obscureConfirmPin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () => setState(
+                                  () => _obscureConfirmPin = !_obscureConfirmPin),
+                            ),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value != _passwordController.text) {
-                              return 'Las contraseñas no coinciden';
+                            if (value != _pinController.text) {
+                              return 'Los PIN no coinciden';
                             }
                             return null;
                           },
@@ -211,9 +218,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           await authService.register(
                                         nombre: _nombreController.text,
                                         apellido: _apellidoController.text,
-                                        ci: _ciController.text,
-                                        email: _emailController.text,
-                                        password: _passwordController.text,
+                                        ci: _ciController.text.trim(),
+                                        pin: _pinController.text,
                                         tipo: _tipo,
                                       );
                                       if (success && context.mounted) {
@@ -227,7 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             .showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'Error al registrar. Intente de nuevo.'),
+                                                'No se pudo registrar. El PIN podría estar en uso.'),
                                             backgroundColor: Colors.red,
                                           ),
                                         );
@@ -235,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E88E5),
+                              backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

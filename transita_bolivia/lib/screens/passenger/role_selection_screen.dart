@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -12,16 +13,18 @@ class RoleSelectionScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFF1565C0),
+              AppColors.primary,
+              AppColors.primaryDark,
             ],
           ),
         ),
         child: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 const Icon(
                   Icons.directions_bus,
                   size: 100,
@@ -65,7 +68,50 @@ class RoleSelectionScreen extends StatelessWidget {
                     Navigator.pushNamed(context, '/driver/login');
                   },
                 ),
-              ],
+                const SizedBox(height: 16),
+                _buildRoleButton(
+                  context,
+                  icon: Icons.admin_panel_settings,
+                  title: 'Administración',
+                  subtitle: 'Panel con registros en tiempo real',
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/admin/login');
+                  },
+                ),
+                const SizedBox(height: 24),
+                _buildRequirementsButton(context),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequirementsButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.pushNamed(context, '/passenger/requirements');
+          },
+          icon: const Icon(Icons.assignment, color: Colors.white),
+          label: const Text(
+            'Requisitos para el registro',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.white, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ),
@@ -89,7 +135,7 @@ class RoleSelectionScreen extends StatelessWidget {
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1E88E5),
+            foregroundColor: AppColors.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),

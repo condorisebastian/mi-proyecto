@@ -1,4 +1,4 @@
-package com.transita.transita_bolivia
+package com.transita.bolivia
 
 import io.flutter.embedding.android.FlutterActivity
 

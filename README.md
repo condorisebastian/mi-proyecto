@@ -23,6 +23,8 @@ mi-proyecto/
 ## Configuración del backend
 
 1. Importar `database/transporte_db.sql` desde phpMyAdmin (crea la BD `proyecto_cobros` con datos de prueba).
+   - Si ya tenías la BD creada con el esquema anterior (sin PIN), importar en su
+     lugar `database/migration_pin.sql`, que agrega la columna `pin` sin borrar datos.
 2. Publicar la API en `htdocs` (junction recomendado, sirve directo desde el repo):
    ```
    mklink /J C:\xampp\htdocs\transporte_api <ruta-del-repo>\api
@@ -51,7 +53,7 @@ mi-proyecto/
 App unificada para pasajeros y conductores con selección de rol al iniciar:
 
 - **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, recarga, pago de viaje (QR/NFC), tarjeta, historial.
-- **Conductor**: login/registro por licencia, cobro de viajes (QR/NFC), resumen diario, historial.
+- **Conductor**: login/registro por PIN, cobro de viajes (QR/NFC), resumen diario, historial.
 
 Con Apache corriendo y la API publicada:
 
@@ -74,12 +76,39 @@ Si cambia la IP de la PC, actualizar el `defaultValue` en
 `transita_bolivia/lib/config.dart`, o compilar con
 `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 
+## Modo Firebase (opcional)
+
+Con `--dart-define=USE_FIREBASE=true` la app usa Cloud Firestore en lugar del
+backend PHP (login/registro por PIN, recargas, pagos, resumen diario):
+
+```
+cd transita_bolivia
+flutter run --dart-define=USE_FIREBASE=true
+```
+
+El acceso por PIN no usa Firebase Auth, por lo que las reglas de Firestore deben
+permitir el acceso cliente. Están versionadas y se despliegan desde
+`transita_bolivia/`:
+
+```
+firebase deploy --only firestore --project transita-bolivia
+```
+
+Archivos: `transita_bolivia/firestore.rules` y `firestore.indexes.json`. Para
+sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
+(requiere `GOOGLE_APPLICATION_CREDENTIALS`).
+
 ## Credenciales de prueba
 
-Todas las contraseñas de usuarios y conductores son `123456` (definidas en `database/transporte_db.sql`).
+El acceso es por **PIN único de 4 dígitos** (ya no se usa CI ni contraseña).
+Los PIN están en `database/transporte_db.sql` (backend PHP) y en Firestore
+(`usuarios`/`conductores`, campo `pin`) para el modo Firebase.
 
-- Pasajero de prueba (CI): `1234567`
-- Conductor de prueba (licencia): `LIC-12345`
+- Pasajero estudiante: `1234` (Sebastian)
+- Pasajero civil: `2345` (Maria) / `4567` (Ana)
+- Pasajero adulto mayor: `3456` (Pedro)
+- Conductor: `5678` (Juan) / `6789` (Carlos)
+- Administrador: `0000`
 
 ## Tests
 

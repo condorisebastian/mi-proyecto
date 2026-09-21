@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import 'charge_screen.dart';
 import 'history_screen.dart';
 import 'summary_screen.dart';
@@ -19,6 +23,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   bool _isCharging = false;
   final DriverApiService _apiService = DriverApiService();
   Map<String, dynamic> _dailySummary = {};
+  StreamSubscription<Map<String, dynamic>>? _summarySub;
 
   final GlobalKey<DriverHistoryScreenState> _historyKey =
       GlobalKey<DriverHistoryScreenState>();
@@ -28,7 +33,26 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDailySummary();
+    final authService = Provider.of<DriverAuthService>(context, listen: false);
+    if (AppConfig.useFirebase && authService.currentConductor != null) {
+      _summarySub = FirebaseService.instance
+          .dailySummaryStream(authService.currentConductor!.id)
+          .listen((summary) {
+        if (mounted) {
+          setState(() {
+            _dailySummary = summary;
+          });
+        }
+      }, onError: (_) {});
+    } else {
+      _loadDailySummary();
+    }
+  }
+
+  @override
+  void dispose() {
+    _summarySub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadDailySummary() async {
@@ -79,7 +103,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFE53935),
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -110,8 +134,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFE53935),
-            Color(0xFFF5F5F5),
+            AppColors.primary,
+            AppColors.background,
           ],
           stops: [0.0, 0.3],
         ),
@@ -143,9 +167,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                           color: Colors.white70,
                         ),
                       ),
+                      Text(
+                        'CI: ${conductor.ci.isEmpty ? '—' : conductor.ci}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                   IconButton(
+                    tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: () {
                       _confirmLogout(context, authService);
@@ -217,7 +249,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFE53935),
+                        color: AppColors.primary,
                       ),
                     ),
                     Text(
@@ -265,7 +297,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     _showQRCode(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -326,7 +358,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Widget _buildStatItem(String value, String label, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFFE53935), size: 20),
+        Icon(icon, color: AppColors.primary, size: 20),
         const SizedBox(height: 4),
         Text(
           value,
@@ -361,7 +393,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('SALIR'),
@@ -416,7 +448,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               Expanded(
                 child: Center(
                   child: QrImageView(
-                    data: 'CONDUCTOR:${conductor?.id}:${conductor?.licencia}',
+                    data: 'CONDUCTOR:${conductor?.id}',
                     version: QrVersions.auto,
                     size: 250,
                     backgroundColor: Colors.white,

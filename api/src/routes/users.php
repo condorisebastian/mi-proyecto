@@ -4,6 +4,14 @@
 function handle_users(string $method, array $seg): void
 {
     if ($method === 'GET' && isset($seg[1]) && ctype_digit($seg[1])) {
+        $cfg = require __DIR__ . '/../../config/database.php';
+        $payload = bearer_payload($cfg['jwt_secret']);
+
+        // Solo el propio pasajero puede consultar su perfil.
+        if (($payload['rol'] ?? '') === 'conductor' || (int)($payload['id'] ?? 0) !== (int)$seg[1]) {
+            json_out(['error' => 'No autorizado'], 401);
+        }
+
         $pdo = db();
         $st = $pdo->prepare(
             'SELECT u.id_usuario, u.nombre, u.apellido, p.ci, u.correo AS email,
@@ -25,7 +33,7 @@ function handle_users(string $method, array $seg): void
             'id'      => (int)$row['id_usuario'],
             'nombre'  => $row['nombre'],
             'apellido'=> $row['apellido'],
-            'ci'      => $row['ci'],
+            'ci'      => $row['ci'] ?? '',
             'email'   => $row['email'],
             'tipo'    => $row['tipo'],
             'puntos'  => (int)round((float)$row['saldo_actual']),

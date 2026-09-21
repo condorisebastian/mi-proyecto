@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import '../../models/transaction.dart';
 import 'recharge_screen.dart';
 import 'pay_trip_screen.dart';
@@ -57,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF1E88E5),
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -88,8 +91,8 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF1E88E5),
-            Color(0xFFF5F5F5),
+            AppColors.primary,
+            AppColors.background,
           ],
           stops: [0.0, 0.3],
         ),
@@ -114,9 +117,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.white,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                   IconButton(
+                    tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: () {
                       _confirmLogout(context, authService);
@@ -154,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E88E5),
+                        color: AppColors.primary,
                       ),
                     ),
                     Text(
@@ -181,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -227,9 +239,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
+                          foregroundColor: AppColors.primary,
                           side: const BorderSide(
-                            color: Color(0xFF1E88E5),
+                            color: AppColors.primary,
                             width: 2,
                           ),
                           shape: RoundedRectangleBorder(
@@ -256,9 +268,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
+                          foregroundColor: AppColors.primary,
                           side: const BorderSide(
-                            color: Color(0xFF1E88E5),
+                            color: AppColors.primary,
                             width: 2,
                           ),
                           shape: RoundedRectangleBorder(
@@ -280,8 +292,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              FutureBuilder<List<Transaction>>(
-                future: _apiService.getTransactionHistory(user.id),
+              StreamBuilder<List<Transaction>>(
+                stream: AppConfig.useFirebase
+                    ? FirebaseService.instance
+                        .transactionHistoryStream(user.id)
+                    : Stream.fromFuture(
+                        _apiService.getTransactionHistory(user.id)),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -395,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('SALIR'),
@@ -450,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Center(
                   child: QrImageView(
-                    data: 'PASAJERO:${user.id}:${user.ci}',
+                    data: 'PASAJERO:${user.id}',
                     version: QrVersions.auto,
                     size: 250,
                     backgroundColor: Colors.white,
@@ -473,6 +489,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       '${user.nombre} ${user.apellido}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 16),
