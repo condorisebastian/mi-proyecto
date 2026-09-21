@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/driver_auth_service.dart';
@@ -79,7 +80,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFFE53935),
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -110,8 +111,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFE53935),
-            Color(0xFFF5F5F5),
+            AppColors.primary,
+            AppColors.background,
           ],
           stops: [0.0, 0.3],
         ),
@@ -225,7 +226,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFE53935),
+                        color: AppColors.primary,
                       ),
                     ),
                     Text(
@@ -273,7 +274,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     _showQRCode(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -334,7 +335,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Widget _buildStatItem(String value, String label, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFFE53935), size: 20),
+        Icon(icon, color: AppColors.primary, size: 20),
         const SizedBox(height: 4),
         Text(
           value,
@@ -369,7 +370,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('SALIR'),

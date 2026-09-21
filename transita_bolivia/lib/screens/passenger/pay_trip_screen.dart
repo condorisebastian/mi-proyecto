@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -24,7 +25,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pagar Viaje'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -33,8 +34,8 @@ class _PayTripScreenState extends State<PayTripScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -69,7 +70,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                                     ? Icons.elderly
                                     : Icons.accessible,
                         size: 60,
-                        color: const Color(0xFF1E88E5),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -107,7 +108,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E88E5),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -128,7 +129,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                         child: ElevatedButton(
                           onPressed: _isProcessing ? null : _showQRScanner,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E88E5),
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -165,9 +166,9 @@ class _PayTripScreenState extends State<PayTripScreen> {
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF1E88E5),
+                            foregroundColor: AppColors.primary,
                             side: const BorderSide(
-                              color: Color(0xFF1E88E5),
+                              color: AppColors.primary,
                               width: 2,
                             ),
                             shape: RoundedRectangleBorder(
@@ -390,7 +391,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('PAGAR'),

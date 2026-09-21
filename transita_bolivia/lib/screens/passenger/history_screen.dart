@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
@@ -49,7 +50,7 @@ class HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -58,8 +59,8 @@ class HistoryScreenState extends State<HistoryScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.2],
           ),
@@ -77,20 +78,20 @@ class HistoryScreenState extends State<HistoryScreen> {
                       'Saldo Actual',
                       '${user?.puntos ?? 0} pts',
                       Icons.account_balance_wallet,
-                      const Color(0xFF1E88E5),
+                      AppColors.primary,
                     ),
                     _buildStatCard(
                       'Tipo',
                       user?.tipoDisplay ?? '',
                       Icons.person,
-                      const Color(0xFF4CAF50),
+                      AppColors.success,
                     ),
                   ],
                 ),
               ),
               Expanded(
                 child: RefreshIndicator(
-                  color: const Color(0xFF1E88E5),
+                  color: AppColors.primary,
                   onRefresh: _loadHistory,
                   child: _loading
                       ? const Center(child: CircularProgressIndicator())

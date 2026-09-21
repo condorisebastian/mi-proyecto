@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 
@@ -33,8 +34,8 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935),
-              Color(0xFFC62828),
+              AppColors.primary,
+              AppColors.primaryDark,
             ],
           ),
         ),
@@ -88,7 +89,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           const Icon(
                             Icons.person,
                             size: 60,
-                            color: Color(0xFFE53935),
+                            color: AppColors.primary,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -173,7 +174,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                     }
                                   },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE53935),
+                                backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -200,7 +201,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                             },
                             child: const Text(
                               '¿No tienes cuenta? Regístrate',
-                              style: TextStyle(color: Color(0xFFE53935)),
+                              style: TextStyle(color: AppColors.primary),
                             ),
                           ),
                         ],

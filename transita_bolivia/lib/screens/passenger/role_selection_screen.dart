@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -12,8 +13,8 @@ class RoleSelectionScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFF1565C0),
+              AppColors.primary,
+              AppColors.primaryDark,
             ],
           ),
         ),
@@ -121,7 +122,7 @@ class RoleSelectionScreen extends StatelessWidget {
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1E88E5),
+            foregroundColor: AppColors.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),

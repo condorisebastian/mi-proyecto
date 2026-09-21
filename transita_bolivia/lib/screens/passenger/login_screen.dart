@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 
@@ -39,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Iniciar Sesión'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -48,8 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -86,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ? Icons.elderly
                                       : Icons.accessible,
                           size: 60,
-                          color: const Color(0xFF1E88E5),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -101,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           _tipo.toUpperCase(),
                           style: const TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF1E88E5),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -180,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E88E5),
+                              backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -207,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: const Text(
                             '¿No tienes cuenta? Regístrate',
-                            style: TextStyle(color: Color(0xFF1E88E5)),
+                            style: TextStyle(color: AppColors.primary),
                           ),
                         ),
                       ],

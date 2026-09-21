@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:ndef/ndef.dart';
@@ -32,7 +33,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cobrar'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -41,8 +42,8 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -95,12 +96,12 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                                     vertical: 12, horizontal: 4),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFFE53935)
+                                      ? AppColors.primary
                                       : Colors.grey[50],
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFFE53935)
+                                        ? AppColors.primary
                                         : Colors.grey[300]!,
                                     width: 2,
                                   ),
@@ -126,7 +127,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                                         fontWeight: FontWeight.bold,
                                         color: isSelected
                                             ? Colors.white70
-                                            : const Color(0xFFE53935),
+                                            : AppColors.primary,
                                       ),
                                     ),
                                   ],
@@ -142,7 +143,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFE53935),
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -259,12 +260,12 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: const Color(0xFFE53935),
+                color: AppColors.primary,
                 size: 30,
               ),
             ),
@@ -556,7 +557,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+              backgroundColor: AppColors.success,
               foregroundColor: Colors.white,
             ),
             child: const Text('COBRAR'),

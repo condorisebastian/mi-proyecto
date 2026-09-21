@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
@@ -42,7 +43,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Resumen del Día'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -51,15 +52,15 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
         ),
         child: SafeArea(
           child: RefreshIndicator(
-            color: const Color(0xFFE53935),
+            color: AppColors.primary,
             onRefresh: _loadSummary,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -114,8 +115,8 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Color(0xFFE53935),
-                                Color(0xFFC62828),
+                                AppColors.primary,
+                                AppColors.primaryDark,
                               ],
                             ),
                             borderRadius: BorderRadius.circular(16),
@@ -183,9 +184,9 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                             icon: const Icon(Icons.share),
                             label: const Text('COMPARTIR RESUMEN'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFE53935),
+                              foregroundColor: AppColors.primary,
                               side: const BorderSide(
-                                color: Color(0xFFE53935),
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -211,7 +212,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFE53935), size: 24),
+          Icon(icon, color: AppColors.primary, size: 24),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
@@ -227,7 +228,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFE53935),
+              color: AppColors.primary,
             ),
           ),
         ],
@@ -239,7 +240,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Función de compartir en desarrollo'),
-        backgroundColor: Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
@@ -39,7 +40,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial del Día'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -48,8 +49,8 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.2],
           ),
@@ -71,7 +72,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
               ),
               Expanded(
                 child: RefreshIndicator(
-                  color: const Color(0xFFE53935),
+                  color: AppColors.primary,
                   onRefresh: _loadHistory,
                   child: _history.isEmpty
                       ? LayoutBuilder(

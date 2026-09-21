@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RequirementsScreen extends StatelessWidget {
@@ -30,7 +31,7 @@ class RequirementsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Requisitos para el registro'),
-        backgroundColor: const Color(0xFF1565C0),
+        backgroundColor: AppColors.primaryDark,
         foregroundColor: Colors.white,
       ),
       bottomNavigationBar:
@@ -167,7 +168,7 @@ class RequirementsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1565C0),
+              backgroundColor: AppColors.primaryDark,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -183,14 +184,14 @@ class RequirementsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
+        color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF90CAF9)),
+        border: Border.all(color: AppColors.primaryBorder),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.assignment_ind, color: Color(0xFF1565C0)),
+          Icon(Icons.assignment_ind, color: AppColors.primaryDark),
           SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -241,7 +242,7 @@ class RequirementsScreen extends StatelessWidget {
                 icon: const Icon(Icons.map),
                 label: const Text('Abrir ubicación en Google Maps'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E88E5),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -268,7 +269,7 @@ class RequirementsScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF1565C0)),
+                Icon(icon, color: AppColors.primaryDark),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

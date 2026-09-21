@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 
@@ -13,7 +14,7 @@ class CardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Tarjeta NFC'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -22,8 +23,8 @@ class CardScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -41,14 +42,14 @@ class CardScreen extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFF1E88E5),
-                        Color(0xFF1565C0),
+                        AppColors.primary,
+                        AppColors.primaryDark,
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1E88E5).withValues(alpha: 0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -258,7 +259,7 @@ class CardScreen extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E88E5),
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -279,7 +280,7 @@ class CardScreen extends StatelessWidget {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E88E5),
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(15),
           ),
           child: Center(
@@ -293,7 +294,7 @@ class CardScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Icon(icon, color: const Color(0xFF1E88E5), size: 20),
+        Icon(icon, color: AppColors.primary, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

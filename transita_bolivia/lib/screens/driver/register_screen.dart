@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 
@@ -40,7 +41,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro Conductor'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -49,8 +50,8 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.3],
           ),
@@ -81,7 +82,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                         const Icon(
                           Icons.directions_bus,
                           size: 60,
-                          color: Color(0xFFE53935),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -278,7 +279,7 @@ class _DriverRegisterScreenState extends State<DriverRegisterScreen> {
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE53935),
+                              backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),

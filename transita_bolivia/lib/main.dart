@@ -7,6 +7,7 @@ import 'services/api_service.dart';
 import 'services/driver_auth_service.dart';
 import 'services/driver_api_service.dart';
 import 'config.dart';
+import 'theme.dart';
 import 'firebase_options.dart';
 import 'screens/passenger/role_selection_screen.dart';
 import 'screens/passenger/requirements_screen.dart';
@@ -71,13 +72,7 @@ class TransitaBoliviaApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Transita Bolivia',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1E88E5),
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-        ),
+        theme: buildAppTheme(),
         initialRoute: auth.isLoggedIn
             ? '/passenger/home'
             : driverAuth.isLoggedIn

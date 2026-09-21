@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
@@ -57,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF1E88E5),
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -88,8 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF1E88E5),
-            Color(0xFFF5F5F5),
+            AppColors.primary,
+            AppColors.background,
           ],
           stops: [0.0, 0.3],
         ),
@@ -163,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E88E5),
+                        color: AppColors.primary,
                       ),
                     ),
                     Text(
@@ -190,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -236,9 +237,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
+                          foregroundColor: AppColors.primary,
                           side: const BorderSide(
-                            color: Color(0xFF1E88E5),
+                            color: AppColors.primary,
                             width: 2,
                           ),
                           shape: RoundedRectangleBorder(
@@ -265,9 +266,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
+                          foregroundColor: AppColors.primary,
                           side: const BorderSide(
-                            color: Color(0xFF1E88E5),
+                            color: AppColors.primary,
                             width: 2,
                           ),
                           shape: RoundedRectangleBorder(
@@ -404,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('SALIR'),
