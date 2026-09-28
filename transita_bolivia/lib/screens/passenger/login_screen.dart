@@ -101,35 +101,50 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                         const SizedBox(height: 16),
-                        GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 1.6,
-                          children: [
-                            _buildProfileTile(
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
                               value: 'estudiante',
-                              icon: Icons.school,
-                              label: 'Estudiante',
+                              icon: Icon(Icons.school, size: 18),
+                              label: Text(
+                                'Estudiante',
+                                style: TextStyle(fontSize: 10),
+                              ),
                             ),
-                            _buildProfileTile(
+                            ButtonSegment(
                               value: 'civil',
-                              icon: Icons.person,
-                              label: 'Ciudadano',
+                              icon: Icon(Icons.person, size: 18),
+                              label: Text(
+                                'Ciudadano',
+                                style: TextStyle(fontSize: 10),
+                              ),
                             ),
-                            _buildProfileTile(
+                            ButtonSegment(
                               value: 'adulto_mayor',
-                              icon: Icons.elderly,
-                              label: 'Adulto mayor',
+                              icon: Icon(Icons.elderly, size: 18),
+                              label: Text(
+                                'Adulto mayor',
+                                style: TextStyle(fontSize: 10),
+                              ),
                             ),
-                            _buildProfileTile(
+                            ButtonSegment(
                               value: 'discapacitado',
-                              icon: Icons.accessible,
-                              label: 'Con discapacidad',
+                              icon: Icon(Icons.accessible, size: 18),
+                              label: Text(
+                                'Con discapacidad',
+                                style: TextStyle(fontSize: 10),
+                              ),
                             ),
                           ],
+                          selected: {_tipo},
+                          showSelectedIcon: false,
+                          multiSelectionEnabled: false,
+                          onSelectionChanged: (selection) {
+                            setState(() => _tipo = selection.first);
+                          },
+                          style: const ButtonStyle(
+                            visualDensity: VisualDensity(horizontal: -3),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         TextFormField(
@@ -261,49 +276,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileTile({
-    required String value,
-    required IconData icon,
-    required String label,
-  }) {
-    final isSelected = _tipo == value;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _tipo = value);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 26,
-              color: isSelected ? Colors.white : AppColors.primary,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : Colors.grey[700],
-              ),
-            ),
-          ],
         ),
       ),
     );
