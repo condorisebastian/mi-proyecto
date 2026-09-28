@@ -13,20 +13,29 @@ service cloud.firestore {
     match /usuarios/{id} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      // Solo se permite actualizar el saldo de puntos (no otros campos).
+      // El centro de atención (call center) actualiza saldo, estado,
+      // tipo y PIN; la app solo modifica el saldo de puntos.
       allow update: if request.auth != null
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['puntos']);
+               .hasOnly(['puntos', 'estado', 'tipo', 'pin']);
       allow delete: if false;
     }
     match /conductores/{id} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update, delete: if false;
+      // El call center habilita/deshabilita y resetea el PIN del conductor.
+      allow update: if request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['estado', 'pin']);
+      allow delete: if false;
     }
     match /transacciones/{id} {
       allow read, create: if request.auth != null;
       allow update, delete: if false;
+    }
+    match /incidencias/{id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if false;
     }
   }
 }

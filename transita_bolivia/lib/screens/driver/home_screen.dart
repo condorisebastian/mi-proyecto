@@ -10,6 +10,7 @@ import '../../config.dart';
 import 'charge_screen.dart';
 import 'history_screen.dart';
 import 'summary_screen.dart';
+import '../soporte/support_screen.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -344,6 +345,40 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SupportScreen(
+                          canal: 'conductor',
+                          id: conductor.id,
+                          nombre:
+                              '${conductor.nombre} ${conductor.apellido}',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent),
+                  label: const Text(
+                    'AYUDA / SOPORTE',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    side: BorderSide(
+                      color: AppColors.primaryDark.withValues(alpha: 0.5),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),

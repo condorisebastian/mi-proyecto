@@ -11,6 +11,7 @@ import 'recharge_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
 import 'card_screen.dart';
+import '../soporte/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -281,6 +282,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SupportScreen(
+                          canal: 'pasajero',
+                          id: user.id,
+                          nombre: '${user.nombre} ${user.apellido}',
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent),
+                  label: const Text(
+                    'AYUDA / SOPORTE',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    side: BorderSide(
+                      color: AppColors.primaryDark.withValues(alpha: 0.5),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(

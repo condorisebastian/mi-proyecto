@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart' as app;
 import '../models/transaction.dart' as app_tx;
@@ -19,6 +20,7 @@ class FirebaseService {
   static const String _usersCollection = 'usuarios';
   static const String _conductoresCollection = 'conductores';
   static const String _transaccionesCollection = 'transacciones';
+  static const String _incidenciasCollection = 'incidencias';
 
   FirebaseFirestore get _db => FirebaseFirestore.instance;
 
@@ -65,6 +67,7 @@ class FirebaseService {
     if (snap.docs.isEmpty) return null;
     final user = _userFromMap(snap.docs.first.data());
     if (user.tipo != tipo) return null;
+    if (user.estado != 'activo') return null;
     if (ci.isNotEmpty && user.ci.isNotEmpty && user.ci != ci) return null;
     return user;
   }
@@ -81,6 +84,7 @@ class FirebaseService {
     if (ci.isNotEmpty && conductor.ci.isNotEmpty && conductor.ci != ci) {
       return null;
     }
+    if (conductor.estado != 'activo') return null;
     return conductor;
   }
 
@@ -606,6 +610,178 @@ class FirebaseService {
         .limit(100)
         .snapshots()
         .map((qs) => qs.docs.map((d) => d.data()).toList());
+  }
+
+  // =====================================================================
+  // CENTRO DE ATENCIÓN (call center: incidencias + gestión de clientes)
+  // =====================================================================
+
+  /// Reporta una incidencia desde la app (pasajero o conductor).
+  Future<({bool ok, String message})> reportarIncidencia({
+    required String canal,
+    required String reportanteClave,
+    required String nombre,
+    required String tipo,
+    required String descripcion,
+    String prioridad = 'media',
+  }) async {
+    try {
+      await _db.collection(_incidenciasCollection).add({
+        'canal': canal,
+        'reportante_clave': reportanteClave,
+        'nombre': nombre,
+        'tipo': tipo,
+        'descripcion': descripcion,
+        'prioridad': prioridad,
+        'estado': 'nueva',
+        'respuesta': '',
+        'notas': <Map<String, dynamic>>[],
+        'acciones': <Map<String, dynamic>>[],
+        'fecha_creacion': DateTime.now().toUtc(),
+        'fecha_resolucion': null,
+      });
+      return (ok: true, message: 'Incidencia enviada al centro de atención');
+    } catch (_) {
+      return (ok: false, message: 'No se pudo enviar la incidencia');
+    }
+  }
+
+  /// Cola de incidencias en vivo (todas, para el panel admin).
+  Stream<List<Map<String, dynamic>>> incidenciasStream() {
+    return _db
+        .collection(_incidenciasCollection)
+        .orderBy('fecha_creacion', descending: true)
+        .limit(200)
+        .snapshots()
+        .map((qs) => qs.docs
+            .map((d) => {'docId': d.id, ...d.data()})
+            .toList());
+  }
+
+  /// Incidencias del usuario (pasajero o conductor) en vivo.
+  Stream<List<Map<String, dynamic>>> incidenciasDeUsuarioStream(
+      String reportanteClave) {
+    return _db
+        .collection(_incidenciasCollection)
+        .where('reportante_clave', isEqualTo: reportanteClave)
+        .orderBy('fecha_creacion', descending: true)
+        .snapshots()
+        .map((qs) => qs.docs
+            .map((d) => {'docId': d.id, ...d.data()})
+            .toList());
+  }
+
+  /// Actualiza campos de una incidencia (estado, respuesta, notas, acciones).
+  Future<void> actualizarIncidencia(
+      String docId, Map<String, dynamic> cambios) {
+    return _db.collection(_incidenciasCollection).doc(docId).update(cambios);
+  }
+
+  /// Busca clientes (pasajero o conductor) por CI, PIN o nombre/apellido.
+  Future<List<Map<String, dynamic>>> buscarClientes(String q) async {
+    final out = <Map<String, dynamic>>[];
+    if (q.trim().isEmpty) return out;
+    final qq = q.trim();
+    final numerico = int.tryParse(qq) != null;
+    for (final col in [_usersCollection, _conductoresCollection]) {
+      if (numerico) {
+        for (final campo in ['ci', 'pin']) {
+          await _appendMatches(_db.collection(col).where(campo, isEqualTo: qq),
+              col == _usersCollection, out);
+        }
+      } else {
+        for (final campo in ['nombre', 'apellido']) {
+          await _appendMatches(_db.collection(col).where(campo, isEqualTo: qq),
+              col == _usersCollection, out);
+        }
+      }
+    }
+    return out;
+  }
+
+  Future<void> _appendMatches(Query q, bool esUsuario, List<Map<String, dynamic>> out) async {
+    try {
+      final snap = await q.limit(20).get();
+      for (final d in snap.docs) {
+        final raw = d.data();
+        final data =
+            Map<String, dynamic>.from(raw is Map ? raw : const {});
+        final m = {
+          'docId': d.id,
+          ...data,
+          'canal': esUsuario ? 'pasajero' : 'conductor'
+        };
+        if (!out.any((e) => e['docId'] == d.id)) out.add(m);
+      }
+    } catch (_) {
+      // Sin permiso se ignora y sigue la búsqueda.
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchClienteDoc(bool esUsuario, int id) async {
+    try {
+      final col = esUsuario ? _usersCollection : _conductoresCollection;
+      final doc = await _db.collection(col).doc('${esUsuario ? 'u' : 'c'}-$id').get();
+      if (!doc.exists) return null;
+      return {'docId': doc.id, ...doc.data()!,
+          'canal': esUsuario ? 'pasajero' : 'conductor'};
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<({bool ok, String message})> setUsuarioEstado(
+      int userId, String estado) async {
+    try {
+      await _db.collection(_usersCollection).doc('u-$userId').update({'estado': estado});
+      return (ok: true, message: 'Estado actualizado');
+    } catch (_) {
+      return (ok: false, message: 'No se pudo actualizar');
+    }
+  }
+
+  Future<({bool ok, String message})> setConductorEstado(
+      int id, String estado) async {
+    try {
+      await _db.collection(_conductoresCollection).doc('c-$id').update({'estado': estado});
+      return (ok: true, message: 'Estado actualizado');
+    } catch (_) {
+      return (ok: false, message: 'No se pudo actualizar');
+    }
+  }
+
+  Future<({bool ok, String message})> cambiarTipoUsuario(
+      int userId, String tipo) async {
+    try {
+      await _db.collection(_usersCollection).doc('u-$userId').update({'tipo': tipo});
+      return (ok: true, message: 'Tipo actualizado');
+    } catch (_) {
+      return (ok: false, message: 'No se pudo actualizar el tipo');
+    }
+  }
+
+  Future<String?> regenerarPinUsuario(int userId) async {
+    return _regenerarPin(_usersCollection, 'u-$userId');
+  }
+
+  Future<String?> regenerarPinConductor(int id) async {
+    return _regenerarPin(_conductoresCollection, 'c-$id');
+  }
+
+  Future<String?> _regenerarPin(String collection, String docId) async {
+    try {
+      final rng = math.Random();
+      for (var i = 0; i < 6; i++) {
+        final pin = (1000 + rng.nextInt(9000)).toString();
+        if (pin == '0000') continue;
+        if (await _pinEnUso(pin)) continue;
+        await _db.collection(collection).doc(docId).update({'pin': pin});
+        return pin;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // =====================================================================
