@@ -12,29 +12,41 @@ class AdminAuthService extends ChangeNotifier {
 
   User? _current;
   bool _isLoading = false;
+  String? _lastLoginError;
 
   User? get currentAdmin => _current;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _current != null;
+  String? get lastLoginError => _lastLoginError;
 
   Future<bool> login(String pin) async {
     _isLoading = true;
     notifyListeners();
 
     if (!AppConfig.useFirebase) {
+      _lastLoginError = 'El panel admin requiere modo Firebase';
       _isLoading = false;
       notifyListeners();
       return false;
     }
 
-    final user = await FirebaseService.instance.loginAdmin(pin);
-    if (user != null) {
-      _current = user;
-      await _saveSession();
+    try {
+      final result = await FirebaseService.instance.loginAdmin(pin);
+      _lastLoginError = result.error;
+      final user = result.user;
+      if (user != null) {
+        _current = user;
+        await _saveSession();
+      }
+      _isLoading = false;
+      notifyListeners();
+      return _current != null;
+    } on Exception {
+      _lastLoginError = 'Error al conectar con el servidor. Reintenta.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-    _isLoading = false;
-    notifyListeners();
-    return _current != null;
   }
 
   Future<void> restoreSession() async {

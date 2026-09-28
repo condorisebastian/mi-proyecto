@@ -14,27 +14,38 @@ class DriverAuthService extends ChangeNotifier {
   Conductor? _currentConductor;
   bool _isLoading = false;
   String? _token;
+  String? _lastLoginError;
 
   Conductor? get currentConductor => _currentConductor;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentConductor != null;
   String? get token => _token;
+  String? get lastLoginError => _lastLoginError;
 
   Future<bool> login(String pin, {String ci = ''}) async {
     _isLoading = true;
     notifyListeners();
 
     if (AppConfig.useFirebase) {
-      final conductor =
-          await FirebaseService.instance.loginConductor(pin, ci: ci);
-      if (conductor != null) {
-        _currentConductor = conductor;
-        _token = 'firebase';
-        await _saveSession();
+      try {
+        final result =
+            await FirebaseService.instance.loginConductor(pin, ci: ci);
+        _lastLoginError = result.error;
+        final conductor = result.conductor;
+        if (conductor != null) {
+          _currentConductor = conductor;
+          _token = 'firebase';
+          await _saveSession();
+        }
+        _isLoading = false;
+        notifyListeners();
+        return conductor != null;
+      } on Exception {
+        _lastLoginError = 'Error al conectar con el servidor. Reintenta.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
       }
-      _isLoading = false;
-      notifyListeners();
-      return conductor != null;
     }
 
     try {

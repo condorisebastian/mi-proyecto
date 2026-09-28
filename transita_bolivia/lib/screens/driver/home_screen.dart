@@ -162,7 +162,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                         ),
                       ),
                       Text(
-                        'Licencia: ${conductor.licencia}',
+                        'ID: #${conductor.id}  ·  Licencia: ${conductor.licencia}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white70,

@@ -9,6 +9,14 @@
       ]
     },
     {
+      "collectionGroup": "usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pin", "order": "ASCENDING" },
+        { "fieldPath": "rol", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "transacciones",
       "queryScope": "COLLECTION",
       "fields": [

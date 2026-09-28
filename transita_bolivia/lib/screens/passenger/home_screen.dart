@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                        'ID: #${user.id}  ·  CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
                         style: const TextStyle(
                           fontSize: 13,
                           color: Colors.white70,

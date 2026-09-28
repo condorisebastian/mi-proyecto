@@ -15,12 +15,14 @@ class AuthService extends ChangeNotifier {
   User? _currentUser;
   bool _isLoading = false;
   String? _token;
+  String? _lastLoginError;
   StreamSubscription<User?>? _liveSub;
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
   String? get token => _token;
+  String? get lastLoginError => _lastLoginError;
 
   /// Suscribe el saldo del pasajero en vivo (solo modo Firebase): cada cambio
   /// de puntos en Firestore (recarga, pago) se refleja sin recargar la app.
@@ -83,15 +85,21 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<bool> _loginFirebase(String pin, String tipo, {String ci = ''}) async {
-    final user = await FirebaseService.instance
-        .loginPasajero(pin, tipo, ci: ci);
-    if (user == null) return false;
-    if (user.tipo != tipo) return false;
-    _currentUser = user;
-    _token = 'firebase';
-    await _saveSession();
-    _subscribeLive(user.id);
-    return true;
+    try {
+      final result = await FirebaseService.instance
+          .loginPasajero(pin, tipo, ci: ci);
+      _lastLoginError = result.error;
+      final user = result.user;
+      if (user == null) return false;
+      _currentUser = user;
+      _token = 'firebase';
+      await _saveSession();
+      _subscribeLive(user.id);
+      return true;
+    } on Exception {
+      _lastLoginError = 'Error al conectar con el servidor. Reintenta.';
+      return false;
+    }
   }
 
   Future<bool> register({

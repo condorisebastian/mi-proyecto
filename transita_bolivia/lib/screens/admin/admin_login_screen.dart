@@ -40,12 +40,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     if (ok) {
       Navigator.pushReplacementNamed(context, '/admin/home');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PIN incorrecto'),
-          backgroundColor: AppColors.primary,
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              auth.lastLoginError ?? 'PIN incorrecto',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 

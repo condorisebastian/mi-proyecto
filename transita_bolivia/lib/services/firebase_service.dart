@@ -55,37 +55,121 @@ class FirebaseService {
   }
 
   /// Autentica a un pasajero por su PIN único + tipo (el CI es opcional;
-  /// si se ingresa, debe coincidir con el de la cuenta).
-  Future<app.User?> loginPasajero(String pin, String tipo,
+  /// si se ingresa, debe coincidir con el de la cuenta). Devuelve un motivo
+  /// claro en `error` para mostrarlo en pantalla.
+  Future<({app.User? user, String? error})> loginPasajero(String pin, String tipo,
       {String ci = ''}) async {
-    final snap = await _db
-        .collection(_usersCollection)
-        .where('pin', isEqualTo: pin)
-        .where('rol', isEqualTo: 'PASAJERO')
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    final user = _userFromMap(snap.docs.first.data());
-    if (user.tipo != tipo) return null;
-    if (user.estado != 'activo') return null;
-    if (ci.isNotEmpty && user.ci.isNotEmpty && user.ci != ci) return null;
-    return user;
+    try {
+      final snap = await _db
+          .collection(_usersCollection)
+          .where('pin', isEqualTo: pin)
+          .where('rol', isEqualTo: 'PASAJERO')
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) {
+        return (user: null, error: 'El PIN $pin no existe. Usa tu PIN de 4 dígitos o regístrate.');
+      }
+      final user = _userFromMap(snap.docs.first.data());
+      if (user.tipo != tipo) {
+        return (user: null, error: 'Tu cuenta es de tipo "${_tipoLabel(user.tipo)}" y estás ingresando como "${_tipoLabel(tipo)}". Elige el perfil correcto.');
+      }
+      if (user.estado != 'activo') {
+        return (user: null, error: 'Tu cuenta está bloqueada. Contacta al centro de atención.');
+      }
+      if (ci.isNotEmpty && user.ci.isNotEmpty && user.ci != ci) {
+        return (user: null, error: 'El carnet (CI) no coincide con el PIN.');
+      }
+      return (user: user, error: null);
+    } catch (e) {
+      return (user: null, error: 'Error al conectar con el servidor. Reintenta en unos segundos.');
+    }
   }
 
   /// Autentica a un conductor por su PIN único (CI opcional).
-  Future<Conductor?> loginConductor(String pin, {String ci = ''}) async {
-    final snap = await _db
-        .collection(_conductoresCollection)
-        .where('pin', isEqualTo: pin)
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    final conductor = _conductorFromMap(snap.docs.first.data());
-    if (ci.isNotEmpty && conductor.ci.isNotEmpty && conductor.ci != ci) {
-      return null;
+  Future<({Conductor? conductor, String? error})> loginConductor(
+      String pin,
+      {String ci = ''}) async {
+    try {
+      final snap = await _db
+          .collection(_conductoresCollection)
+          .where('pin', isEqualTo: pin)
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) {
+        return (conductor: null, error: 'El PIN $pin no existe. Revisa tu PIN o regístrate.');
+      }
+      final conductor = _conductorFromMap(snap.docs.first.data());
+      if (ci.isNotEmpty && conductor.ci.isNotEmpty && conductor.ci != ci) {
+        return (conductor: null, error: 'El carnet (CI) no coincide con el PIN.');
+      }
+      if (conductor.estado != 'activo') {
+        return (conductor: null, error: 'Tu cuenta está bloqueada. Contacta al centro de atención.');
+      }
+      return (conductor: conductor, error: null);
+    } catch (e) {
+      return (conductor: null, error: 'Error al conectar con el servidor. Reintenta en unos segundos.');
     }
-    if (conductor.estado != 'activo') return null;
-    return conductor;
+  }
+
+  /// Crea los usuarios y conductores de prueba (PINs del seed de MySQL) en
+  /// Firestore si aún no existen. Así el login por PIN funciona de inmediato.
+  Future<void> seedTestData() async {
+    try {
+      final usuarios = [
+        {'nombre': 'Sebastian', 'apellido': 'Condori', 'ci': '1234567', 'pin': '1234', 'tipo': 'estudiante'},
+        {'nombre': 'Maria', 'apellido': 'Garcia', 'ci': '7654321', 'pin': '2345', 'tipo': 'civil'},
+        {'nombre': 'Pedro', 'apellido': 'Flores', 'ci': '1122334', 'pin': '3456', 'tipo': 'adulto_mayor'},
+        {'nombre': 'Ana', 'apellido': 'Vargas', 'ci': '2222222', 'pin': '4567', 'tipo': 'civil'},
+      ];
+      for (final u in usuarios) {
+        final exists = await _db
+            .collection(_usersCollection)
+            .where('pin', isEqualTo: u['pin'])
+            .limit(1)
+            .get();
+        if (exists.docs.isNotEmpty) continue;
+        final id = await _nextId(_usersCollection);
+        await _db.collection(_usersCollection).doc('u-$id').set({
+          'id': id,
+          'nombre': u['nombre'],
+          'apellido': u['apellido'],
+          'ci': u['ci'],
+          'email': '',
+          'pin': u['pin'],
+          'tipo': u['tipo'],
+          'puntos': 0,
+          'estado': 'activo',
+          'rol': 'PASAJERO',
+        });
+      }
+
+      final conductores = [
+        {'nombre': 'Juan', 'apellido': 'Perez', 'ci': '9876543', 'pin': '5678', 'licencia': 'LIC-12345'},
+        {'nombre': 'Carlos', 'apellido': 'Rojas', 'ci': '1010101', 'pin': '6789', 'licencia': 'LIC-67890'},
+      ];
+      for (final c in conductores) {
+        final exists = await _db
+            .collection(_conductoresCollection)
+            .where('pin', isEqualTo: c['pin'])
+            .limit(1)
+            .get();
+        if (exists.docs.isNotEmpty) continue;
+        final id = await _nextId(_conductoresCollection);
+        await _db.collection(_conductoresCollection).doc('c-$id').set({
+          'id': id,
+          'nombre': c['nombre'],
+          'apellido': c['apellido'],
+          'ci': c['ci'],
+          'pin': c['pin'],
+          'licencia': c['licencia'],
+          'telefono': '',
+          'estado': 'activo',
+          'usuario_id': null,
+        });
+      }
+    } catch (_) {
+      // Sin acceso no se interrumpe el arranque de la app.
+    }
   }
 
   /// Registra un pasajero en Firestore con PIN único.
@@ -571,20 +655,30 @@ class FirebaseService {
   }
 
   /// Autentica al administrador por su PIN.
-  Future<app.User?> loginAdmin(String pin) async {
-    final snap = await _db
-        .collection(_usersCollection)
-        .where('rol', isEqualTo: 'ADMIN')
-        .where('pin', isEqualTo: pin)
-        .limit(1)
-        .get();
-    if (snap.docs.isEmpty) return null;
-    return _userFromMap(snap.docs.first.data());
+  Future<({app.User? user, String? error})> loginAdmin(String pin) async {
+    try {
+      final snap = await _db
+          .collection(_usersCollection)
+          .where('rol', isEqualTo: 'ADMIN')
+          .where('pin', isEqualTo: pin)
+          .limit(1)
+          .get();
+      if (snap.docs.isEmpty) {
+        return (user: null, error: 'PIN de administrador incorrecto.');
+      }
+      return (user: _userFromMap(snap.docs.first.data()), error: null);
+    } catch (e) {
+      return (user: null, error: 'Error al conectar con el servidor. Reintenta en unos segundos.');
+    }
   }
 
-  /// Todos los usuarios en vivo (para el panel admin).
+  /// Pasajeros en vivo (para el panel admin).
   Stream<List<Map<String, dynamic>>> adminUsuariosStream() {
-    return _db.collection(_usersCollection).snapshots().map((qs) {
+    return _db
+        .collection(_usersCollection)
+        .where('rol', isEqualTo: 'PASAJERO')
+        .snapshots()
+        .map((qs) {
       final list = qs.docs.map((d) => d.data()).toList();
       list.sort((a, b) => ((b['id'] as num?)?.toInt() ?? 0)
           .compareTo((a['id'] as num?)?.toInt() ?? 0));
@@ -810,6 +904,14 @@ class FirebaseService {
       estado: m['estado'] as String,
     );
   }
+
+  String _tipoLabel(String t) => switch (t) {
+        'estudiante' => 'Estudiante',
+        'civil' => 'Ciudadano',
+        'adulto_mayor' => 'Adulto mayor',
+        'discapacitado' => 'Discapacitado',
+        _ => t,
+      };
 
   app_tx.Transaction _transactionFromMap(Map<String, dynamic> m) {
     return app_tx.Transaction(

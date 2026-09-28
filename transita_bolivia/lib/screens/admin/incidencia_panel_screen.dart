@@ -391,6 +391,7 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
     final c = _cliente!;
     final estado = (c['estado'] as String?) ?? 'activo';
     final activo = estado == 'activo';
+    final idCliente = (c['id'] as num?)?.toInt() ?? 0;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -427,6 +428,7 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
               ],
             ),
             const SizedBox(height: 10),
+            _fila('ID', idCliente > 0 ? '#$idCliente' : '—'),
             _fila('Canal', _esConductor ? 'Conductor' : 'Pasajero'),
             _fila('CI', (c['ci'] as String? ?? '').isEmpty ? '—' : c['ci']),
             if (!_esConductor) ...[

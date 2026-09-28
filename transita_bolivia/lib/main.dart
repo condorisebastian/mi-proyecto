@@ -32,8 +32,10 @@ Future<void> _ensureFirebaseIdentity() async {
     if (FirebaseAuth.instance.currentUser == null) {
       await FirebaseAuth.instance.signInAnonymously();
     }
-  } catch (_) {
-    // Sin identidad anónima la app sigue leyendo si las reglas lo permiten.
+  } catch (e) {
+    // El proyecto puede tener el proveedor Anonymous deshabilitado; entonces
+    // las reglas no lo exigen. El login PIN funciona igual.
+    debugPrint('Alerta: signInAnonymously no disponible ($e)');
   }
 }
 
@@ -47,6 +49,7 @@ void main() async {
 
   if (AppConfig.useFirebase) {
     await fb.FirebaseService.instance.ensureAdminUser();
+    await fb.FirebaseService.instance.seedTestData();
   }
 
   final auth = AuthService();

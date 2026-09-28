@@ -1,40 +1,43 @@
 rules_version = '2';
 
-// Acceso por PIN sin Firebase Auth. La app crea una identidad anonima
-// (signInAnonymously) al iniciar, por lo que las reglas exigen
-// `request.auth != null`: sin la app/proyecto no hay acceso.
+// Acceso por PIN sin Firebase Auth. El proveedor Anonymous Auth del proyecto
+// está DESHABILITADO, así que las reglas NO pueden exigir `request.auth != null`
+// (bloquearía toda la app). Acceso de lectura/creación abierto para la demo,
+// con protección en lo importante:
+//   - update: SOLO permite tocar los campos permitidos por operación.
+//   - delete: prohibido siempre.
+//   - create en `usuarios`: prohibe crear cuentas de rol ADMIN desde el cliente.
 //
-// El modelo de "puntos" requiere que la app lea, cree y (solo en `usuarios`)
-// actualice el campo `puntos` del pasajero autenticado por PIN.
-// Si se requiere seguridad real (duena unica de cada documento), migrar a
-// Firebase Auth (correo/fono) y atar cada documento a su `uid`.
+// Nota: si se habilita Anonymous Auth (consola Firebase -> Authentication ->
+// Sign-in method -> Anonymous) se pueden reactivar las reglas estrictas
+// `request.auth != null` sin cambios en la app.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /usuarios/{id} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      // El centro de atención (call center) actualiza saldo, estado,
-      // tipo y PIN; la app solo modifica el saldo de puntos.
-      allow update: if request.auth != null
-          && request.resource.data.diff(resource.data).affectedKeys()
+      allow read: if true;
+      allow create: if request.resource.data.rol == null
+          || request.resource.data.rol != 'ADMIN';
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['puntos', 'estado', 'tipo', 'pin']);
       allow delete: if false;
     }
     match /conductores/{id} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      // El call center habilita/deshabilita y resetea el PIN del conductor.
-      allow update: if request.auth != null
-          && request.resource.data.diff(resource.data).affectedKeys()
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['estado', 'pin']);
       allow delete: if false;
     }
     match /transacciones/{id} {
-      allow read, create: if request.auth != null;
+      allow read: if true;
+      allow create: if true;
       allow update, delete: if false;
     }
     match /incidencias/{id} {
-      allow read, create, update: if request.auth != null;
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['estado', 'respuesta', 'notas', 'acciones', 'fecha_resolucion']);
       allow delete: if false;
     }
   }

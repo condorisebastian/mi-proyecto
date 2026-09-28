@@ -58,6 +58,14 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   y `firestore.indexes.json`. El login por PIN (sin Firebase Auth) requiere
   desplegarlos: `firebase deploy --only firestore --project transita-bolivia`
   (desde `transita_bolivia/`). Sin reglas, el acceso cliente da PERMISSION_DENIED.
+- **Anonymous Auth está DESHABILITADO** en el proyecto (las reglas NO exigen
+  `request.auth != null`; acceso read/create abierto en demo, update restringido
+  por lista de campos y delete prohibido). Si se habilita en consola Firebase,
+  se pueden volver a las reglas estrictas `request.auth != null`.
+- La app siembra los usuarios/conductores de prueba (PINs `1234`..`6789`) en
+  Firestore al arrancar si no existen (`seedTestData` en `firebase_service.dart`,
+  llamado en `main.dart`). Índice compuesto `usuarios(pin, rol)` necesario para
+  el login por PIN.
 - **Centro de atención (call center)**: pasajeros y conductores reportan
   incidencias desde la app ("Ayuda / Soporte"); el panel admin (PIN `0000`,
   pestaña "Atención") muestra la cola en vivo y permite cambiar estado

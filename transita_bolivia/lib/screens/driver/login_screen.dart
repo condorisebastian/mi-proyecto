@@ -163,13 +163,15 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                             context, '/driver/home');
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Carnet o PIN incorrectos'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
+                                          ..hideCurrentSnackBar()
+                                          ..showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                authService.lastLoginError ??
+                                                    'Carnet o PIN incorrectos'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
                                       }
                                     }
                                   },

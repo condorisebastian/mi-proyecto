@@ -442,9 +442,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        esUsuario
-                            ? 'CI: ${m['ci'] ?? ''} · ${m['tipo'] ?? ''} · PIN: ${m['pin'] ?? ''}'
-                            : 'CI: ${m['ci'] ?? ''} · Licencia: ${m['licencia'] ?? ''}',
+                        'ID #${m['id'] ?? '-'} · ${esUsuario ? 'CI: ${m['ci'] ?? ''}' : 'Licencia: ${m['licencia'] ?? ''}'} · '
+                        '${esUsuario ? m['tipo'] ?? '' : ''}',
                         style:
                             const TextStyle(fontSize: 12, color: Colors.grey),
                       ),

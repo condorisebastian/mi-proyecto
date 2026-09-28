@@ -89,35 +89,78 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 60,
                           color: AppColors.primary,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
                           'Bienvenido',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[800],
                           ),
                         ),
-                        Text(
-                          _tipo.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Elige tu perfil y escribe tu PIN',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'estudiante',
+                              icon: Icon(Icons.school, size: 18),
+                              label: Text('Estudiante',
+                                  style: TextStyle(fontSize: 10)),
+                            ),
+                            ButtonSegment(
+                              value: 'civil',
+                              icon: Icon(Icons.person, size: 18),
+                              label: Text('Ciudadano',
+                                  style: TextStyle(fontSize: 10)),
+                            ),
+                            ButtonSegment(
+                              value: 'adulto_mayor',
+                              icon: Icon(Icons.elderly, size: 18),
+                              label: Text('Adulto mayor',
+                                  style: TextStyle(fontSize: 10)),
+                            ),
+                            ButtonSegment(
+                              value: 'discapacitado',
+                              icon: Icon(Icons.accessible, size: 18),
+                              label: Text('Con discapacidad',
+                                  style: TextStyle(fontSize: 10)),
+                            ),
+                          ],
+                          selected: {_tipo},
+                          showSelectedIcon: false,
+                          multiSelectionEnabled: false,
+                          onSelectionChanged: (selection) {
+                            setState(() => _tipo = selection.first);
+                          },
+                          style: const ButtonStyle(
+                            visualDensity: VisualDensity(horizontal: -3),
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 24),
                         TextFormField(
                           controller: _ciController,
                           keyboardType: TextInputType.number,
                           maxLength: 12,
                           decoration: InputDecoration(
-                            labelText: 'Nro. de Carnet (CI)',
+                            labelText: 'Nro. de Carnet (CI) — opcional',
                             prefixIcon: const Icon(Icons.badge),
                             counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Solo ingresa el CI si lo recuerdas; con el PIN basta.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -170,13 +213,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                             context, '/passenger/home');
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Carnet o PIN incorrectos'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
+                                          ..hideCurrentSnackBar()
+                                          ..showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                authService.lastLoginError ??
+                                                    'PIN o carnet incorrectos'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
                                       }
                                     }
                                   },
