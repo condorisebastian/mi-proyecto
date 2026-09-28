@@ -19,12 +19,15 @@ class DriverHomeScreen extends StatefulWidget {
   State<DriverHomeScreen> createState() => _DriverHomeScreenState();
 }
 
-class _DriverHomeScreenState extends State<DriverHomeScreen> {
+class _DriverHomeScreenState extends State<DriverHomeScreen>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   bool _isCharging = false;
   final DriverApiService _apiService = DriverApiService();
   Map<String, dynamic> _dailySummary = {};
   StreamSubscription<Map<String, dynamic>>? _summarySub;
+
+  late final AnimationController _chargePulse;
 
   final GlobalKey<DriverHistoryScreenState> _historyKey =
       GlobalKey<DriverHistoryScreenState>();
@@ -34,17 +37,21 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _chargePulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
     final authService = Provider.of<DriverAuthService>(context, listen: false);
     if (AppConfig.useFirebase && authService.currentConductor != null) {
       _summarySub = FirebaseService.instance
           .dailySummaryStream(authService.currentConductor!.id)
           .listen((summary) {
-        if (mounted) {
-          setState(() {
-            _dailySummary = summary;
-          });
-        }
-      }, onError: (_) {});
+            if (mounted) {
+              setState(() {
+                _dailySummary = summary;
+              });
+            }
+          }, onError: (_) {});
     } else {
       _loadDailySummary();
     }
@@ -52,6 +59,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   @override
   void dispose() {
+    _chargePulse.dispose();
     _summarySub?.cancel();
     super.dispose();
   }
@@ -74,9 +82,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final conductor = authService.currentConductor;
 
     if (conductor == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -107,10 +113,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money),
             label: 'Cobrar',
@@ -134,10 +137,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary,
-            AppColors.background,
-          ],
+          colors: [AppColors.primary, AppColors.background],
           stops: [0.0, 0.3],
         ),
       ),
@@ -217,17 +217,47 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: _isCharging ? Colors.green : Colors.red,
-                              shape: BoxShape.circle,
-                            ),
+                          AnimatedBuilder(
+                            animation: _chargePulse,
+                            builder: (context, child) {
+                              final t = Curves.easeInOut.transform(
+                                _chargePulse.value,
+                              );
+                              return Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  if (_isCharging)
+                                    Opacity(
+                                      opacity: 0.4 * (1 - t),
+                                      child: Transform.scale(
+                                        scale: 1 + t,
+                                        child: Container(
+                                          width: 22,
+                                          height: 22,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: _isCharging
+                                          ? Colors.green
+                                          : Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            _isCharging ? 'COBRANDO ✅' : 'DETENIDO',
+                            _isCharging ? 'COBRANDO' : 'DETENIDO',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: _isCharging ? Colors.green : Colors.red,
@@ -239,10 +269,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     const SizedBox(height: 20),
                     const Text(
                       'COBROS HOY',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -255,10 +282,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     ),
                     Text(
                       '= Bs ${_dailySummary['total_puntos'] ?? 0}.00',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
                     GridView.count(
@@ -331,9 +355,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 height: 60,
                 child: OutlinedButton(
                   onPressed: () {
+                    final wasCharging = _isCharging;
                     setState(() {
-                      _isCharging = !_isCharging;
+                      _isCharging = !wasCharging;
                     });
+                    if (!wasCharging) {
+                      _chargePulse.repeat(reverse: true);
+                    } else {
+                      _chargePulse.stop();
+                      _chargePulse.value = 0;
+                    }
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _isCharging ? Colors.red : Colors.green,
@@ -366,8 +397,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                         builder: (context) => SupportScreen(
                           canal: 'conductor',
                           id: conductor.id,
-                          nombre:
-                              '${conductor.nombre} ${conductor.apellido}',
+                          nombre: '${conductor.nombre} ${conductor.apellido}',
                         ),
                       ),
                     );
@@ -422,10 +452,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
             ),
@@ -436,7 +463,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Future<void> _confirmLogout(
-      BuildContext context, DriverAuthService authService) async {
+    BuildContext context,
+    DriverAuthService authService,
+  ) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -468,8 +497,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   void _showQRCode(BuildContext context) {
-    final conductor =
-        Provider.of<DriverAuthService>(context, listen: false).currentConductor;
+    final conductor = Provider.of<DriverAuthService>(
+      context,
+      listen: false,
+    ).currentConductor;
 
     showModalBottomSheet(
       context: context,
@@ -496,10 +527,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 padding: EdgeInsets.all(20),
                 child: Text(
                   'Código QR para cobro',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
@@ -518,17 +546,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   children: [
                     const Text(
                       'Escanea este código para pagar',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Conductor: ${conductor?.nombre} ${conductor?.apellido}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
