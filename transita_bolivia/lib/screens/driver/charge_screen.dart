@@ -79,59 +79,62 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 1.6,
                         children: _tipos.map((tipo) {
                           final isSelected = tipo.id == _tipo.id;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _tipo = tipo;
-                                });
-                              },
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 4),
-                                decoration: BoxDecoration(
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _tipo = tipo;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 12, horizontal: 4),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : Colors.grey[300]!,
-                                    width: 2,
+                                      : Colors.grey[300]!,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    tipo.nombre,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.grey[700],
+                                    ),
                                   ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      tipo.nombre,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : Colors.grey[700],
-                                      ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${tipo.puntos} pt',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Colors.white70
+                                          : AppColors.primary,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${tipo.puntos} pt',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: isSelected
-                                            ? Colors.white70
-                                            : AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           );
