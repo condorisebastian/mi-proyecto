@@ -25,8 +25,11 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
     (id: 'adulto_mayor', nombre: 'Adulto Mayor', puntos: 1),
     (id: 'discapacitado', nombre: 'Discapacitado', puntos: 1),
   ];
-  ({String id, String nombre, int puntos}) _tipo =
-      (id: 'estudiante', nombre: 'Estudiante', puntos: 1);
+  ({String id, String nombre, int puntos}) _tipo = (
+    id: 'estudiante',
+    nombre: 'Estudiante',
+    puntos: 1,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +44,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -96,7 +96,9 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 4),
+                                vertical: 12,
+                                horizontal: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.primary
@@ -195,29 +197,33 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                       ),
                       const SizedBox(height: 24),
                       if (_lastPayment.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _lastPayment,
-                                  style: const TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.elasticOut,
+                          builder: (context, value, child) =>
+                              Transform.scale(scale: value, child: child),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const _PulsingCheck(),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _lastPayment,
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                     ],
@@ -226,10 +232,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                 const SizedBox(height: 20),
                 const Text(
                   'Mantén el celular cerca del pasajero',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
               ],
             ),
@@ -253,10 +256,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
         decoration: BoxDecoration(
           color: Colors.grey[50],
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.grey[200]!,
-            width: 2,
-          ),
+          border: Border.all(color: Colors.grey[200]!, width: 2),
         ),
         child: Row(
           children: [
@@ -266,11 +266,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: AppColors.primary,
-                size: 30,
-              ),
+              child: Icon(icon, color: AppColors.primary, size: 30),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -286,18 +282,12 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
       ),
@@ -389,10 +379,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                 padding: EdgeInsets.all(20),
                 child: Text(
                   'Escanea el QR del pasajero',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
@@ -499,15 +486,14 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
           children: [
             const Text('¿Cobrar viaje?'),
             const SizedBox(height: 8),
-            Text(passengerLabel,
-                style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(
+              passengerLabel,
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
             const SizedBox(height: 16),
             Text(
               'Monto: $puntos punto(s) = Bs $puntos.00',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
@@ -567,6 +553,62 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PulsingCheck extends StatefulWidget {
+  const _PulsingCheck();
+
+  @override
+  State<_PulsingCheck> createState() => _PulsingCheckState();
+}
+
+class _PulsingCheckState extends State<_PulsingCheck>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        return Transform.scale(
+          scale: 1 + t * 0.18,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.18 - t * 0.08),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.15 + t * 0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const Icon(Icons.check, color: Colors.green, size: 26),
+            ],
+          ),
+        );
+      },
     );
   }
 }
