@@ -35,7 +35,7 @@
         { "fieldPath": "estado", "order": "ASCENDING" },
         { "fieldPath": "fecha", "order": "DESCENDING" }
       ]
-    }
+    },
   {
       "collectionGroup": "incidencias",
       "queryScope": "COLLECTION",
