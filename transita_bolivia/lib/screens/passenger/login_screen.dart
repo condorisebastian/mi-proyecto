@@ -48,10 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -82,10 +79,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           _tipo == 'estudiante'
                               ? Icons.school
                               : _tipo == 'civil'
-                                  ? Icons.person
-                                  : _tipo == 'adulto_mayor'
-                                      ? Icons.elderly
-                                      : Icons.accessible,
+                              ? Icons.person
+                              : _tipo == 'adulto_mayor'
+                              ? Icons.elderly
+                              : Icons.accessible,
                           size: 60,
                           color: AppColors.primary,
                         ),
@@ -104,42 +101,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                         const SizedBox(height: 16),
-                        SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1.6,
+                          children: [
+                            _buildProfileTile(
                               value: 'estudiante',
-                              icon: Icon(Icons.school, size: 18),
-                              label: Text('Estudiante',
-                                  style: TextStyle(fontSize: 10)),
+                              icon: Icons.school,
+                              label: 'Estudiante',
                             ),
-                            ButtonSegment(
+                            _buildProfileTile(
                               value: 'civil',
-                              icon: Icon(Icons.person, size: 18),
-                              label: Text('Ciudadano',
-                                  style: TextStyle(fontSize: 10)),
+                              icon: Icons.person,
+                              label: 'Ciudadano',
                             ),
-                            ButtonSegment(
+                            _buildProfileTile(
                               value: 'adulto_mayor',
-                              icon: Icon(Icons.elderly, size: 18),
-                              label: Text('Adulto mayor',
-                                  style: TextStyle(fontSize: 10)),
+                              icon: Icons.elderly,
+                              label: 'Adulto mayor',
                             ),
-                            ButtonSegment(
+                            _buildProfileTile(
                               value: 'discapacitado',
-                              icon: Icon(Icons.accessible, size: 18),
-                              label: Text('Con discapacidad',
-                                  style: TextStyle(fontSize: 10)),
+                              icon: Icons.accessible,
+                              label: 'Con discapacidad',
                             ),
                           ],
-                          selected: {_tipo},
-                          showSelectedIcon: false,
-                          multiSelectionEnabled: false,
-                          onSelectionChanged: (selection) {
-                            setState(() => _tipo = selection.first);
-                          },
-                          style: const ButtonStyle(
-                            visualDensity: VisualDensity(horizontal: -3),
-                          ),
                         ),
                         const SizedBox(height: 24),
                         TextFormField(
@@ -173,9 +163,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
                             suffixIcon: IconButton(
-                              icon: Icon(_obscurePin
-                                  ? Icons.visibility_off
-                                  : Icons.visibility),
+                              icon: Icon(
+                                _obscurePin
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
                               tooltip: _obscurePin
                                   ? 'Mostrar PIN'
                                   : 'Ocultar PIN',
@@ -210,7 +202,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       );
                                       if (success && context.mounted) {
                                         Navigator.pushReplacementNamed(
-                                            context, '/passenger/home');
+                                          context,
+                                          '/passenger/home',
+                                        );
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
                                           ..hideCurrentSnackBar()
@@ -218,7 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                             SnackBar(
                                               content: Text(
                                                 authService.lastLoginError ??
-                                                    'PIN o carnet incorrectos'),
+                                                    'PIN o carnet incorrectos',
+                                              ),
                                               backgroundColor: Colors.red,
                                             ),
                                           );
@@ -234,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: authService.isLoading
                                 ? const CircularProgressIndicator(
-                                    color: Colors.white)
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     'INICIAR SESIÓN',
                                     style: TextStyle(
@@ -248,8 +244,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: () {
                             Navigator.pushNamed(
-                                context, '/passenger/requirements',
-                                arguments: {'role': 'passenger', 'tipo': _tipo});
+                              context,
+                              '/passenger/requirements',
+                              arguments: {'role': 'passenger', 'tipo': _tipo},
+                            );
                           },
                           child: const Text(
                             '¿No tienes cuenta? Regístrate',
@@ -263,6 +261,49 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTile({
+    required String value,
+    required IconData icon,
+    required String label,
+  }) {
+    final isSelected = _tipo == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _tipo = value);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey[300]!,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 26,
+              color: isSelected ? Colors.white : AppColors.primary,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ],
         ),
       ),
     );
