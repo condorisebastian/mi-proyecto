@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 
@@ -24,7 +24,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pagar Viaje'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -32,10 +32,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -64,12 +61,12 @@ class _PayTripScreenState extends State<PayTripScreen> {
                         user?.tipo == 'estudiante'
                             ? Icons.school
                             : user?.tipo == 'civil'
-                                ? Icons.person
-                                : user?.tipo == 'adulto_mayor'
-                                    ? Icons.elderly
-                                    : Icons.accessible,
+                            ? Icons.person
+                            : user?.tipo == 'adulto_mayor'
+                            ? Icons.elderly
+                            : Icons.accessible,
                         size: 60,
-                        color: const Color(0xFF1E88E5),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -107,7 +104,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E88E5),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -116,10 +113,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                       const SizedBox(height: 32),
                       const Text(
                         'Escanea el QR que muestra el conductor',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
@@ -128,7 +122,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                         child: ElevatedButton(
                           onPressed: _isProcessing ? null : _showQRScanner,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E88E5),
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -148,43 +142,6 @@ class _PayTripScreenState extends State<PayTripScreen> {
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: OutlinedButton.icon(
-                          onPressed: _showMyQR,
-                          icon: const Icon(Icons.qr_code),
-                          label: const Text(
-                            'MOSTRAR MI QR',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF1E88E5),
-                            side: const BorderSide(
-                              color: Color(0xFF1E88E5),
-                              width: 2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'O muestra tu QR para que el conductor cobre el viaje',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -224,10 +181,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                 padding: EdgeInsets.all(20),
                 child: Text(
                   'Escanea el QR del conductor',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
@@ -390,7 +344,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('PAGAR'),
@@ -408,87 +362,5 @@ class _PayTripScreenState extends State<PayTripScreen> {
       }
     }
     return null;
-  }
-
-  void _showMyQR() {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user == null) return;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Mi código QR',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: QrImageView(
-                    data: 'PASAJERO:${user.id}:${user.ci}',
-                    version: QrVersions.auto,
-                    size: 250,
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Muestra este código al conductor para pagar',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${user.nombre} ${user.apellido}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('CERRAR'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }

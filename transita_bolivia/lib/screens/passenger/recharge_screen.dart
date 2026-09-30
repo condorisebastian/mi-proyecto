@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
@@ -36,7 +37,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recargar Puntos'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -45,8 +46,8 @@ class _RechargeScreenState extends State<RechargeScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.2],
           ),
@@ -86,7 +87,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E88E5),
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -125,19 +126,19 @@ class _RechargeScreenState extends State<RechargeScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? const Color(0xFF1E88E5)
+                              ? AppColors.primary
                               : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ? const Color(0xFF1E88E5)
+                                ? AppColors.primary
                                 : Colors.grey[300]!,
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: isSelected
-                                  ? const Color(0xFF1E88E5)
+                                  ? AppColors.primary
                                       .withValues(alpha: 0.3)
                                   : Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
@@ -198,14 +199,14 @@ class _RechargeScreenState extends State<RechargeScreen> {
                             children: [
                               Icon(method['icon'],
                                   color: isSelected
-                                      ? const Color(0xFF1E88E5)
+                                      ? AppColors.primary
                                       : Colors.grey),
                               const SizedBox(width: 12),
                               Text(method['name']),
                             ],
                           ),
                           value: method['id'],
-                          activeColor: const Color(0xFF1E88E5),
+                          activeColor: AppColors.primary,
                         ),
                       );
                     }).toList(),
@@ -220,7 +221,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                         ? null
                         : () => _showQRScanner(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
+                      backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: Colors.grey,
                       shape: RoundedRectangleBorder(
@@ -389,7 +390,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                   'Nuevo saldo: ${authService.currentUser?.puntos ?? 0} puntos',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E88E5),
+                    color: AppColors.primary,
                   ),
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 
@@ -11,9 +12,17 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _ciController = TextEditingController(text: '1234567');
-  final _passwordController = TextEditingController(text: '123456');
+  final _ciController = TextEditingController();
+  final _pinController = TextEditingController();
   String _tipo = 'estudiante';
+  bool _obscurePin = true;
+
+  @override
+  void dispose() {
+    _ciController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -31,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Iniciar Sesión'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -39,10 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -73,61 +79,78 @@ class _LoginScreenState extends State<LoginScreen> {
                           _tipo == 'estudiante'
                               ? Icons.school
                               : _tipo == 'civil'
-                                  ? Icons.person
-                                  : _tipo == 'adulto_mayor'
-                                      ? Icons.elderly
-                                      : Icons.accessible,
+                              ? Icons.person
+                              : _tipo == 'adulto_mayor'
+                              ? Icons.elderly
+                              : Icons.accessible,
                           size: 60,
-                          color: const Color(0xFF1E88E5),
+                          color: AppColors.primary,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
                           'Bienvenido',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey[800],
                           ),
                         ),
-                        Text(
-                          _tipo.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF1E88E5),
-                            fontWeight: FontWeight.bold,
-                          ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Escribe tu PIN para ingresar',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 24),
                         TextFormField(
                           controller: _ciController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 12,
                           decoration: InputDecoration(
-                            labelText: 'Cédula de Identidad',
+                            labelText: 'Nro. de Carnet (CI) — opcional',
                             prefixIcon: const Icon(Icons.badge),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su CI';
-                            }
-                            return null;
-                          },
+                        ),
+                        const SizedBox(height: 8),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Solo ingresa el CI si lo recuerdas; con el PIN basta.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
+                          controller: _pinController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          obscureText: _obscurePin,
                           decoration: InputDecoration(
-                            labelText: 'Contraseña',
+                            labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePin
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              tooltip: _obscurePin
+                                  ? 'Mostrar PIN'
+                                  : 'Ocultar PIN',
+                              onPressed: () =>
+                                  setState(() => _obscurePin = !_obscurePin),
+                            ),
+                            counterText: '',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingrese su contraseña';
+                            if (value == null || value.length != 4) {
+                              return 'Ingrese su PIN de 4 dígitos';
                             }
                             return null;
                           },
@@ -142,27 +165,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : () async {
                                     if (_formKey.currentState!.validate()) {
                                       final success = await authService.login(
-                                        _ciController.text,
-                                        _passwordController.text,
+                                        _pinController.text,
                                         _tipo,
+                                        ci: _ciController.text.trim(),
                                       );
                                       if (success && context.mounted) {
                                         Navigator.pushReplacementNamed(
-                                            context, '/passenger/home');
+                                          context,
+                                          '/passenger/home',
+                                        );
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'CI o contraseña incorrectos'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
+                                          ..hideCurrentSnackBar()
+                                          ..showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                authService.lastLoginError ??
+                                                    'PIN o carnet incorrectos',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
                                       }
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E88E5),
+                              backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -170,7 +198,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: authService.isLoading
                                 ? const CircularProgressIndicator(
-                                    color: Colors.white)
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     'INICIAR SESIÓN',
                                     style: TextStyle(
@@ -183,12 +212,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/passenger/register',
-                                arguments: {'tipo': _tipo});
+                            Navigator.pushNamed(
+                              context,
+                              '/passenger/requirements',
+                              arguments: {'role': 'passenger', 'tipo': _tipo},
+                            );
                           },
                           child: const Text(
                             '¿No tienes cuenta? Regístrate',
-                            style: TextStyle(color: Color(0xFF1E88E5)),
+                            style: TextStyle(color: AppColors.primary),
                           ),
                         ),
                       ],

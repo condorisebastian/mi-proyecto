@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Acceso por PIN sin Firebase Auth. El proveedor Anonymous Auth del proyecto
+// está DESHABILITADO, así que las reglas NO pueden exigir `request.auth != null`
+// (bloquearía toda la app). Acceso de lectura/creación abierto para la demo,
+// con protección en lo importante:
+//   - update: SOLO permite tocar los campos permitidos por operación.
+//   - delete: prohibido siempre.
+//   - create en `usuarios`: prohibe crear cuentas de rol ADMIN desde el cliente.
+//
+// Nota: si se habilita Anonymous Auth (consola Firebase -> Authentication ->
+// Sign-in method -> Anonymous) se pueden reactivar las reglas estrictas
+// `request.auth != null` sin cambios en la app.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /usuarios/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.rol == null
+          || request.resource.data.rol != 'ADMIN';
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['puntos', 'estado', 'tipo', 'pin']);
+      allow delete: if false;
+    }
+    match /conductores/{id} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['estado', 'pin']);
+      allow delete: if false;
+    }
+    match /transacciones/{id} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+    match /incidencias/{id} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['estado', 'respuesta', 'notas', 'acciones', 'fecha_resolucion']);
+      allow delete: if false;
+    }
+  }
+}

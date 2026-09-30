@@ -48,3 +48,36 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 - Firewall: regla entrante "XAMPP HTTP 80" ya creada (puerto 80 TCP permitido).
 - Contraseña de todos los usuarios/conductores de prueba: `123456`.
+- Acceso en la app: **PIN único de 4 dígitos** (no CI ni contraseña). PINs de
+  prueba: estudiante `1234`, civil `2345`/`4567`, adulto mayor `3456`,
+  conductores `5678`/`6789`, admin `0000`. Definidos en
+  `database/transporte_db.sql` y en Firestore (`usuarios`/`conductores.pin`).
+- Modo Firebase activable con `--dart-define=USE_FIREBASE=true` (login por PIN
+  contra Cloud Firestore; el backend PHP queda como fallback).
+- Firestore: reglas e índices versionados en `transita_bolivia/firestore.rules`
+  y `firestore.indexes.json`. El login por PIN (sin Firebase Auth) requiere
+  desplegarlos: `firebase deploy --only firestore --project transita-bolivia`
+  (desde `transita_bolivia/`). Sin reglas, el acceso cliente da PERMISSION_DENIED.
+- **Anonymous Auth está DESHABILITADO** en el proyecto (las reglas NO exigen
+  `request.auth != null`; acceso read/create abierto en demo, update restringido
+  por lista de campos y delete prohibido). Si se habilita en consola Firebase,
+  se pueden volver a las reglas estrictas `request.auth != null`.
+- La app siembra los usuarios/conductores de prueba (PINs `1234`..`6789`) en
+  Firestore al arrancar si no existen (`seedTestData` en `firebase_service.dart`,
+  llamado en `main.dart`). Índice compuesto `usuarios(pin, rol)` necesario para
+  el login por PIN.
+- **Centro de atención (call center)**: pasajeros y conductores reportan
+  incidencias desde la app ("Ayuda / Soporte"); el panel admin (PIN `0000`,
+  pestaña "Atención") muestra la cola en vivo y permite cambiar estado
+  (nueva/en_curso/resuelta/cerrada), responder, añadir notas/bitácora, bloquear/
+  desbloquear, regenerar PIN, recarga manual y cambiar tipo. Colección Firestore
+  `incidencias` (índice `reportante_clave`+`fecha_creacion` necesario). El login
+  rechaza usuarios/conductores con `estado != 'activo'`.
+- Las reglas exigen identidad: la app hace `signInAnonymously()` al iniciar
+  (`firebase_auth`). **Orden importante**: instalar la app actualizada en los
+  equipos ANTES de desplegar las reglas, o el cliente quedará bloqueado.
+- Backend PHP/MySQL: el usuario de BD por defecto es `root` sin clave (XAMPP).
+  Para producción ejecutar `php api/setup_db_user.php` (crea `transporte_app`
+  con privilegios mínimos y guarda credenciales en `api/config/.db_creds.php`,
+  gitignored). El secreto JWT se lee de `JWT_SECRET` o se autogenera en
+  `api/config/.jwt_secret` (gitignored) al primer uso.

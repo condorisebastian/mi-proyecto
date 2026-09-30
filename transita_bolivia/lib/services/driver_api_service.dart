@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart';
+import 'firebase_service.dart';
 
 class DriverApiService {
   static String? Function()? tokenProvider;
@@ -22,6 +23,16 @@ class DriverApiService {
     required String metodoPago,
     int? userId,
   }) async {
+    if (AppConfig.useFirebase) {
+      return FirebaseService.instance.registrarCobro(
+        conductorId: conductorId,
+        tipoUsuario: tipoUsuario,
+        puntos: puntos,
+        metodoPago: metodoPago,
+        userId: userId,
+      );
+    }
+
     try {
       final response = await http
           .post(
@@ -29,7 +40,7 @@ class DriverApiService {
             headers: _headers,
             body: jsonEncode({
               'conductor_id': conductorId,
-              if (userId != null) 'user_id': userId,
+              'user_id': ?userId,
               'tipo_usuario': tipoUsuario,
               'puntos': puntos,
               'metodo_pago': metodoPago,
@@ -47,6 +58,10 @@ class DriverApiService {
   }
 
   Future<Map<String, dynamic>> getDailySummary(int conductorId) async {
+    if (AppConfig.useFirebase) {
+      return FirebaseService.instance.getDailySummary(conductorId);
+    }
+
     try {
       final response = await http
           .get(
@@ -65,6 +80,10 @@ class DriverApiService {
   }
 
   Future<List<Map<String, dynamic>>> getDailyHistory(int conductorId) async {
+    if (AppConfig.useFirebase) {
+      return FirebaseService.instance.getDailyHistory(conductorId);
+    }
+
     try {
       final response = await http
           .get(

@@ -3,6 +3,23 @@
 Todas las notas de cambios notables se documentan en este archivo.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y el proyecto usa [Versionado Semántico](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Añadido
+- Acceso por **PIN único de 4 dígitos** para pasajeros y conductores (reemplaza CI, contraseña y licencia).
+- Integración Firebase opcional (Firestore) con `--dart-define=USE_FIREBASE=true`; login/registro por PIN en la nube.
+- Reglas e índices de Firestore versionados (`firestore.rules`, `firestore.indexes.json`) y desplegados.
+- Script `database/migration_pin.sql` para actualizar una BD existente sin perder datos.
+- Script `tools/firebase/seed_pins.js` para sembrar PINs en Firestore.
+
+### Cambiado
+- `/auth/login` y `/auth/login-conductor` reciben `pin` (antes ci/licencia + password).
+- `ci` pasa a ser opcional en `pasajeros` y `conductores`.
+- Se elimina la dependencia `firebase_auth` de la app.
+
+### Eliminado
+- Script `tools/firebase/create_auth_users.js` (ya no se usa Firebase Auth).
+
 ## [2.0.0] - 2026-08-27
 
 ### Añadido

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import '../../models/transaction.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -49,7 +52,7 @@ class HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -58,8 +61,8 @@ class HistoryScreenState extends State<HistoryScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
+              AppColors.primary,
+              AppColors.background,
             ],
             stops: [0.0, 0.2],
           ),
@@ -77,71 +80,86 @@ class HistoryScreenState extends State<HistoryScreen> {
                       'Saldo Actual',
                       '${user?.puntos ?? 0} pts',
                       Icons.account_balance_wallet,
-                      const Color(0xFF1E88E5),
+                      AppColors.primary,
                     ),
                     _buildStatCard(
                       'Tipo',
                       user?.tipoDisplay ?? '',
                       Icons.person,
-                      const Color(0xFF4CAF50),
+                      AppColors.success,
                     ),
                   ],
                 ),
               ),
               Expanded(
-                child: RefreshIndicator(
-                  color: const Color(0xFF1E88E5),
-                  onRefresh: _loadHistory,
-                  child: _loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _transactions.isEmpty
-                          ? LayoutBuilder(
-                              builder: (context, constraints) {
-                                return SingleChildScrollView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  child: SizedBox(
-                                    height: constraints.maxHeight,
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.history,
-                                            size: 80,
-                                            color: Colors.grey[300],
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            'No hay transacciones',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.grey[500],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(20),
-                              itemCount: _transactions.length,
-                              itemBuilder: (context, index) {
-                                return _buildTransactionCard(
-                                    _transactions[index]);
-                              },
-                            ),
-                ),
+                child: AppConfig.useFirebase && user != null
+                    ? StreamBuilder<List<Transaction>>(
+                        stream: FirebaseService.instance
+                            .transactionHistoryStream(user.id),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.waiting &&
+                              !snapshot.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          return _buildHistoryBody(snapshot.data ?? []);
+                        },
+                      )
+                    : RefreshIndicator(
+                        color: AppColors.primary,
+                        onRefresh: _loadHistory,
+                        child: _loading
+                            ? const Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : _buildHistoryBody(_transactions),
+                      ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHistoryBody(List<Transaction> transactions) {
+    if (transactions.isEmpty) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, size: 80, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No hay transacciones',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(20),
+      itemCount: transactions.length,
+      itemBuilder: (context, index) {
+        return _buildTransactionCard(transactions[index]);
+      },
     );
   }
 
