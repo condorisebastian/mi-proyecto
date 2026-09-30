@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:ndef/ndef.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
@@ -187,14 +186,6 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                         subtitle: 'Acerca la tarjeta al celular',
                         onTap: _readNFC,
                       ),
-                      const SizedBox(height: 16),
-                      _buildPaymentOption(
-                        context,
-                        icon: Icons.qr_code_scanner,
-                        title: 'QR del Celular',
-                        subtitle: 'Escanea el QR del pasajero',
-                        onTap: _showQRScanner,
-                      ),
                       const SizedBox(height: 24),
                       if (_lastPayment.isNotEmpty)
                         TweenAnimationBuilder<double>(
@@ -351,97 +342,6 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
       }
     }
     return null;
-  }
-
-  Future<void> _showQRScanner() async {
-    final scanned = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Escanea el QR del pasajero',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: MobileScanner(
-                      onDetect: (capture) {
-                        for (final barcode in capture.barcodes) {
-                          final raw = barcode.rawValue;
-                          if (raw != null && raw.isNotEmpty) {
-                            Navigator.pop(context, raw);
-                            return;
-                          }
-                        }
-                      },
-                      errorBuilder: (context, error) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'No se pudo abrir la cámara: $error',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('CANCELAR'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (!mounted) return;
-    if (scanned != null && scanned.isNotEmpty) {
-      _onScanned('QR', scanned);
-    }
   }
 
   void _onScanned(String method, String rawData) {
