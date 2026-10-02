@@ -39,21 +39,38 @@ Future<void> _ensureFirebaseIdentity() async {
   }
 }
 
+/// Tope corto para que la app NO se quede en pantalla blanca cuando el
+/// backend (Firebase) no es alcanzable (sin internet). Ante error o timeout,
+/// la app abre igual y el login falla con un mensaje claro.
+Future<T> _boot<T>(Future<T> Function() fn, T fallback) async {
+  try {
+    return await fn().timeout(const Duration(seconds: 5));
+  } catch (_) {
+    return fallback;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await _boot(
+    () => Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ),
+    null,
   );
-  await _ensureFirebaseIdentity();
+  await _boot(_ensureFirebaseIdentity, null);
 
   if (AppConfig.useFirebase) {
-    await fb.FirebaseService.instance.ensureAdminUser();
-    await fb.FirebaseService.instance.seedTestData();
+    await _boot(() => fb.FirebaseService.instance.ensureAdminUser(), null);
+    await _boot(() => fb.FirebaseService.instance.seedTestData(), null);
   }
 
   final auth = AuthService();
-  await auth.restoreSession();
+  await auth.restoreSession().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {},
+      );
   ApiService.tokenProvider = () => auth.token;
 
   final driverAuth = DriverAuthService();
