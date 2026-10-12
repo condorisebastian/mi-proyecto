@@ -127,17 +127,24 @@ class _PayTripScreenState extends State<PayTripScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
                           child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.qr_code_scanner, size: 24),
-                              SizedBox(width: 12),
-                              Text(
-                                'ESCANEAR QR DEL CONDUCTOR',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                              SizedBox(width: 10),
+                              Flexible(
+                                child: Text(
+                                  'ESCANEAR QR DEL CONDUCTOR',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
