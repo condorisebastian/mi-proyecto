@@ -19,6 +19,7 @@ CREATE DATABASE IF NOT EXISTS proyecto_cobros
 USE proyecto_cobros;
 
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS incidencias;
 DROP TABLE IF EXISTS cobros;
 DROP TABLE IF EXISTS recargas;
 DROP TABLE IF EXISTS saldos;
@@ -174,6 +175,30 @@ CREATE TABLE cobros (
   CONSTRAINT fk_cobro_ruta      FOREIGN KEY (id_ruta)
     REFERENCES rutas(id_ruta)           ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT chk_cobro_monto CHECK (monto >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLA incidencias (reportes del center de atencion / call center)
+-- ============================================================
+CREATE TABLE incidencias (
+  id_incidencia    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  canal            ENUM('pasajero','conductor') NOT NULL
+                   COMMENT 'quien reporta: app pasajero o conductor',
+  reportante_clave VARCHAR(20)  NOT NULL
+                   COMMENT 'PIN o CI del reportante (usado por la app)',
+  nombre           VARCHAR(160) NOT NULL COMMENT 'nombre del reportante',
+  tipo             VARCHAR(30)  NOT NULL DEFAULT 'otros',
+  descripcion      TEXT         NOT NULL,
+  prioridad        ENUM('baja','media','alta') NOT NULL DEFAULT 'media',
+  estado           ENUM('nueva','en_curso','resuelta','cerrada') NOT NULL DEFAULT 'nueva',
+  respuesta        TEXT         NULL,
+  notas            JSON         NULL COMMENT 'bitacora: [{fecha, texto, usuario}]',
+  acciones         JSON         NULL COMMENT 'estado historico de la incidencia',
+  fecha_creacion   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_resolucion DATETIME     NULL,
+  INDEX idx_inci_reportante (canal, reportante_clave),
+  INDEX idx_inci_estado (estado),
+  INDEX idx_inci_fecha (fecha_creacion)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
