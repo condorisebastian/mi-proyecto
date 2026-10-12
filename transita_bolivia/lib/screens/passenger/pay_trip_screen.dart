@@ -95,10 +95,14 @@ class _PayTripScreenState extends State<PayTripScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Tu saldo:',
-                              style: TextStyle(fontSize: 16),
+                            Flexible(
+                              child: Text(
+                                'Tu saldo:',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 16),
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Text(
                               '${user?.puntos ?? 0} puntos',
                               style: const TextStyle(
