@@ -217,7 +217,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
   String _metodoLabel(dynamic metodo) {
     switch (metodo) {
       case 'tarjeta_nfc':
-        return 'NFC';
+        return 'Tarjeta';
       case 'qr':
         return 'QR';
       default:

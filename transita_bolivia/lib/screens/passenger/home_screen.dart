@@ -9,7 +9,6 @@ import '../../models/transaction.dart';
 import 'recharge_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
-import 'card_screen.dart';
 import '../soporte/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -200,44 +199,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CardScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.nfc, size: 20),
-                        label: const Text(
-                          'MI TARJETA',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
               const SizedBox(height: 20),
               SizedBox(

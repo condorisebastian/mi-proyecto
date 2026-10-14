@@ -59,7 +59,7 @@ class Transaction {
   String get metodoPagoDisplay {
     switch (metodoPago) {
       case 'tarjeta_nfc':
-        return '📱 NFC';
+        return '📱 Tarjeta';
       case 'qr':
         return '📷 QR';
       case 'recarga':

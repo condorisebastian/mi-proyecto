@@ -17,6 +17,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
   final DriverApiService _apiService = DriverApiService();
   String _lastPayment = '';
   bool _isProcessing = false;
+  static const bool _nfcEnabled = false;
 
   final List<({String id, String nombre, int puntos})> _tipos = [
     (id: 'estudiante', nombre: 'Estudiante', puntos: 1),
@@ -154,7 +155,8 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Container(
+                if (_nfcEnabled)
+                  Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -221,10 +223,11 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Mantén el celular cerca del pasajero',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
-                ),
+                if (_nfcEnabled)
+                  const Text(
+                    'Mantén el celular cerca del pasajero',
+                    style: TextStyle(fontSize: 14, color: Colors.white70),
+                  ),
               ],
             ),
           ),
