@@ -20,12 +20,12 @@ const Map<String, Color> _estadoColor = {
 };
 
 String _estadoLabel(String e) => switch (e) {
-      'nueva' => 'Nueva',
-      'en_curso' => 'En curso',
-      'resuelta' => 'Resuelta',
-      'cerrada' => 'Cerrada',
-      _ => e,
-    };
+  'nueva' => 'Nueva',
+  'en_curso' => 'En curso',
+  'resuelta' => 'Resuelta',
+  'cerrada' => 'Cerrada',
+  _ => e,
+};
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({
@@ -49,9 +49,8 @@ class _SupportScreenState extends State<SupportScreen> {
   String _tipo = 'saldo';
   bool _enviando = false;
 
-  String get _clave => widget.canal == 'conductor'
-      ? 'c-${widget.id}'
-      : 'p-${widget.id}';
+  String get _clave =>
+      widget.canal == 'conductor' ? 'c-${widget.id}' : 'p-${widget.id}';
 
   @override
   void dispose() {
@@ -73,7 +72,8 @@ class _SupportScreenState extends State<SupportScreen> {
             tipo: _tipo,
             descripcion: _descController.text.trim(),
           )
-        : const (ok: true, message: 'Requiere modo Firebase');
+        : const (ok: false, message: 'Requiere modo Firebase');
+    if (!mounted) return;
     setState(() => _enviando = false);
     _mostrarSnack(result.message);
     if (result.ok) {
@@ -102,12 +102,7 @@ class _SupportScreenState extends State<SupportScreen> {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildReportTab(),
-            _buildMisIncidencias(),
-          ],
-        ),
+        body: TabBarView(children: [_buildReportTab(), _buildMisIncidencias()]),
       ),
     );
   }
@@ -171,10 +166,7 @@ class _SupportScreenState extends State<SupportScreen> {
           const SizedBox(height: 12),
           Text(
             'Un operador del centro de atención revisará tu caso y te responderá aquí.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textMuted,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -184,7 +176,10 @@ class _SupportScreenState extends State<SupportScreen> {
   Widget _buildMisIncidencias() {
     if (!AppConfig.useFirebase) {
       return const Center(
-        child: Text('Requiere modo Firebase', style: TextStyle(color: Colors.grey)),
+        child: Text(
+          'Requiere modo Firebase',
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
     return StreamBuilder<List<Map<String, dynamic>>>(
@@ -196,8 +191,10 @@ class _SupportScreenState extends State<SupportScreen> {
         final incidencias = snapshot.data ?? [];
         if (incidencias.isEmpty) {
           return const Center(
-            child: Text('Aún no has reportado incidencias',
-                style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'Aún no has reportado incidencias',
+              style: TextStyle(color: Colors.grey),
+            ),
           );
         }
         return ListView.builder(
@@ -223,7 +220,9 @@ class _SupportScreenState extends State<SupportScreen> {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: (_estadoColor[estado] ?? Colors.grey)
                                 .withValues(alpha: 0.15),
@@ -290,8 +289,8 @@ class _SupportScreenState extends State<SupportScreen> {
     final d = f is Timestamp
         ? f.toDate()
         : f is DateTime
-            ? f
-            : null;
+        ? f
+        : null;
     if (d == null) return '';
     return '${d.day}/${d.month}/${d.year} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }

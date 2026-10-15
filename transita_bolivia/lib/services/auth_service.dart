@@ -29,15 +29,12 @@ class AuthService extends ChangeNotifier {
   void _subscribeLive(int userId) {
     if (!AppConfig.useFirebase) return;
     _liveSub?.cancel();
-    _liveSub = FirebaseService.instance.userStream(userId).listen(
-      (user) {
-        if (user != null && _currentUser != null) {
-          _currentUser = user;
-          notifyListeners();
-        }
-      },
-      onError: (_) {},
-    );
+    _liveSub = FirebaseService.instance.userStream(userId).listen((user) {
+      if (user != null && _currentUser != null) {
+        _currentUser = user;
+        notifyListeners();
+      }
+    }, onError: (_) {});
   }
 
   Future<bool> login(String pin, String tipo, {String ci = ''}) async {
@@ -56,11 +53,7 @@ class AuthService extends ChangeNotifier {
           .post(
             Uri.parse('$baseUrl/auth/login'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'pin': pin,
-              'tipo': tipo,
-              'ci': ci,
-            }),
+            body: jsonEncode({'pin': pin, 'tipo': tipo, 'ci': ci}),
           )
           .timeout(AppConfig.timeout);
 
@@ -86,8 +79,11 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> _loginFirebase(String pin, String tipo, {String ci = ''}) async {
     try {
-      final result = await FirebaseService.instance
-          .loginPasajero(pin, tipo, ci: ci);
+      final result = await FirebaseService.instance.loginPasajero(
+        pin,
+        tipo,
+        ci: ci,
+      );
       _lastLoginError = result.error;
       final user = result.user;
       if (user == null) return false;
@@ -173,6 +169,10 @@ class AuthService extends ChangeNotifier {
       if (raw == null) return;
 
       final data = jsonDecode(raw) as Map<String, dynamic>;
+      if ((data['token'] == 'firebase') != AppConfig.useFirebase) {
+        await _clearSession();
+        return;
+      }
       final expiresAt =
           (data['expiresAt'] as int?) ?? DateTime.now().millisecondsSinceEpoch;
       if (expiresAt <= DateTime.now().millisecondsSinceEpoch) {
@@ -182,9 +182,15 @@ class AuthService extends ChangeNotifier {
       _currentUser = User.fromJson(data['user']);
 
       if (AppConfig.useFirebase) {
-        final user = await FirebaseService.instance
-            .fetchUserById(_currentUser!.id);
-        if (user != null) _currentUser = user;
+        final user = await FirebaseService.instance.fetchUserById(
+          _currentUser!.id,
+        );
+        if (user == null || user.estado != 'activo') {
+          _currentUser = null;
+          await _clearSession();
+          return;
+        }
+        _currentUser = user;
         _token = 'firebase';
         _subscribeLive(_currentUser!.id);
       } else {
@@ -204,9 +210,7 @@ class AuthService extends ChangeNotifier {
         jsonEncode({
           'user': _currentUser!.toJson(),
           'token': _token,
-          'expiresAt': DateTime.now()
-              .add(_kSessionTtl)
-              .millisecondsSinceEpoch,
+          'expiresAt': DateTime.now().add(_kSessionTtl).millisecondsSinceEpoch,
         }),
       );
     } catch (e) {
@@ -245,8 +249,9 @@ class AuthService extends ChangeNotifier {
     if (_currentUser == null) return;
 
     if (AppConfig.useFirebase) {
-      final user = await FirebaseService.instance
-          .fetchUserById(_currentUser!.id);
+      final user = await FirebaseService.instance.fetchUserById(
+        _currentUser!.id,
+      );
       if (user != null) {
         _currentUser = user;
         _token = 'firebase';
@@ -256,10 +261,12 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/${_currentUser!.id}'),
-        headers: {'Authorization': 'Bearer $_token'},
-      ).timeout(AppConfig.timeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/users/${_currentUser!.id}'),
+            headers: {'Authorization': 'Bearer $_token'},
+          )
+          .timeout(AppConfig.timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

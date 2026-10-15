@@ -13,6 +13,7 @@ class RechargeScreen extends StatefulWidget {
 
 class _RechargeScreenState extends State<RechargeScreen> {
   int _selectedAmount = 0;
+  bool _isRecharging = false;
   String _selectedPaymentMethod = 'qr_bancario';
   final ApiService _apiService = ApiService();
 
@@ -45,10 +46,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.2],
           ),
         ),
@@ -76,10 +74,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                     children: [
                       const Text(
                         'SALDO ACTUAL',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -125,9 +120,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : Colors.white,
+                          color: isSelected ? AppColors.primary : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
@@ -138,8 +131,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: isSelected
-                                  ? AppColors.primary
-                                      .withValues(alpha: 0.3)
+                                  ? AppColors.primary.withValues(alpha: 0.3)
                                   : Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
@@ -161,8 +153,9 @@ class _RechargeScreenState extends State<RechargeScreen> {
                               '= ${amount['points']} puntos',
                               style: TextStyle(
                                 fontSize: 12,
-                                color:
-                                    isSelected ? Colors.white70 : Colors.grey,
+                                color: isSelected
+                                    ? Colors.white70
+                                    : Colors.grey,
                               ),
                             ),
                           ],
@@ -197,10 +190,12 @@ class _RechargeScreenState extends State<RechargeScreen> {
                         child: RadioListTile<String>(
                           title: Row(
                             children: [
-                              Icon(method['icon'],
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : Colors.grey),
+                              Icon(
+                                method['icon'],
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.grey,
+                              ),
                               const SizedBox(width: 12),
                               Text(method['name']),
                             ],
@@ -217,7 +212,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                   width: double.infinity,
                   height: 60,
                   child: ElevatedButton(
-                    onPressed: _selectedAmount == 0
+                    onPressed: _selectedAmount == 0 || _isRecharging
                         ? null
                         : () => _showQRScanner(context),
                     style: ElevatedButton.styleFrom(
@@ -234,7 +229,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
                         Icon(Icons.qr_code_scanner, size: 24),
                         SizedBox(width: 12),
                         Text(
-                          'PAGAR CON QR',
+                          'RECARGAR PUNTOS',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -252,108 +247,43 @@ class _RechargeScreenState extends State<RechargeScreen> {
     );
   }
 
-  void _showQRScanner(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showQRScanner(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context) => AlertDialog(
+        title: const Text('Recarga de demostración'),
+        content: Text(
+          'Se añadirán $_selectedAmount puntos de prueba a tu cuenta. '
+          'No se realizará un cobro bancario.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCELAR'),
           ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Escanea el código QR de pago',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          size: 100,
-                          color: Colors.white54,
-                        ),
-                        SizedBox(height: 20),
-                        Text(
-                          'Cámara QR',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Apunta al código QR del comercio',
-                          style: TextStyle(
-                            color: Colors.white38,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('CANCELAR'),
-                  ),
-                ),
-              ),
-            ],
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('CONFIRMAR RECARGA'),
           ),
-        );
-      },
-    ).then((_) {
-      if (!context.mounted) return;
-      _processPayment(context);
-    });
+        ],
+      ),
+    );
+    if (!context.mounted || confirmed != true) return;
+    _processPayment(context);
   }
 
   void _processPayment(BuildContext context) async {
+    if (_isRecharging) return;
     final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
 
     if (user == null) return;
+    setState(() => _isRecharging = true);
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     final result = await _apiService.rechargePoints(
@@ -361,6 +291,8 @@ class _RechargeScreenState extends State<RechargeScreen> {
       _selectedAmount,
       _selectedPaymentMethod,
     );
+    if (!mounted) return;
+    setState(() => _isRecharging = false);
 
     if (context.mounted) {
       Navigator.pop(context);
@@ -383,7 +315,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Monto pagado: Bs $_selectedAmount.00'),
+                Text('Recarga de prueba: $_selectedAmount puntos'),
                 Text('Puntos recibidos: $_selectedAmount'),
                 const SizedBox(height: 8),
                 Text(
@@ -408,10 +340,7 @@ class _RechargeScreenState extends State<RechargeScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(result.message), backgroundColor: Colors.red),
         );
       }
     }

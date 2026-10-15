@@ -52,8 +52,8 @@ mi-proyecto/
 
 App unificada para pasajeros y conductores con selección de rol al iniciar:
 
-- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, recarga, pago de viaje (QR/NFC), tarjeta, historial.
-- **Conductor**: login/registro por PIN, cobro de viajes (QR/NFC), resumen diario, historial.
+- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, recarga de demostración, pago de viaje por QR e historial.
+- **Conductor**: login/registro por PIN, cobro por QR, alerta sonora y visual de pago confirmado, resumen diario e historial.
 
 Con Apache corriendo y la API publicada:
 
@@ -76,18 +76,21 @@ Si cambia la IP de la PC, actualizar el `defaultValue` en
 `transita_bolivia/lib/config.dart`, o compilar con
 `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 
-## Modo Firebase (opcional)
+## Modo Firebase (predeterminado)
 
-Con `--dart-define=USE_FIREBASE=true` la app usa Cloud Firestore en lugar del
-backend PHP (login/registro por PIN, recargas, pagos, resumen diario):
+La app usa Cloud Firestore por defecto para sincronizar los dos teléfonos
+(login/registro por PIN, recargas, pagos, resumen diario y soporte).
+El modo PHP/MySQL se selecciona con `--dart-define=USE_FIREBASE=false`.
+Ambos modos almacenan datos por separado; no hay sincronización entre ellos.
 
 ```
 cd transita_bolivia
 flutter run --dart-define=USE_FIREBASE=true
 ```
 
-El acceso por PIN no usa Firebase Auth, por lo que las reglas de Firestore deben
-permitir el acceso cliente. Están versionadas y se despliegan desde
+La app intenta crear una identidad anónima de Firebase Auth si el proveedor está
+habilitado; el acceso de la aplicación sigue siendo por PIN. Las reglas actuales
+son para demostración y deben reforzarse antes de producción. Están versionadas y se despliegan desde
 `transita_bolivia/`:
 
 ```
@@ -97,6 +100,26 @@ firebase deploy --only firestore --project transita-bolivia
 Archivos: `transita_bolivia/firestore.rules` y `firestore.indexes.json`. Para
 sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
 (requiere `GOOGLE_APPLICATION_CREDENTIALS`).
+
+### Prueba en dos teléfonos
+
+1. Instalar la misma compilación Firebase en ambos equipos, con acceso a internet.
+2. Samsung A70 (`R58M54T79VR`): pasajero estudiante, PIN `1234`.
+3. Tecno BG7 (`11424153CR013112`): conductor, PIN `5678`.
+4. Comprobar que el pasajero tenga saldo; la recarga dentro de la app es de
+   demostración y requiere confirmación explícita. Cancelar no recarga.
+5. En el Tecno, elegir **Cobrar → Estudiante → Mostrar QR**.
+6. En el Samsung, elegir **Pagar → Escanear QR del conductor → Pagar**.
+7. El Samsung muestra el comprobante y el nuevo saldo. El Tecno emite dos tonos,
+   vibra y muestra **PAGO EXITOSO** sobre el QR, con el importe y el pasajero.
+   El historial y el resumen se actualizan en vivo.
+
+Mantener la app del conductor abierta y el volumen multimedia audible. Este aviso
+es una alarma dentro de la app; no usa notificaciones push con la aplicación cerrada.
+Un pasajero solo puede pagar una vez cada QR: para otro viaje, cerrar el QR y
+generar uno nuevo. Los reintentos no descuentan otra vez y el historial antiguo
+no provoca alarmas al abrir la app. El pago requiere conexión y confirmación del
+servidor; no se anuncia como exitoso un pago pendiente sin internet.
 
 ## Credenciales de prueba
 

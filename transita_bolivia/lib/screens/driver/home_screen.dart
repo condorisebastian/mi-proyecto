@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
 import '../../services/firebase_service.dart';
+import '../../services/payment_alert_service.dart';
+import '../../models/driver_payment.dart';
 import '../../config.dart';
 import 'charge_screen.dart';
 import 'history_screen.dart';
@@ -22,10 +23,15 @@ class DriverHomeScreen extends StatefulWidget {
 class _DriverHomeScreenState extends State<DriverHomeScreen>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
-  bool _isCharging = false;
+  final bool _isCharging = true;
   final DriverApiService _apiService = DriverApiService();
   Map<String, dynamic> _dailySummary = {};
   StreamSubscription<Map<String, dynamic>>? _summarySub;
+  StreamSubscription<({List<DriverPayment> payments, bool fromCache})>?
+  _paymentsSub;
+  final _paymentTracker = DriverPaymentTracker();
+  OverlayEntry? _paymentNotice;
+  Timer? _noticeTimer;
 
   late final AnimationController _chargePulse;
 
@@ -41,17 +47,33 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
+    _chargePulse.repeat(reverse: true);
     final authService = Provider.of<DriverAuthService>(context, listen: false);
     if (AppConfig.useFirebase && authService.currentConductor != null) {
       _summarySub = FirebaseService.instance
           .dailySummaryStream(authService.currentConductor!.id)
           .listen((summary) {
-            if (mounted) {
-              setState(() {
-                _dailySummary = summary;
-              });
-            }
+            if (!mounted) return;
+            setState(() {
+              _dailySummary = summary;
+            });
           }, onError: (_) {});
+      _paymentsSub = FirebaseService.instance
+          .confirmedDriverPaymentsStream(authService.currentConductor!.id)
+          .listen(
+            (batch) {
+              if (!mounted) return;
+              for (final payment in _paymentTracker.receive(
+                batch.payments,
+                fromCache: batch.fromCache,
+              )) {
+                _onPaymentReceived(payment);
+              }
+            },
+            onError: (Object error) {
+              debugPrint('No se pudo escuchar los pagos: $error');
+            },
+          );
     } else {
       _loadDailySummary();
     }
@@ -61,7 +83,69 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
   void dispose() {
     _chargePulse.dispose();
     _summarySub?.cancel();
+    _paymentsSub?.cancel();
+    _clearPaymentNotice();
     super.dispose();
+  }
+
+  void _clearPaymentNotice() {
+    _noticeTimer?.cancel();
+    _paymentNotice?.remove();
+    _paymentNotice = null;
+  }
+
+  void _onPaymentReceived(DriverPayment payment) {
+    unawaited(PaymentAlertService.play());
+    debugPrint('Pago confirmado: ${payment.documentId}');
+    _clearPaymentNotice();
+    _paymentNotice = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 0,
+        left: 12,
+        right: 12,
+        child: SafeArea(
+          child: Material(
+            elevation: 12,
+            color: Colors.green.shade800,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              onTap: _clearPaymentNotice,
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'PAGO EXITOSO',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '+${payment.puntos} punto(s) · ${payment.pasajero.isEmpty ? 'Pasajero' : payment.pasajero}',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context, rootOverlay: true).insert(_paymentNotice!);
+    _noticeTimer = Timer(const Duration(seconds: 6), _clearPaymentNotice);
   }
 
   Future<void> _loadDailySummary() async {
@@ -70,6 +154,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
       final summary = await _apiService.getDailySummary(
         authService.currentConductor!.id,
       );
+      if (!mounted) return;
       setState(() {
         _dailySummary = summary;
       });
@@ -324,7 +409,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                 height: 60,
                 child: ElevatedButton(
                   onPressed: () {
-                    _showQRCode(context);
+                    setState(() {
+                      _currentIndex = 1;
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
@@ -339,49 +426,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                       Icon(Icons.qr_code, size: 24),
                       SizedBox(width: 12),
                       Text(
-                        'MOSTRAR QR PARA COBRAR',
+                        'MOSTRAR QR',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: OutlinedButton(
-                  onPressed: () {
-                    final wasCharging = _isCharging;
-                    setState(() {
-                      _isCharging = !wasCharging;
-                    });
-                    if (!wasCharging) {
-                      _chargePulse.repeat(reverse: true);
-                    } else {
-                      _chargePulse.stop();
-                      _chargePulse.value = 0;
-                    }
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _isCharging ? Colors.red : Colors.green,
-                    side: BorderSide(
-                      color: _isCharging ? Colors.red : Colors.green,
-                      width: 2,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    _isCharging ? 'DETENER COBRO' : 'INICIAR COBRO',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
               ),
@@ -494,81 +545,5 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
         Navigator.pushReplacementNamed(context, '/');
       }
     }
-  }
-
-  void _showQRCode(BuildContext context) {
-    final conductor = Provider.of<DriverAuthService>(
-      context,
-      listen: false,
-    ).currentConductor;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Código QR para cobro',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: QrImageView(
-                    data: 'CONDUCTOR:${conductor?.id}',
-                    version: QrVersions.auto,
-                    size: 250,
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Escanea este código para pagar',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Conductor: ${conductor?.nombre} ${conductor?.apellido}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('CERRAR'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }

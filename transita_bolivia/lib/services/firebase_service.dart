@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart' as app;
 import '../models/transaction.dart' as app_tx;
 import '../models/conductor.dart';
+import '../models/driver_payment.dart';
+import '../models/trip_qr.dart';
 
 /// Capa de datos sobre Firebase (Cloud Firestore).
 ///
@@ -14,15 +16,18 @@ import '../models/conductor.dart';
 /// Las colecciones `usuarios`, `conductores` y `transacciones` usan el modelo
 /// de "puntos" que consume la app.
 class FirebaseService {
-  FirebaseService._();
+  FirebaseService._() : _firestore = null;
+  FirebaseService.forTesting(FirebaseFirestore firestore)
+    : _firestore = firestore;
   static final FirebaseService instance = FirebaseService._();
+  final FirebaseFirestore? _firestore;
 
   static const String _usersCollection = 'usuarios';
   static const String _conductoresCollection = 'conductores';
   static const String _transaccionesCollection = 'transacciones';
   static const String _incidenciasCollection = 'incidencias';
 
-  FirebaseFirestore get _db => FirebaseFirestore.instance;
+  FirebaseFirestore get _db => _firestore ?? FirebaseFirestore.instance;
 
   // =====================================================================
   // AUTH (por PIN)
@@ -57,8 +62,11 @@ class FirebaseService {
   /// Autentica a un pasajero por su PIN único + tipo (el CI es opcional;
   /// si se ingresa, debe coincidir con el de la cuenta). Devuelve un motivo
   /// claro en `error` para mostrarlo en pantalla.
-  Future<({app.User? user, String? error})> loginPasajero(String pin, String tipo,
-      {String ci = ''}) async {
+  Future<({app.User? user, String? error})> loginPasajero(
+    String pin,
+    String tipo, {
+    String ci = '',
+  }) async {
     try {
       final snap = await _db
           .collection(_usersCollection)
@@ -67,28 +75,42 @@ class FirebaseService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) {
-        return (user: null, error: 'El PIN $pin no existe. Usa tu PIN de 4 dígitos o regístrate.');
+        return (
+          user: null,
+          error: 'El PIN $pin no existe. Usa tu PIN de 4 dígitos o regístrate.',
+        );
       }
       final user = _userFromMap(snap.docs.first.data());
       if (user.tipo != tipo) {
-        return (user: null, error: 'Tu cuenta es de tipo "${_tipoLabel(user.tipo)}" y estás ingresando como "${_tipoLabel(tipo)}". Elige el perfil correcto.');
+        return (
+          user: null,
+          error:
+              'Tu cuenta es de tipo "${_tipoLabel(user.tipo)}" y estás ingresando como "${_tipoLabel(tipo)}". Elige el perfil correcto.',
+        );
       }
       if (user.estado != 'activo') {
-        return (user: null, error: 'Tu cuenta está bloqueada. Contacta al centro de atención.');
+        return (
+          user: null,
+          error: 'Tu cuenta está bloqueada. Contacta al centro de atención.',
+        );
       }
       if (ci.isNotEmpty && user.ci.isNotEmpty && user.ci != ci) {
         return (user: null, error: 'El carnet (CI) no coincide con el PIN.');
       }
       return (user: user, error: null);
     } catch (e) {
-      return (user: null, error: 'Error al conectar con el servidor. Reintenta en unos segundos.');
+      return (
+        user: null,
+        error: 'Error al conectar con el servidor. Reintenta en unos segundos.',
+      );
     }
   }
 
   /// Autentica a un conductor por su PIN único (CI opcional).
   Future<({Conductor? conductor, String? error})> loginConductor(
-      String pin,
-      {String ci = ''}) async {
+    String pin, {
+    String ci = '',
+  }) async {
     try {
       final snap = await _db
           .collection(_conductoresCollection)
@@ -96,18 +118,30 @@ class FirebaseService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) {
-        return (conductor: null, error: 'El PIN $pin no existe. Revisa tu PIN o regístrate.');
+        return (
+          conductor: null,
+          error: 'El PIN $pin no existe. Revisa tu PIN o regístrate.',
+        );
       }
       final conductor = _conductorFromMap(snap.docs.first.data());
       if (ci.isNotEmpty && conductor.ci.isNotEmpty && conductor.ci != ci) {
-        return (conductor: null, error: 'El carnet (CI) no coincide con el PIN.');
+        return (
+          conductor: null,
+          error: 'El carnet (CI) no coincide con el PIN.',
+        );
       }
       if (conductor.estado != 'activo') {
-        return (conductor: null, error: 'Tu cuenta está bloqueada. Contacta al centro de atención.');
+        return (
+          conductor: null,
+          error: 'Tu cuenta está bloqueada. Contacta al centro de atención.',
+        );
       }
       return (conductor: conductor, error: null);
     } catch (e) {
-      return (conductor: null, error: 'Error al conectar con el servidor. Reintenta en unos segundos.');
+      return (
+        conductor: null,
+        error: 'Error al conectar con el servidor. Reintenta en unos segundos.',
+      );
     }
   }
 
@@ -116,10 +150,34 @@ class FirebaseService {
   Future<void> seedTestData() async {
     try {
       final usuarios = [
-        {'nombre': 'Sebastian', 'apellido': 'Condori', 'ci': '1234567', 'pin': '1234', 'tipo': 'estudiante'},
-        {'nombre': 'Maria', 'apellido': 'Garcia', 'ci': '7654321', 'pin': '2345', 'tipo': 'civil'},
-        {'nombre': 'Pedro', 'apellido': 'Flores', 'ci': '1122334', 'pin': '3456', 'tipo': 'adulto_mayor'},
-        {'nombre': 'Ana', 'apellido': 'Vargas', 'ci': '2222222', 'pin': '4567', 'tipo': 'civil'},
+        {
+          'nombre': 'Sebastian',
+          'apellido': 'Condori',
+          'ci': '1234567',
+          'pin': '1234',
+          'tipo': 'estudiante',
+        },
+        {
+          'nombre': 'Maria',
+          'apellido': 'Garcia',
+          'ci': '7654321',
+          'pin': '2345',
+          'tipo': 'civil',
+        },
+        {
+          'nombre': 'Pedro',
+          'apellido': 'Flores',
+          'ci': '1122334',
+          'pin': '3456',
+          'tipo': 'adulto_mayor',
+        },
+        {
+          'nombre': 'Ana',
+          'apellido': 'Vargas',
+          'ci': '2222222',
+          'pin': '4567',
+          'tipo': 'civil',
+        },
       ];
       for (final u in usuarios) {
         final exists = await _db
@@ -144,8 +202,20 @@ class FirebaseService {
       }
 
       final conductores = [
-        {'nombre': 'Juan', 'apellido': 'Perez', 'ci': '9876543', 'pin': '5678', 'licencia': 'LIC-12345'},
-        {'nombre': 'Carlos', 'apellido': 'Rojas', 'ci': '1010101', 'pin': '6789', 'licencia': 'LIC-67890'},
+        {
+          'nombre': 'Juan',
+          'apellido': 'Perez',
+          'ci': '9876543',
+          'pin': '5678',
+          'licencia': 'LIC-12345',
+        },
+        {
+          'nombre': 'Carlos',
+          'apellido': 'Rojas',
+          'ci': '1010101',
+          'pin': '6789',
+          'licencia': 'LIC-67890',
+        },
       ];
       for (final c in conductores) {
         final exists = await _db
@@ -232,10 +302,7 @@ class FirebaseService {
       'usuario_id': null,
     };
     try {
-      await _db
-          .collection(_conductoresCollection)
-          .doc('c-$nextId')
-          .set(doc);
+      await _db.collection(_conductoresCollection).doc('c-$nextId').set(doc);
     } catch (_) {
       return null;
     }
@@ -292,25 +359,28 @@ class FirebaseService {
     required int puntos,
     required String metodoPago,
   }) async {
-    final userDoc = await _db
-        .collection(_usersCollection)
-        .doc('u-$userId')
-        .get();
-    if (!userDoc.exists) return;
-
-    final nextId = await _nextId(_transaccionesCollection);
-    final rec = {
-      'id': -nextId,
-      'id_usuario': userId,
-      'id_conductor': 1,
-      'puntos': puntos,
-      'tipo': 'recarga',
-      'metodo_pago': metodoPago,
-      'estado': 'exitosa',
-      'fecha': DateTime.now().toUtc(),
-    };
-    await _db.collection(_transaccionesCollection).doc('r-$nextId').set(rec);
-    await addPuntos(userId, puntos);
+    if (puntos <= 0) throw ArgumentError('La recarga debe ser positiva');
+    final userRef = _db.collection(_usersCollection).doc('u-$userId');
+    final recargaRef = _db.collection(_transaccionesCollection).doc();
+    await _db.runTransaction((txn) async {
+      final userDoc = await txn.get(userRef);
+      if (!userDoc.exists || userDoc.data()?['estado'] != 'activo') {
+        throw StateError('Usuario no disponible');
+      }
+      final saldo = (userDoc.data()?['puntos'] as num?)?.toInt() ?? 0;
+      txn.update(userRef, {'puntos': saldo + puntos});
+      txn.set(recargaRef, {
+        'id': -DateTime.now().microsecondsSinceEpoch,
+        'id_usuario': userId,
+        'id_conductor': 0,
+        'puntos': puntos,
+        'tipo': 'recarga',
+        'metodo_pago': metodoPago,
+        'estado': 'exitosa',
+        'fecha': FieldValue.serverTimestamp(),
+        'fecha_cliente': DateTime.now().toUtc(),
+      });
+    });
   }
 
   /// Registra el pago de un viaje y descuenta los puntos del pasajero.
@@ -321,20 +391,51 @@ class FirebaseService {
     required int puntos,
     required String metodoPago,
     String? tipoUsuario,
+    String? paymentReference,
   }) async {
-    final nextId = await _nextId(_transaccionesCollection);
+    if (userId <= 0 || conductorId <= 0 || puntos <= 0 || metodoPago != 'qr') {
+      return (ok: false, message: 'Datos de pago inválidos');
+    }
+    if (paymentReference != null &&
+        !RegExp(r'^[a-zA-Z0-9_-]{1,80}$').hasMatch(paymentReference)) {
+      return (ok: false, message: 'Referencia de pago inválida');
+    }
     final userRef = _db.collection(_usersCollection).doc('u-$userId');
+    final conductorRef = _db
+        .collection(_conductoresCollection)
+        .doc('c-$conductorId');
     final cobroRef = _db
         .collection(_transaccionesCollection)
-        .doc('c-$nextId');
+        .doc(paymentReference == null ? null : 'c-$userId-$paymentReference');
 
     try {
       return await _db.runTransaction((txn) async {
+        final existing = await txn.get(cobroRef);
+        if (existing.exists) {
+          return (
+            ok: false,
+            message: 'Este QR ya fue pagado. Pide al conductor uno nuevo.',
+          );
+        }
         final userSnap = await txn.get(userRef);
+        final conductorSnap = await txn.get(conductorRef);
         if (!userSnap.exists) {
           return (ok: false, message: 'Usuario no encontrado');
         }
         final data = userSnap.data()!;
+        if (data['estado'] != 'activo' ||
+            !conductorSnap.exists ||
+            conductorSnap.data()?['estado'] != 'activo') {
+          return (ok: false, message: 'Pasajero o conductor no disponible');
+        }
+        final tipo = data['tipo'] as String?;
+        if (TripQr.fares[tipo] != puntos ||
+            (tipoUsuario != null && tipoUsuario != tipo)) {
+          return (
+            ok: false,
+            message: 'El QR no corresponde a tu tipo de pasajero o tarifa.',
+          );
+        }
         final saldo = (data['puntos'] as num?)?.toInt() ?? 0;
         if (saldo < puntos) {
           return (ok: false, message: 'Saldo insuficiente');
@@ -342,15 +443,16 @@ class FirebaseService {
 
         txn.update(userRef, {'puntos': saldo - puntos});
         txn.set(cobroRef, {
-          'id': nextId,
+          'id': DateTime.now().microsecondsSinceEpoch,
           'id_usuario': userId,
           'id_conductor': conductorId,
           'puntos': puntos,
           'tipo': 'cobro_viaje',
           'metodo_pago': metodoPago,
           'estado': 'exitoso',
-          'fecha': DateTime.now().toUtc(),
-          'tipo_usuario': tipoUsuario,
+          'fecha': FieldValue.serverTimestamp(),
+          'fecha_cliente': DateTime.now().toUtc(),
+          'tipo_usuario': tipo,
           'nombre_pasajero': data['nombre'],
           'apellido_pasajero': data['apellido'],
         });
@@ -389,32 +491,17 @@ class FirebaseService {
   }) async {
     if (userId != null) {
       return pagarViaje(
-          userId: userId,
-          conductorId: conductorId,
-          puntos: puntos,
-          metodoPago: metodoPago,
-          tipoUsuario: tipoUsuario);
+        userId: userId,
+        conductorId: conductorId,
+        puntos: puntos,
+        metodoPago: metodoPago,
+        tipoUsuario: tipoUsuario,
+      );
     }
-    final nextId = await _nextId(_transaccionesCollection);
-    final cobro = {
-      'id': nextId,
-      'id_usuario': userId,
-      'id_conductor': conductorId,
-      'puntos': puntos,
-      'tipo': 'cobro_viaje',
-      'metodo_pago': metodoPago,
-      'estado': 'exitoso',
-      'fecha': DateTime.now().toUtc(),
-      'tipo_usuario': tipoUsuario,
-      'nombre_pasajero': '',
-      'apellido_pasajero': '',
-    };
-    try {
-      await _db.collection(_transaccionesCollection).doc('c-$nextId').set(cobro);
-    } catch (_) {
-      return (ok: false, message: 'Error al registrar el cobro');
-    }
-    return (ok: true, message: 'Cobro registrado');
+    return (
+      ok: false,
+      message: 'El pasajero debe confirmar el pago desde su teléfono.',
+    );
   }
 
   /// Resumen diario del conductor (lista en forma de mapa del contrato PHP).
@@ -426,10 +513,6 @@ class FirebaseService {
     final snap = await _db
         .collection(_transaccionesCollection)
         .where('id_conductor', isEqualTo: conductorId)
-        .where('tipo', isEqualTo: 'cobro_viaje')
-        .where('estado', isEqualTo: 'exitoso')
-        .where('fecha', isGreaterThanOrEqualTo: start)
-        .where('fecha', isLessThan: end)
         .get();
 
     int totalPasajeros = 0;
@@ -441,6 +524,11 @@ class FirebaseService {
 
     for (final d in snap.docs) {
       final m = d.data();
+      if ((m['id_conductor'] as num?)?.toInt() != conductorId) continue;
+      if (m['tipo'] != 'cobro_viaje') continue;
+      if (m['estado'] != 'exitoso') continue;
+      if (!_enRangoHoy(m['fecha'], start, end)) continue;
+
       totalPasajeros++;
       totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
       final tipo = m['tipo_usuario'] as String? ?? 'civil';
@@ -479,16 +567,15 @@ class FirebaseService {
     final snap = await _db
         .collection(_transaccionesCollection)
         .where('id_conductor', isEqualTo: conductorId)
-        .where('tipo', isEqualTo: 'cobro_viaje')
-        .where('estado', isEqualTo: 'exitoso')
-        .where('fecha', isGreaterThanOrEqualTo: start)
-        .where('fecha', isLessThan: end)
-        .orderBy('fecha', descending: true)
         .get();
 
     final out = <Map<String, dynamic>>[];
     for (final d in snap.docs) {
       final m = d.data();
+      if ((m['id_conductor'] as num?)?.toInt() != conductorId) continue;
+      if (m['tipo'] != 'cobro_viaje') continue;
+      if (m['estado'] != 'exitoso') continue;
+      if (!_enRangoHoy(m['fecha'], start, end)) continue;
       final userId = m['id_usuario'] as int?;
       out.add({
         'id': m['id'],
@@ -506,6 +593,7 @@ class FirebaseService {
         'tipo_usuario': m['tipo_usuario'] ?? '',
       });
     }
+    out.sort((a, b) => (b['fecha'] as String).compareTo(a['fecha'] as String));
     return out;
   }
 
@@ -529,6 +617,41 @@ class FirebaseService {
         .map((ds) => ds.exists ? _userFromMap(ds.data()!) : null);
   }
 
+  /// Solo los documentos confirmados por el servidor pueden avisar al chofer.
+  /// La consulta por conductor usa un índice simple, disponible por defecto.
+  Stream<({List<DriverPayment> payments, bool fromCache})>
+  confirmedDriverPaymentsStream(int conductorId) {
+    return _db
+        .collection(_transaccionesCollection)
+        .where('id_conductor', isEqualTo: conductorId)
+        .snapshots(includeMetadataChanges: true)
+        .map(
+          (snapshot) => (
+            fromCache: snapshot.metadata.isFromCache,
+            payments: snapshot.docs
+                .where(
+                  (doc) =>
+                      !doc.metadata.hasPendingWrites &&
+                      doc.data()['tipo'] == 'cobro_viaje' &&
+                      doc.data()['estado'] == 'exitoso' &&
+                      doc.data()['fecha'] is Timestamp,
+                )
+                .map((doc) {
+                  final data = doc.data();
+                  return DriverPayment(
+                    documentId: doc.id,
+                    puntos: (data['puntos'] as num).toInt(),
+                    pasajero:
+                        '${data['nombre_pasajero'] ?? ''} ${data['apellido_pasajero'] ?? ''}'
+                            .trim(),
+                    fecha: (data['fecha'] as Timestamp).toDate(),
+                  );
+                })
+                .toList(),
+          ),
+        );
+  }
+
   /// Historial del pasajero en vivo (recargas + cobros).
   Stream<List<app_tx.Transaction>> transactionHistoryStream(int userId) {
     return _db
@@ -536,95 +659,107 @@ class FirebaseService {
         .where('id_usuario', isEqualTo: userId)
         .orderBy('fecha', descending: true)
         .snapshots()
-        .map((qs) =>
-            qs.docs.map((d) => _transactionFromMap(d.data())).toList());
+        .map(
+          (qs) => qs.docs.map((d) => _transactionFromMap(d.data())).toList(),
+        );
   }
 
   /// Resumen diario del conductor en vivo.
+  ///
+  /// Se calcula en el cliente sobre las transacciones más recientes para no
+  /// depender de índices compuestos de Firestore: así funciona aunque el
+  /// índice no esté desplegado y en el cambio se dispara la notificación.
   Stream<Map<String, dynamic>> dailySummaryStream(int conductorId) {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-
-    final query = _db
+    return _db
         .collection(_transaccionesCollection)
         .where('id_conductor', isEqualTo: conductorId)
-        .where('tipo', isEqualTo: 'cobro_viaje')
-        .where('estado', isEqualTo: 'exitoso')
-        .where('fecha', isGreaterThanOrEqualTo: start)
-        .where('fecha', isLessThan: end);
+        .snapshots()
+        .map((qs) {
+          final now = DateTime.now();
+          final start = DateTime(now.year, now.month, now.day);
+          final end = start.add(const Duration(days: 1));
 
-    return query.snapshots().map((qs) {
-      int totalPasajeros = 0;
-      int totalPuntos = 0;
-      int estudiantes = 0;
-      int civiles = 0;
-      int mayores = 0;
-      int discapacitados = 0;
+          int totalPasajeros = 0;
+          int totalPuntos = 0;
+          int estudiantes = 0;
+          int civiles = 0;
+          int mayores = 0;
+          int discapacitados = 0;
 
-      for (final d in qs.docs) {
-        final m = d.data();
-        totalPasajeros++;
-        totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
-        final tipo = m['tipo_usuario'] as String? ?? 'civil';
-        switch (tipo) {
-          case 'estudiante':
-            estudiantes++;
-            break;
-          case 'civil':
-            civiles++;
-            break;
-          case 'adulto_mayor':
-            mayores++;
-            break;
-          case 'discapacitado':
-            discapacitados++;
-            break;
-        }
-      }
+          for (final d in qs.docs) {
+            final m = d.data();
+            if ((m['id_conductor'] as num?)?.toInt() != conductorId) continue;
+            if (m['tipo'] != 'cobro_viaje') continue;
+            if (m['estado'] != 'exitoso') continue;
+            if (!_enRangoHoy(m['fecha'], start, end)) continue;
 
-      return {
-        'total_pasajeros': totalPasajeros,
-        'total_puntos': totalPuntos,
-        'estudiantes': estudiantes,
-        'civiles': civiles,
-        'mayores': mayores,
-        'discapacitados': discapacitados,
-      };
-    });
+            totalPasajeros++;
+            totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
+            final tipo = m['tipo_usuario'] as String? ?? 'civil';
+            switch (tipo) {
+              case 'estudiante':
+                estudiantes++;
+                break;
+              case 'civil':
+                civiles++;
+                break;
+              case 'adulto_mayor':
+                mayores++;
+                break;
+              case 'discapacitado':
+                discapacitados++;
+                break;
+            }
+          }
+
+          return {
+            'total_pasajeros': totalPasajeros,
+            'total_puntos': totalPuntos,
+            'estudiantes': estudiantes,
+            'civiles': civiles,
+            'mayores': mayores,
+            'discapacitados': discapacitados,
+          };
+        });
   }
 
   /// Cobros del día en vivo (para el historial del conductor).
   Stream<List<Map<String, dynamic>>> dailyHistoryStream(int conductorId) {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day);
-    final end = start.add(const Duration(days: 1));
-
     return _db
         .collection(_transaccionesCollection)
         .where('id_conductor', isEqualTo: conductorId)
-        .where('tipo', isEqualTo: 'cobro_viaje')
-        .where('estado', isEqualTo: 'exitoso')
-        .where('fecha', isGreaterThanOrEqualTo: start)
-        .where('fecha', isLessThan: end)
-        .orderBy('fecha', descending: true)
         .snapshots()
-        .map((qs) => qs.docs.map((d) {
-              final m = d.data();
-              return {
-                'id': m['id'],
-                'id_usuario': m['id_usuario'],
-                'id_conductor': m['id_conductor'],
-                'puntos': m['puntos'],
-                'tipo': m['tipo'],
-                'metodo_pago': m['metodo_pago'],
-                'estado': m['estado'],
-                'fecha': _formatFecha(m['fecha']),
-                'nombre': (m['nombre_pasajero'] as String?) ?? '',
-                'apellido': (m['apellido_pasajero'] as String?) ?? '',
-                'tipo_usuario': m['tipo_usuario'] ?? '',
-              };
-            }).toList());
+        .map((qs) {
+          final now = DateTime.now();
+          final start = DateTime(now.year, now.month, now.day);
+          final end = start.add(const Duration(days: 1));
+
+          final out = <Map<String, dynamic>>[];
+          for (final d in qs.docs) {
+            final m = d.data();
+            if ((m['id_conductor'] as num?)?.toInt() != conductorId) continue;
+            if (m['tipo'] != 'cobro_viaje') continue;
+            if (m['estado'] != 'exitoso') continue;
+            if (!_enRangoHoy(m['fecha'], start, end)) continue;
+            out.add({
+              'id': m['id'],
+              'id_usuario': m['id_usuario'],
+              'id_conductor': m['id_conductor'],
+              'puntos': m['puntos'],
+              'tipo': m['tipo'],
+              'metodo_pago': m['metodo_pago'],
+              'estado': m['estado'],
+              'fecha': _formatFecha(m['fecha']),
+              'nombre': (m['nombre_pasajero'] as String?) ?? '',
+              'apellido': (m['apellido_pasajero'] as String?) ?? '',
+              'tipo_usuario': m['tipo_usuario'] ?? '',
+            });
+          }
+          out.sort(
+            (a, b) => (b['fecha'] as String).compareTo(a['fecha'] as String),
+          );
+          return out;
+        });
   }
 
   // =====================================================================
@@ -668,7 +803,10 @@ class FirebaseService {
       }
       return (user: _userFromMap(snap.docs.first.data()), error: null);
     } catch (e) {
-      return (user: null, error: 'Error al conectar con el servidor. Reintenta en unos segundos.');
+      return (
+        user: null,
+        error: 'Error al conectar con el servidor. Reintenta en unos segundos.',
+      );
     }
   }
 
@@ -679,19 +817,25 @@ class FirebaseService {
         .where('rol', isEqualTo: 'PASAJERO')
         .snapshots()
         .map((qs) {
-      final list = qs.docs.map((d) => d.data()).toList();
-      list.sort((a, b) => ((b['id'] as num?)?.toInt() ?? 0)
-          .compareTo((a['id'] as num?)?.toInt() ?? 0));
-      return list;
-    });
+          final list = qs.docs.map((d) => d.data()).toList();
+          list.sort(
+            (a, b) => ((b['id'] as num?)?.toInt() ?? 0).compareTo(
+              (a['id'] as num?)?.toInt() ?? 0,
+            ),
+          );
+          return list;
+        });
   }
 
   /// Todos los conductores en vivo (para el panel admin).
   Stream<List<Map<String, dynamic>>> adminConductoresStream() {
     return _db.collection(_conductoresCollection).snapshots().map((qs) {
       final list = qs.docs.map((d) => d.data()).toList();
-      list.sort((a, b) => ((b['id'] as num?)?.toInt() ?? 0)
-          .compareTo((a['id'] as num?)?.toInt() ?? 0));
+      list.sort(
+        (a, b) => ((b['id'] as num?)?.toInt() ?? 0).compareTo(
+          (a['id'] as num?)?.toInt() ?? 0,
+        ),
+      );
       return list;
     });
   }
@@ -747,27 +891,26 @@ class FirebaseService {
         .orderBy('fecha_creacion', descending: true)
         .limit(200)
         .snapshots()
-        .map((qs) => qs.docs
-            .map((d) => {'docId': d.id, ...d.data()})
-            .toList());
+        .map((qs) => qs.docs.map((d) => {'docId': d.id, ...d.data()}).toList());
   }
 
   /// Incidencias del usuario (pasajero o conductor) en vivo.
   Stream<List<Map<String, dynamic>>> incidenciasDeUsuarioStream(
-      String reportanteClave) {
+    String reportanteClave,
+  ) {
     return _db
         .collection(_incidenciasCollection)
         .where('reportante_clave', isEqualTo: reportanteClave)
         .orderBy('fecha_creacion', descending: true)
         .snapshots()
-        .map((qs) => qs.docs
-            .map((d) => {'docId': d.id, ...d.data()})
-            .toList());
+        .map((qs) => qs.docs.map((d) => {'docId': d.id, ...d.data()}).toList());
   }
 
   /// Actualiza campos de una incidencia (estado, respuesta, notas, acciones).
   Future<void> actualizarIncidencia(
-      String docId, Map<String, dynamic> cambios) {
+    String docId,
+    Map<String, dynamic> cambios,
+  ) {
     return _db.collection(_incidenciasCollection).doc(docId).update(cambios);
   }
 
@@ -780,30 +923,39 @@ class FirebaseService {
     for (final col in [_usersCollection, _conductoresCollection]) {
       if (numerico) {
         for (final campo in ['ci', 'pin']) {
-          await _appendMatches(_db.collection(col).where(campo, isEqualTo: qq),
-              col == _usersCollection, out);
+          await _appendMatches(
+            _db.collection(col).where(campo, isEqualTo: qq),
+            col == _usersCollection,
+            out,
+          );
         }
       } else {
         for (final campo in ['nombre', 'apellido']) {
-          await _appendMatches(_db.collection(col).where(campo, isEqualTo: qq),
-              col == _usersCollection, out);
+          await _appendMatches(
+            _db.collection(col).where(campo, isEqualTo: qq),
+            col == _usersCollection,
+            out,
+          );
         }
       }
     }
     return out;
   }
 
-  Future<void> _appendMatches(Query q, bool esUsuario, List<Map<String, dynamic>> out) async {
+  Future<void> _appendMatches(
+    Query q,
+    bool esUsuario,
+    List<Map<String, dynamic>> out,
+  ) async {
     try {
       final snap = await q.limit(20).get();
       for (final d in snap.docs) {
         final raw = d.data();
-        final data =
-            Map<String, dynamic>.from(raw is Map ? raw : const {});
+        final data = Map<String, dynamic>.from(raw is Map ? raw : const {});
         final m = {
           'docId': d.id,
           ...data,
-          'canal': esUsuario ? 'pasajero' : 'conductor'
+          'canal': esUsuario ? 'pasajero' : 'conductor',
         };
         if (!out.any((e) => e['docId'] == d.id)) out.add(m);
       }
@@ -815,19 +967,29 @@ class FirebaseService {
   Future<Map<String, dynamic>?> fetchClienteDoc(bool esUsuario, int id) async {
     try {
       final col = esUsuario ? _usersCollection : _conductoresCollection;
-      final doc = await _db.collection(col).doc('${esUsuario ? 'u' : 'c'}-$id').get();
+      final doc = await _db
+          .collection(col)
+          .doc('${esUsuario ? 'u' : 'c'}-$id')
+          .get();
       if (!doc.exists) return null;
-      return {'docId': doc.id, ...doc.data()!,
-          'canal': esUsuario ? 'pasajero' : 'conductor'};
+      return {
+        'docId': doc.id,
+        ...doc.data()!,
+        'canal': esUsuario ? 'pasajero' : 'conductor',
+      };
     } catch (_) {
       return null;
     }
   }
 
   Future<({bool ok, String message})> setUsuarioEstado(
-      int userId, String estado) async {
+    int userId,
+    String estado,
+  ) async {
     try {
-      await _db.collection(_usersCollection).doc('u-$userId').update({'estado': estado});
+      await _db.collection(_usersCollection).doc('u-$userId').update({
+        'estado': estado,
+      });
       return (ok: true, message: 'Estado actualizado');
     } catch (_) {
       return (ok: false, message: 'No se pudo actualizar');
@@ -835,9 +997,13 @@ class FirebaseService {
   }
 
   Future<({bool ok, String message})> setConductorEstado(
-      int id, String estado) async {
+    int id,
+    String estado,
+  ) async {
     try {
-      await _db.collection(_conductoresCollection).doc('c-$id').update({'estado': estado});
+      await _db.collection(_conductoresCollection).doc('c-$id').update({
+        'estado': estado,
+      });
       return (ok: true, message: 'Estado actualizado');
     } catch (_) {
       return (ok: false, message: 'No se pudo actualizar');
@@ -845,9 +1011,13 @@ class FirebaseService {
   }
 
   Future<({bool ok, String message})> cambiarTipoUsuario(
-      int userId, String tipo) async {
+    int userId,
+    String tipo,
+  ) async {
     try {
-      await _db.collection(_usersCollection).doc('u-$userId').update({'tipo': tipo});
+      await _db.collection(_usersCollection).doc('u-$userId').update({
+        'tipo': tipo,
+      });
       return (ok: true, message: 'Tipo actualizado');
     } catch (_) {
       return (ok: false, message: 'No se pudo actualizar el tipo');
@@ -906,12 +1076,12 @@ class FirebaseService {
   }
 
   String _tipoLabel(String t) => switch (t) {
-        'estudiante' => 'Estudiante',
-        'civil' => 'Ciudadano',
-        'adulto_mayor' => 'Adulto mayor',
-        'discapacitado' => 'Discapacitado',
-        _ => t,
-      };
+    'estudiante' => 'Estudiante',
+    'civil' => 'Ciudadano',
+    'adulto_mayor' => 'Adulto mayor',
+    'discapacitado' => 'Discapacitado',
+    _ => t,
+  };
 
   app_tx.Transaction _transactionFromMap(Map<String, dynamic> m) {
     return app_tx.Transaction(
@@ -922,7 +1092,11 @@ class FirebaseService {
       tipo: m['tipo'] as String,
       metodoPago: m['metodo_pago'] as String,
       estado: m['estado'] as String,
-      fecha: (m['fecha'] as Timestamp).toDate(),
+      fecha: m['fecha'] is Timestamp
+          ? (m['fecha'] as Timestamp).toDate()
+          : m['fecha_cliente'] is Timestamp
+          ? (m['fecha_cliente'] as Timestamp).toDate()
+          : DateTime.now(),
     );
   }
 
@@ -933,5 +1107,19 @@ class FirebaseService {
           '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}:${d.second.toString().padLeft(2, '0')}';
     }
     return '';
+  }
+
+  /// Indica si `fecha` (Timestamp o DateTime de Firestore) cae en [start, end)
+  /// en hora local. Se usa para filtrar en el cliente sin índices compuestos.
+  bool _enRangoHoy(dynamic fecha, DateTime start, DateTime end) {
+    DateTime? d;
+    if (fecha is Timestamp) {
+      d = fecha.toDate();
+    } else if (fecha is DateTime) {
+      d = fecha;
+    }
+    if (d == null) return false;
+    final local = d.toLocal();
+    return !local.isBefore(start) && local.isBefore(end);
   }
 }

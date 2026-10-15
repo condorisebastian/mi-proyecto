@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:share_plus/share_plus.dart';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
@@ -27,12 +28,12 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
       _liveSub = FirebaseService.instance
           .dailySummaryStream(authService.currentConductor!.id)
           .listen((summary) {
-        if (mounted) {
-          setState(() {
-            _summary = summary;
-          });
-        }
-      }, onError: (_) {});
+            if (mounted) {
+              setState(() {
+                _summary = summary;
+              });
+            }
+          }, onError: (_) {});
     } else {
       _loadSummary();
     }
@@ -52,6 +53,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
       final summary = await _apiService.getDailySummary(
         authService.currentConductor!.id,
       );
+      if (!mounted) return;
       setState(() {
         _summary = summary;
       });
@@ -74,10 +76,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -240,10 +239,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ),
           Text(
@@ -259,12 +255,25 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
     );
   }
 
-  void _shareSummary() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Función de compartir en desarrollo'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+  Future<void> _shareSummary() async {
+    final conductor = context.read<DriverAuthService>().currentConductor;
+    final now = DateTime.now();
+    try {
+      await Share.share(
+        'Transita Bolivia — Resumen del ${now.day}/${now.month}/${now.year}\n'
+        'Conductor: ${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}\n'
+        'Viajes: ${_summary['total_pasajeros'] ?? 0}\n'
+        'Recaudación: ${_summary['total_puntos'] ?? 0} puntos\n'
+        'Estudiantes: ${_summary['estudiantes'] ?? 0}\n'
+        'Civiles: ${_summary['civiles'] ?? 0}\n'
+        'Adultos mayores: ${_summary['mayores'] ?? 0}\n'
+        'Personas con discapacidad: ${_summary['discapacitados'] ?? 0}',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo compartir el resumen.')),
+      );
+    }
   }
 }

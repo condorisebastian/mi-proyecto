@@ -41,7 +41,10 @@ class ApiService {
   }
 
   Future<({bool ok, String message})> rechargePoints(
-      int userId, int points, String metodoPago) async {
+    int userId,
+    int points,
+    String metodoPago,
+  ) async {
     if (AppConfig.useFirebase) {
       try {
         await FirebaseService.instance.recargar(
@@ -78,13 +81,21 @@ class ApiService {
   }
 
   Future<({bool ok, String message})> payTrip(
-      int userId, int conductorId, int puntos, String metodoPago) async {
+    int userId,
+    int conductorId,
+    int puntos,
+    String metodoPago, {
+    String? tipoUsuario,
+    String? paymentReference,
+  }) async {
     if (AppConfig.useFirebase) {
       return FirebaseService.instance.pagarViaje(
         userId: userId,
         conductorId: conductorId,
         puntos: puntos,
         metodoPago: metodoPago,
+        tipoUsuario: tipoUsuario,
+        paymentReference: paymentReference,
       );
     }
 
@@ -98,6 +109,8 @@ class ApiService {
               'conductor_id': conductorId,
               'puntos': puntos,
               'metodo_pago': metodoPago,
+              'tipo_usuario': ?tipoUsuario,
+              'payment_reference': ?paymentReference,
             }),
           )
           .timeout(AppConfig.timeout);

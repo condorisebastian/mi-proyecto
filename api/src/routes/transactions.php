@@ -27,10 +27,18 @@ function handle_transactions(string $method, array $seg): void
         $conductorId = (int)($body['conductor_id'] ?? 0);
         $puntos      = (int)($body['puntos'] ?? 0);
         $userIdIn    = (int)($body['user_id'] ?? 0);
+        $reference = $body['payment_reference'] ?? null;
 
         if (!$conductorId || $puntos <= 0) {
             json_out(['error' => 'conductor_id y puntos son obligatorios'], 400);
         }
+        if (($body['metodo_pago'] ?? 'qr') !== 'qr'
+            || ($reference !== null && (!is_string($reference)
+                || !preg_match('/^[a-zA-Z0-9_-]{1,80}$/', $reference)))) {
+            json_out(['error' => 'Datos de pago inválidos'], 400);
+        }
+        $codigo = $reference === null ? uniqid('TXN-')
+            : 'QR-' . substr(hash('sha256', $userIdIn . ':' . $conductorId . ':' . $reference), 0, 40);
 
         // El cobro lo hace el conductor autenticado (siempre) y si paga un
         // pasajero vinculado, este debe ser el dueño del token.
@@ -56,18 +64,18 @@ function handle_transactions(string $method, array $seg): void
             }
 
             $idPasajero = null;
-            $metodoPago = 'tarjeta_nfc';
+            $metodoPago = 'qr';
             $tipoUsuario = null;
 
             if (!empty($body['user_id'])) {
                 $userId = (int)$body['user_id'];
 
                 $st = $pdo->prepare(
-                    "SELECT p.id_pasajero, s.saldo_actual
+                    "SELECT p.id_pasajero, p.tipo, s.saldo_actual
                      FROM usuarios u
                      JOIN pasajeros p ON p.id_usuario = u.id_usuario
                      LEFT JOIN saldos s ON s.id_pasajero = p.id_pasajero
-                     WHERE u.id_usuario = ? AND u.estado = 'activo'"
+                     WHERE u.id_usuario = ? AND u.estado = 'activo' FOR UPDATE"
                 );
                 $st->execute([$userId]);
                 $row = $st->fetch();
@@ -75,6 +83,18 @@ function handle_transactions(string $method, array $seg): void
                 if (!$row) {
                     $pdo->rollBack();
                     json_out(['error' => 'Usuario no encontrado'], 404);
+                }
+                $tarifas = ['estudiante' => 1, 'civil' => 3, 'adulto_mayor' => 1, 'discapacitado' => 1];
+                if (($tarifas[$row['tipo']] ?? 0) !== $puntos
+                    || (isset($body['tipo_usuario']) && $body['tipo_usuario'] !== $row['tipo'])) {
+                    $pdo->rollBack();
+                    json_out(['error' => 'El QR no corresponde a tu tipo de pasajero o tarifa'], 400);
+                }
+                $st = $pdo->prepare('SELECT id_cobro FROM cobros WHERE codigo_transaccion = ?');
+                $st->execute([$codigo]);
+                if ($st->fetch()) {
+                    $pdo->rollBack();
+                    json_out(['error' => 'Este QR ya fue pagado. Pide al conductor uno nuevo.'], 409);
                 }
                 if ((float)($row['saldo_actual'] ?? 0) < $puntos) {
                     $pdo->rollBack();
@@ -93,7 +113,6 @@ function handle_transactions(string $method, array $seg): void
             $tipoUsuario = isset($body['tipo_usuario']) && $body['tipo_usuario'] !== ''
                 ? $body['tipo_usuario'] : null;
 
-            $codigo = uniqid('TXN-');
             $st = $pdo->prepare(
                 'INSERT INTO cobros (id_pasajero, id_conductor, monto, metodo_pago, tipo_usuario, codigo_transaccion)
                  VALUES (?, ?, ?, ?, ?, ?)'
@@ -126,7 +145,7 @@ function handle_transactions(string $method, array $seg): void
             json_out(['error' => 'user_id y puntos son obligatorios'], 400);
         }
 
-        $validMethods = ['tarjeta_nfc', 'qr', 'recarga', 'qr_bancario', 'tigo_money', 'unnocc'];
+        $validMethods = ['qr', 'recarga', 'qr_bancario', 'tigo_money', 'unnocc'];
         if (!in_array($metodoPago, $validMethods, true)) {
             json_out(['error' => 'Método de pago inválido'], 400);
         }

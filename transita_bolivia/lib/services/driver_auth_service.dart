@@ -28,8 +28,10 @@ class DriverAuthService extends ChangeNotifier {
 
     if (AppConfig.useFirebase) {
       try {
-        final result =
-            await FirebaseService.instance.loginConductor(pin, ci: ci);
+        final result = await FirebaseService.instance.loginConductor(
+          pin,
+          ci: ci,
+        );
         _lastLoginError = result.error;
         final conductor = result.conductor;
         if (conductor != null) {
@@ -53,10 +55,7 @@ class DriverAuthService extends ChangeNotifier {
           .post(
             Uri.parse('$baseUrl/auth/login-conductor'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'pin': pin,
-              'ci': ci,
-            }),
+            body: jsonEncode({'pin': pin, 'ci': ci}),
           )
           .timeout(AppConfig.timeout);
 
@@ -155,7 +154,12 @@ class DriverAuthService extends ChangeNotifier {
         final raw = prefs.getString(_kSessionKey);
         if (raw != null) {
           final data = jsonDecode(raw) as Map<String, dynamic>;
-          final expiresAt = (data['expiresAt'] as int?) ??
+          if (data['token'] != 'firebase') {
+            await _clearSession();
+            return;
+          }
+          final expiresAt =
+              (data['expiresAt'] as int?) ??
               DateTime.now().millisecondsSinceEpoch;
           if (expiresAt <= DateTime.now().millisecondsSinceEpoch) {
             await _clearSession();
@@ -173,8 +177,12 @@ class DriverAuthService extends ChangeNotifier {
       if (raw == null) return;
 
       final data = jsonDecode(raw) as Map<String, dynamic>;
-      final expiresAt = (data['expiresAt'] as int?) ??
-          DateTime.now().millisecondsSinceEpoch;
+      if (data['token'] == 'firebase') {
+        await _clearSession();
+        return;
+      }
+      final expiresAt =
+          (data['expiresAt'] as int?) ?? DateTime.now().millisecondsSinceEpoch;
       if (expiresAt <= DateTime.now().millisecondsSinceEpoch) {
         await _clearSession();
         return;
@@ -195,9 +203,7 @@ class DriverAuthService extends ChangeNotifier {
         jsonEncode({
           'conductor': _currentConductor!.toJson(),
           'token': _token,
-          'expiresAt': DateTime.now()
-              .add(_kSessionTtl)
-              .millisecondsSinceEpoch,
+          'expiresAt': DateTime.now().add(_kSessionTtl).millisecondsSinceEpoch,
         }),
       );
     } catch (e) {

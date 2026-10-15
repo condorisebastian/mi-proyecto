@@ -27,12 +27,12 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
       _liveSub = FirebaseService.instance
           .dailyHistoryStream(authService.currentConductor!.id)
           .listen((history) {
-        if (mounted) {
-          setState(() {
-            _history = history;
-          });
-        }
-      }, onError: (_) {});
+            if (mounted) {
+              setState(() {
+                _history = history;
+              });
+            }
+          }, onError: (_) {});
     } else {
       _loadHistory();
     }
@@ -71,10 +71,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.2],
           ),
         ),
@@ -174,10 +171,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
               color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.directions_bus,
-              color: Colors.orange,
-            ),
+            child: const Icon(Icons.directions_bus, color: Colors.orange),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -193,20 +187,17 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
                 ),
                 Text(
                   '$metodo · $tipoUsuario',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
           ),
           Text(
-            '-$puntos pts',
+            '+$puntos pts',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.red,
+              color: Colors.green,
             ),
           ),
         ],
@@ -216,8 +207,6 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
 
   String _metodoLabel(dynamic metodo) {
     switch (metodo) {
-      case 'tarjeta_nfc':
-        return 'Tarjeta';
       case 'qr':
         return 'QR';
       default:
