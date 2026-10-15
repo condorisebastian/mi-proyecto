@@ -28,8 +28,9 @@ function handle_transactions(string $method, array $seg): void
         $puntos      = (int)($body['puntos'] ?? 0);
         $userIdIn    = (int)($body['user_id'] ?? 0);
         $reference = $body['payment_reference'] ?? null;
+        $cantidad = (int)($body['cantidad_pasajeros'] ?? 1);
 
-        if (!$conductorId || $puntos <= 0) {
+        if (!$conductorId || $puntos <= 0 || $cantidad < 1 || $cantidad > 50) {
             json_out(['error' => 'conductor_id y puntos son obligatorios'], 400);
         }
         if (($body['metodo_pago'] ?? 'qr') !== 'qr'
@@ -85,7 +86,7 @@ function handle_transactions(string $method, array $seg): void
                     json_out(['error' => 'Usuario no encontrado'], 404);
                 }
                 $tarifas = ['estudiante' => 1, 'civil' => 3, 'adulto_mayor' => 1, 'discapacitado' => 1];
-                if (($tarifas[$row['tipo']] ?? 0) !== $puntos
+                if (($tarifas[$row['tipo']] ?? 0) * $cantidad !== $puntos
                     || (isset($body['tipo_usuario']) && $body['tipo_usuario'] !== $row['tipo'])) {
                     $pdo->rollBack();
                     json_out(['error' => 'El QR no corresponde a tu tipo de pasajero o tarifa'], 400);
@@ -114,10 +115,10 @@ function handle_transactions(string $method, array $seg): void
                 ? $body['tipo_usuario'] : null;
 
             $st = $pdo->prepare(
-                'INSERT INTO cobros (id_pasajero, id_conductor, monto, metodo_pago, tipo_usuario, codigo_transaccion)
-                 VALUES (?, ?, ?, ?, ?, ?)'
+                'INSERT INTO cobros (id_pasajero, id_conductor, monto, metodo_pago, tipo_usuario, codigo_transaccion, cantidad_pasajeros)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
             );
-            $st->execute([$idPasajero, $conductorId, $puntos, $metodoPago, $tipoUsuario, $codigo]);
+            $st->execute([$idPasajero, $conductorId, $puntos, $metodoPago, $tipoUsuario, $codigo, $cantidad]);
 
             $pdo->commit();
             json_out(['ok' => true]);
@@ -215,6 +216,7 @@ function handle_transactions(string $method, array $seg): void
                     'cobro_viaje' AS tipo,
                     c.metodo_pago,
                     c.estado,
+                    c.cantidad_pasajeros,
                     CONCAT(c.fecha, ' ', c.hora) AS fecha_orden,
                     CONCAT(c.fecha, ' ', c.hora) AS fecha
                FROM cobros c
@@ -228,6 +230,7 @@ function handle_transactions(string $method, array $seg): void
                     'recarga' AS tipo,
                     r.metodo_pago,
                     r.estado,
+                    1 AS cantidad_pasajeros,
                     r.fecha AS fecha_orden,
                     DATE_FORMAT(r.fecha, '%Y-%m-%d %H:%i:%s') AS fecha
                FROM recargas r
@@ -248,6 +251,7 @@ function handle_transactions(string $method, array $seg): void
                 'tipo'         => $r['tipo'],
                 'metodo_pago'  => $r['metodo_pago'],
                 'estado'       => $r['estado'],
+                'cantidad_pasajeros' => (int)$r['cantidad_pasajeros'],
                 'fecha'        => $r['fecha'],
             ];
         }
@@ -263,12 +267,12 @@ function handle_transactions(string $method, array $seg): void
         }
 
         $st = $pdo->prepare(
-            "SELECT COUNT(*) AS total_pasajeros,
+            "SELECT COALESCE(SUM(c.cantidad_pasajeros), 0) AS total_pasajeros,
                     COALESCE(SUM(c.monto), 0) AS total_puntos,
-                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'estudiante' THEN 1 ELSE 0 END), 0) AS estudiantes,
-                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'civil' THEN 1 ELSE 0 END), 0) AS civiles,
-                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'adulto_mayor' THEN 1 ELSE 0 END), 0) AS mayores,
-                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'discapacitado' THEN 1 ELSE 0 END), 0) AS discapacitados
+                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'estudiante' THEN c.cantidad_pasajeros ELSE 0 END), 0) AS estudiantes,
+                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'civil' THEN c.cantidad_pasajeros ELSE 0 END), 0) AS civiles,
+                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'adulto_mayor' THEN c.cantidad_pasajeros ELSE 0 END), 0) AS mayores,
+                    COALESCE(SUM(CASE WHEN COALESCE(c.tipo_usuario, p.tipo) = 'discapacitado' THEN c.cantidad_pasajeros ELSE 0 END), 0) AS discapacitados
                FROM cobros c
                LEFT JOIN pasajeros p ON p.id_pasajero = c.id_pasajero
               WHERE c.id_conductor = ?
@@ -304,6 +308,7 @@ function handle_transactions(string $method, array $seg): void
                     'cobro_viaje' AS tipo,
                     c.metodo_pago,
                     c.estado,
+                    c.cantidad_pasajeros,
                     CONCAT(c.fecha, ' ', c.hora) AS fecha,
                     COALESCE(u.nombre, '') AS nombre,
                     COALESCE(u.apellido, '') AS apellido,
@@ -327,6 +332,7 @@ function handle_transactions(string $method, array $seg): void
                 'tipo'         => $r['tipo'],
                 'metodo_pago'  => $r['metodo_pago'],
                 'estado'       => $r['estado'],
+                'cantidad_pasajeros' => (int)$r['cantidad_pasajeros'],
                 'fecha'        => $r['fecha'],
                 'nombre'       => $r['nombre'],
                 'apellido'     => $r['apellido'],

@@ -52,8 +52,9 @@ mi-proyecto/
 
 App unificada para pasajeros y conductores con selección de rol al iniciar:
 
-- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, recarga de demostración, pago de viaje por QR e historial.
-- **Conductor**: login/registro por PIN, cobro por QR, alerta sonora y visual de pago confirmado, resumen diario e historial.
+- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, chat de recargas con el operador, pago individual o grupal por QR e historial.
+- **Conductor**: login/registro por PIN, cobro por QR con cuadrícula de categorías e iconos, cantidad de pasajes, alerta sonora y visual, resumen, historial y chat de retiros diarios.
+- **Administrador**: bandeja Chats, conversación en vivo y confirmación/rechazo de solicitudes de recarga y retiro.
 
 Con Apache corriendo y la API publicada:
 
@@ -106,13 +107,31 @@ sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
 1. Instalar la misma compilación Firebase en ambos equipos, con acceso a internet.
 2. Samsung A70 (`R58M54T79VR`): pasajero estudiante, PIN `1234`.
 3. Tecno BG7 (`11424153CR013112`): conductor, PIN `5678`.
-4. Comprobar que el pasajero tenga saldo; la recarga dentro de la app es de
-   demostración y requiere confirmación explícita. Cancelar no recarga.
-5. En el Tecno, elegir **Cobrar → Estudiante → Mostrar QR**.
+4. Comprobar que el pasajero tenga saldo. En **Chat → Solicitar recarga**, enviar
+   monto y referencia. En **Administración → Chats**, el operador responde y
+   confirma el pago verificado; entonces se acreditan los puntos una sola vez.
+5. En el Tecno, elegir **Cobrar → Estudiante**. En **Pago**, usar + / − para
+   seleccionar 1, 2, 3 o más pasajes; el QR incluye la cantidad y el total.
 6. En el Samsung, elegir **Pagar → Escanear QR del conductor → Pagar**.
 7. El Samsung muestra el comprobante y el nuevo saldo. El Tecno emite dos tonos,
    vibra y muestra **PAGO EXITOSO** sobre el QR, con el importe y el pasajero.
    El historial y el resumen se actualizan en vivo.
+
+En el chat del conductor se muestra su recaudación diaria disponible, lo reservado
+y lo retirado. El calendario permite consultar días anteriores y solicitar su
+saldo pendiente, sin perderlo al cambiar de día. **Solicitar retiro** reserva el monto; el operador confirma solo
+después de entregar el dinero. Rechazar libera la reserva. Los retiros no pueden
+superar los cobros exitosos disponibles de ese conductor y día. La confirmación
+registra la operación; la app no ejecuta transferencias bancarias.
+
+Los chats usan `chats/{id}/mensajes`, `solicitudes_financieras` y `liquidaciones`.
+Desplegar las reglas antes de probar la nueva sección:
+`firebase deploy --only firestore:rules --project transita-bolivia`.
+No requieren índices compuestos nuevos. Las solicitudes tienen estados
+`pendiente`, `aprobada` y `rechazada`, con respuesta y registro de la operación.
+
+Para usar el cobro grupal en el backend PHP/MariaDB existente, ejecutar una vez
+`database/migration_pago_grupal.sql`; una instalación nueva ya incluye la columna.
 
 Mantener la app del conductor abierta y el volumen multimedia audible. Este aviso
 es una alarma dentro de la app; no usa notificaciones push con la aplicación cerrada.

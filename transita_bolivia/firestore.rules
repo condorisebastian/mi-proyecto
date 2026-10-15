@@ -40,5 +40,34 @@ service cloud.firestore {
                .hasOnly(['estado', 'respuesta', 'notas', 'acciones', 'fecha_resolucion']);
       allow delete: if false;
     }
+    // Conversaciones de recargas y retiros en el entorno de demostración.
+    match /chats/{id} {
+      allow read, create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['ultimo_mensaje', 'fecha_actualizacion']);
+      allow delete: if false;
+      match /mensajes/{messageId} {
+        allow read, create: if true;
+        allow update, delete: if false;
+      }
+    }
+    match /solicitudes_financieras/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.estado == 'pendiente'
+          && request.resource.data.monto is int && request.resource.data.monto > 0;
+      allow update: if resource.data.estado == 'pendiente'
+          && request.resource.data.estado in ['aprobada', 'rechazada']
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['estado', 'fecha_resolucion', 'operador', 'observacion']);
+      allow delete: if false;
+    }
+    match /liquidaciones/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.reservado >= 0 && request.resource.data.retirado >= 0;
+      allow update: if request.resource.data.reservado >= 0 && request.resource.data.retirado >= 0
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['reservado', 'retirado']);
+      allow delete: if false;
+    }
   }
 }

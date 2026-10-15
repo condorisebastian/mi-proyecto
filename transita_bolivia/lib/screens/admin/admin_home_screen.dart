@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../services/firebase_service.dart';
 import '../../services/admin_auth_service.dart';
 import 'incidencia_panel_screen.dart';
+import 'admin_chats_tab.dart';
 
 /// Panel admin: centro de atención (call center) + registros en vivo.
 class AdminHomeScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget build(BuildContext context) {
     final admin = Provider.of<AdminAuthService>(context).currentAdmin;
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Panel Admin'),
@@ -53,6 +54,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             unselectedLabelColor: Colors.white60,
             tabs: [
               Tab(icon: Icon(Icons.support_agent), text: 'Atención'),
+              Tab(icon: Icon(Icons.forum_outlined), text: 'Chats'),
               Tab(icon: Icon(Icons.people), text: 'Usuarios'),
               Tab(icon: Icon(Icons.directions_car), text: 'Conductores'),
               Tab(icon: Icon(Icons.receipt_long), text: 'Transacciones'),
@@ -62,6 +64,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         body: TabBarView(
           children: [
             _buildAtencionTab(),
+            const AdminChatsTab(),
             _buildLiveList(
               stream: FirebaseService.instance.adminUsuariosStream(),
               emptyIcon: Icons.people_outline,
@@ -156,23 +159,25 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       builder: (sheetContext) => ListView(
         shrinkWrap: true,
         children: resultados
-            .map((r) => ListTile(
-                  leading: Icon(
-                    r['canal'] == 'conductor'
-                        ? Icons.directions_car
-                        : Icons.person,
-                    color: AppColors.primary,
-                  ),
-                  title: Text('${r['nombre'] ?? ''} ${r['apellido'] ?? ''}'),
-                  subtitle: Text(
-                    '${r['canal'] == 'conductor' ? 'Conductor' : 'Pasajero'} · '
-                    'CI: ${r['ci'] ?? ''} · PIN: ${r['pin'] ?? ''}',
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _abrirPanel(cliente: r);
-                  },
-                ))
+            .map(
+              (r) => ListTile(
+                leading: Icon(
+                  r['canal'] == 'conductor'
+                      ? Icons.directions_car
+                      : Icons.person,
+                  color: AppColors.primary,
+                ),
+                title: Text('${r['nombre'] ?? ''} ${r['apellido'] ?? ''}'),
+                subtitle: Text(
+                  '${r['canal'] == 'conductor' ? 'Conductor' : 'Pasajero'} · '
+                  'CI: ${r['ci'] ?? ''} · PIN: ${r['pin'] ?? ''}',
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _abrirPanel(cliente: r);
+                },
+              ),
+            )
             .toList(),
       ),
     );
@@ -192,8 +197,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.mark_chat_unread,
-                    size: 80, color: Colors.grey),
+                const Icon(
+                  Icons.mark_chat_unread,
+                  size: 80,
+                  color: Colors.grey,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Sin incidencias en cola',
@@ -211,8 +219,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: incidencias.length,
-          itemBuilder: (context, index) =>
-              _buildTicketCard(incidencias[index]),
+          itemBuilder: (context, index) => _buildTicketCard(incidencias[index]),
         );
       },
     );
@@ -254,8 +261,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor:
-                  (estadoColor[estado] ?? Colors.grey).withValues(alpha: 0.15),
+              backgroundColor: (estadoColor[estado] ?? Colors.grey).withValues(
+                alpha: 0.15,
+              ),
               child: Icon(
                 esConductor ? Icons.directions_car : Icons.person_pin_circle,
                 color: color,
@@ -290,8 +298,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -324,22 +334,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }) {
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => IncidenciaPanelScreen(
-          incidencia: incidencia,
-          cliente: cliente,
-        ),
+        builder: (_) =>
+            IncidenciaPanelScreen(incidencia: incidencia, cliente: cliente),
       ),
     );
   }
 
   String _tipoLabel(String t) => switch (t) {
-        'saldo' => 'Saldo incorrecto',
-        'cobro' => 'Cobro no aplicado/duplicado',
-        'pin' => 'Cambiar u olvidé mi PIN',
-        'dispositivo' => 'Dispositivo nuevo',
-        'otro' => 'Otro problema',
-        _ => t,
-      };
+    'saldo' => 'Saldo incorrecto',
+    'cobro' => 'Cobro no aplicado/duplicado',
+    'pin' => 'Cambiar u olvidé mi PIN',
+    'dispositivo' => 'Dispositivo nuevo',
+    'otro' => 'Otro problema',
+    _ => t,
+  };
 
   void _mostrarSnack(String msg) {
     ScaffoldMessenger.of(context)
@@ -444,8 +452,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       Text(
                         'ID #${m['id'] ?? '-'} · ${esUsuario ? 'CI: ${m['ci'] ?? ''}' : 'Licencia: ${m['licencia'] ?? ''}'} · '
                         '${esUsuario ? m['tipo'] ?? '' : ''}',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -463,7 +473,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: (activo ? AppColors.success : Colors.red)
                             .withValues(alpha: 0.15),
@@ -490,6 +502,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   Widget _buildTransaccionCard(Map<String, dynamic> m) {
     final esRecarga = m['tipo'] == 'recarga';
+    final esRetiro = m['tipo'] == 'retiro_conductor';
     return _wrapCard(
       m,
       Row(
@@ -499,7 +512,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 ? AppColors.success.withValues(alpha: 0.15)
                 : Colors.orange.withValues(alpha: 0.15),
             child: Icon(
-              esRecarga ? Icons.add : Icons.remove,
+              esRecarga
+                  ? Icons.add
+                  : esRetiro
+                  ? Icons.payments_outlined
+                  : Icons.directions_bus,
               color: esRecarga ? AppColors.success : Colors.orange,
             ),
           ),
@@ -509,7 +526,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  esRecarga ? 'Recarga' : 'Viaje',
+                  esRecarga
+                      ? 'Recarga'
+                      : esRetiro
+                      ? 'Retiro del conductor'
+                      : 'Viaje · ${m['cantidad_pasajeros'] ?? 1} pasaje(s)',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(

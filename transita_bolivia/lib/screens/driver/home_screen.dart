@@ -12,6 +12,8 @@ import 'charge_screen.dart';
 import 'history_screen.dart';
 import 'summary_screen.dart';
 import '../soporte/support_screen.dart';
+import '../../models/financial_chat.dart';
+import '../chat/financial_chat_screen.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -130,7 +132,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                             ),
                           ),
                           Text(
-                            '+${payment.puntos} punto(s) · ${payment.pasajero.isEmpty ? 'Pasajero' : payment.pasajero}',
+                            '+${payment.puntos} punto(s) · ${payment.cantidad} pasaje(s)\n${payment.pasajero.isEmpty ? 'Pasajero' : payment.pasajero}',
                             style: const TextStyle(color: Colors.white),
                           ),
                         ],
@@ -178,6 +180,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           const DriverChargeScreen(),
           DriverHistoryScreen(key: _historyKey),
           DriverSummaryScreen(key: _summaryKey),
+          FinancialChatScreen(
+            owner: ChatIdentity(
+              canal: 'conductor',
+              id: conductor.id,
+              nombre: '${conductor.nombre} ${conductor.apellido}',
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -210,6 +219,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           BottomNavigationBarItem(
             icon: Icon(Icons.assessment),
             label: 'Resumen',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chat',
           ),
         ],
       ),

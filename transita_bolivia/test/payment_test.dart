@@ -6,6 +6,19 @@ import 'package:transita_bolivia/services/firebase_service.dart';
 
 void main() {
   group('QR de cobro', () {
+    test('codifica un pago grupal y rechaza cantidad o total manipulados', () {
+      const qr = TripQr(
+        conductorId: 2,
+        tipo: 'estudiante',
+        puntos: 3,
+        reference: 'grupo-3',
+        cantidad: 3,
+      );
+      expect(TripQr.tryParse(qr.encode())?.cantidad, 3);
+      expect(TripQr.tryParse('CONDUCTOR:2:estudiante:3:grupo-3:2'), isNull);
+      expect(TripQr.tryParse('CONDUCTOR:2:estudiante:1:grupo-3:0'), isNull);
+      expect(TripQr.tryParse('CONDUCTOR:2:civil:153:grupo-3:51'), isNull);
+    });
     test(
       'conserva conductor, tarifa y referencia sin incluir credenciales',
       () {
@@ -33,6 +46,7 @@ void main() {
           'CONDUCTOR:2:civil:1:x',
           'CONDUCTOR:2:estudiante:-1:x',
           'CONDUCTOR:2:desconocido:1:x',
+          'CONDUCTOR:2:desconocido:0:x:1',
           'CONDUCTOR:2:estudiante:1:../x',
           'CONDUCTOR:2:estudiante:1:',
           'USUARIO:2:estudiante:1:x',
@@ -115,6 +129,7 @@ void main() {
       int driver = 2,
       String type = 'estudiante',
       String reference = 'viaje-1',
+      int quantity = 1,
     }) => service.pagarViaje(
       userId: 1,
       conductorId: driver,
@@ -122,10 +137,30 @@ void main() {
       metodoPago: 'qr',
       tipoUsuario: type,
       paymentReference: reference,
+      cantidadPasajeros: quantity,
     );
     Future<int> balance() async =>
         (await db.collection('usuarios').doc('u-1').get()).data()!['puntos']
             as int;
+
+    test(
+      'un pasajero paga tres pasajes con un solo descuento y tres personas en el resumen',
+      () async {
+        expect((await pay(points: 3, quantity: 3)).ok, isTrue);
+        expect(await balance(), 7);
+        expect((await db.collection('transacciones').get()).docs, hasLength(1));
+        final summary = await service.getDailySummary(2);
+        expect(summary['total_pasajeros'], 3);
+        expect(summary['estudiantes'], 3);
+        expect(summary['total_puntos'], 3);
+        expect(
+          (await service.getDailyHistory(2)).single['cantidad_pasajeros'],
+          3,
+        );
+        expect((await pay(points: 3, quantity: 3)).ok, isFalse);
+        expect(await balance(), 7);
+      },
+    );
 
     test(
       'descuenta y registra un solo cobro; reescanear no vuelve a descontar',

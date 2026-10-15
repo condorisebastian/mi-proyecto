@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.1.0/) y el p
 
 ## [Unreleased]
 
+### Añadido
+- Cuadrícula 2×2 con iconos y selector de cantidad para pagar varios pasajes con
+  un mismo QR. Comprobante, historial, avisos y resumen incluyen la cantidad.
+- Chat de recargas del pasajero en lugar de la recarga automática, chat de retiros
+  diarios del conductor y bandeja de conversaciones para el administrador.
+- Confirmación única de solicitudes, reservas de retiros y liberación al rechazar.
+- Eliminados los emojis de las etiquetas; se usan iconos Material en la interfaz.
+
 ### Corregido
 - Cobro exclusivo por QR: retirados pantalla, permisos y paquetes NFC.
 - Aviso de pago confirmado en el conductor con dos tonos Android, vibración y

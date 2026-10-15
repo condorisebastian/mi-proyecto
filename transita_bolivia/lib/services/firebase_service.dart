@@ -392,8 +392,14 @@ class FirebaseService {
     required String metodoPago,
     String? tipoUsuario,
     String? paymentReference,
+    int cantidadPasajeros = 1,
   }) async {
-    if (userId <= 0 || conductorId <= 0 || puntos <= 0 || metodoPago != 'qr') {
+    if (userId <= 0 ||
+        conductorId <= 0 ||
+        puntos <= 0 ||
+        metodoPago != 'qr' ||
+        cantidadPasajeros < 1 ||
+        cantidadPasajeros > TripQr.maxPassengers) {
       return (ok: false, message: 'Datos de pago inválidos');
     }
     if (paymentReference != null &&
@@ -429,7 +435,7 @@ class FirebaseService {
           return (ok: false, message: 'Pasajero o conductor no disponible');
         }
         final tipo = data['tipo'] as String?;
-        if (TripQr.fares[tipo] != puntos ||
+        if ((TripQr.fares[tipo] ?? 0) * cantidadPasajeros != puntos ||
             (tipoUsuario != null && tipoUsuario != tipo)) {
           return (
             ok: false,
@@ -453,6 +459,7 @@ class FirebaseService {
           'fecha': FieldValue.serverTimestamp(),
           'fecha_cliente': DateTime.now().toUtc(),
           'tipo_usuario': tipo,
+          'cantidad_pasajeros': cantidadPasajeros,
           'nombre_pasajero': data['nombre'],
           'apellido_pasajero': data['apellido'],
         });
@@ -529,21 +536,22 @@ class FirebaseService {
       if (m['estado'] != 'exitoso') continue;
       if (!_enRangoHoy(m['fecha'], start, end)) continue;
 
-      totalPasajeros++;
+      final cantidad = (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1;
+      totalPasajeros += cantidad;
       totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
       final tipo = m['tipo_usuario'] as String? ?? 'civil';
       switch (tipo) {
         case 'estudiante':
-          estudiantes++;
+          estudiantes += cantidad;
           break;
         case 'civil':
-          civiles++;
+          civiles += cantidad;
           break;
         case 'adulto_mayor':
-          mayores++;
+          mayores += cantidad;
           break;
         case 'discapacitado':
-          discapacitados++;
+          discapacitados += cantidad;
           break;
       }
     }
@@ -591,6 +599,7 @@ class FirebaseService {
             : await _nombreByUserId(userId),
         'apellido': '',
         'tipo_usuario': m['tipo_usuario'] ?? '',
+        'cantidad_pasajeros': (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1,
       });
     }
     out.sort((a, b) => (b['fecha'] as String).compareTo(a['fecha'] as String));
@@ -645,6 +654,8 @@ class FirebaseService {
                         '${data['nombre_pasajero'] ?? ''} ${data['apellido_pasajero'] ?? ''}'
                             .trim(),
                     fecha: (data['fecha'] as Timestamp).toDate(),
+                    cantidad:
+                        (data['cantidad_pasajeros'] as num?)?.toInt() ?? 1,
                   );
                 })
                 .toList(),
@@ -693,21 +704,22 @@ class FirebaseService {
             if (m['estado'] != 'exitoso') continue;
             if (!_enRangoHoy(m['fecha'], start, end)) continue;
 
-            totalPasajeros++;
+            final cantidad = (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1;
+            totalPasajeros += cantidad;
             totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
             final tipo = m['tipo_usuario'] as String? ?? 'civil';
             switch (tipo) {
               case 'estudiante':
-                estudiantes++;
+                estudiantes += cantidad;
                 break;
               case 'civil':
-                civiles++;
+                civiles += cantidad;
                 break;
               case 'adulto_mayor':
-                mayores++;
+                mayores += cantidad;
                 break;
               case 'discapacitado':
-                discapacitados++;
+                discapacitados += cantidad;
                 break;
             }
           }
@@ -753,6 +765,8 @@ class FirebaseService {
               'nombre': (m['nombre_pasajero'] as String?) ?? '',
               'apellido': (m['apellido_pasajero'] as String?) ?? '',
               'tipo_usuario': m['tipo_usuario'] ?? '',
+              'cantidad_pasajeros':
+                  (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1,
             });
           }
           out.sort(
@@ -1097,6 +1111,7 @@ class FirebaseService {
           : m['fecha_cliente'] is Timestamp
           ? (m['fecha_cliente'] as Timestamp).toDate()
           : DateTime.now(),
+      cantidadPasajeros: (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1,
     );
   }
 

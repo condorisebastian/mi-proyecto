@@ -186,7 +186,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
                   ),
                 ),
                 Text(
-                  '$metodo · $tipoUsuario',
+                  '$metodo · $tipoUsuario · ${item['cantidad_pasajeros'] ?? 1} pasaje(s)',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],

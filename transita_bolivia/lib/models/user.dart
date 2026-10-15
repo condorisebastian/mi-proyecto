@@ -48,13 +48,13 @@ class User {
   String get tipoDisplay {
     switch (tipo) {
       case 'estudiante':
-        return '🎓 Estudiante';
+        return 'Estudiante';
       case 'civil':
-        return '👤 Civil';
+        return 'Civil';
       case 'adulto_mayor':
-        return '👴 Adulto Mayor';
+        return 'Adulto Mayor';
       case 'discapacitado':
-        return '♿ Discapacitado';
+        return 'Persona con discapacidad';
       default:
         return tipo;
     }

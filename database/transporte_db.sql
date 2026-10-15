@@ -159,6 +159,7 @@ CREATE TABLE cobros (
   id_conductor       INT UNSIGNED NOT NULL,
   id_vehiculo        INT UNSIGNED NULL COMMENT 'opcional: el flujo actual no asigna vehiculo',
   id_ruta            INT UNSIGNED NULL COMMENT 'opcional: el flujo actual no asigna ruta',
+  cantidad_pasajeros SMALLINT UNSIGNED NOT NULL DEFAULT 1,
   monto              DECIMAL(10,2) NOT NULL,
   metodo_pago        VARCHAR(30)   NOT NULL DEFAULT 'qr',
   tipo_usuario       VARCHAR(20)   NULL COMMENT 'tipo del pasajero al momento del cobro',

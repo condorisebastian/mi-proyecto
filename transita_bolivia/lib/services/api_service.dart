@@ -87,6 +87,7 @@ class ApiService {
     String metodoPago, {
     String? tipoUsuario,
     String? paymentReference,
+    int cantidadPasajeros = 1,
   }) async {
     if (AppConfig.useFirebase) {
       return FirebaseService.instance.pagarViaje(
@@ -96,6 +97,7 @@ class ApiService {
         metodoPago: metodoPago,
         tipoUsuario: tipoUsuario,
         paymentReference: paymentReference,
+        cantidadPasajeros: cantidadPasajeros,
       );
     }
 
@@ -111,6 +113,7 @@ class ApiService {
               'metodo_pago': metodoPago,
               'tipo_usuario': ?tipoUsuario,
               'payment_reference': ?paymentReference,
+              'cantidad_pasajeros': cantidadPasajeros,
             }),
           )
           .timeout(AppConfig.timeout);

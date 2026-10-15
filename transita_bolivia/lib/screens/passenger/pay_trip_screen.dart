@@ -280,7 +280,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
     final conductorId = parsed.conductorId;
     final puntos = parsed.puntos;
     final tipo = parsed.tipo;
-    if (tipo != user.tipo || puntos != user.costoViaje) {
+    if (tipo != user.tipo || puntos != user.costoViaje * parsed.cantidad) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pide al conductor un QR para tu tipo de pasajero.'),
@@ -301,6 +301,9 @@ class _PayTripScreenState extends State<PayTripScreen> {
             Text('Conductor N° $conductorId'),
             const SizedBox(height: 8),
             Text('Tipo de pasajero: ${_tipoLabel(tipo)}'),
+            const SizedBox(height: 8),
+            Text('Cantidad: ${parsed.cantidad} pasaje(s)'),
+            Text('Tarifa por persona: ${user.costoViaje} punto(s)'),
             const SizedBox(height: 8),
             Text(
               '¿Confirmas el pago de $puntos punto(s)?',
@@ -333,6 +336,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                 'qr',
                 tipoUsuario: tipo.isNotEmpty ? tipo : user.tipo,
                 paymentReference: parsed.reference,
+                cantidadPasajeros: parsed.cantidad,
               );
 
               if (!mounted) return;
@@ -412,6 +416,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                                     .trim(),
                               ),
                               _receiptRow('Tipo', _tipoLabel(tipo)),
+                              _receiptRow('Pasajes', '${parsed.cantidad}'),
                               _receiptRow('Conductor', '#$conductorId'),
                               const Divider(height: 24),
                               _receiptRow(

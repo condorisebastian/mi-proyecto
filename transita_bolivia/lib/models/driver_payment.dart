@@ -4,12 +4,14 @@ class DriverPayment {
     required this.puntos,
     required this.pasajero,
     required this.fecha,
+    this.cantidad = 1,
   });
 
   final String documentId;
   final int puntos;
   final String pasajero;
   final DateTime fecha;
+  final int cantidad;
 }
 
 /// Deduplica los avisos aunque Firestore vuelva a emitir la misma instantánea.

@@ -6,7 +6,8 @@ import '../../services/api_service.dart';
 import '../../services/firebase_service.dart';
 import '../../config.dart';
 import '../../models/transaction.dart';
-import 'recharge_screen.dart';
+import '../../models/financial_chat.dart';
+import '../chat/financial_chat_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
 import '../soporte/support_screen.dart';
@@ -39,7 +40,13 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: [
           _buildHomeTab(user, authService),
-          const RechargeScreen(),
+          FinancialChatScreen(
+            owner: ChatIdentity(
+              canal: 'pasajero',
+              id: user.id,
+              nombre: '${user.nombre} ${user.apellido}',
+            ),
+          ),
           const PayTripScreen(),
           HistoryScreen(key: _historyKey),
         ],
@@ -62,8 +69,8 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_card),
-            label: 'Recargar',
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.qr_code_scanner),
@@ -170,12 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 60,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RechargeScreen(),
-                      ),
-                    );
+                    setState(() => _currentIndex = 1);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
@@ -187,10 +189,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_card, size: 24),
+                      Icon(Icons.chat_bubble_outline, size: 24),
                       SizedBox(width: 12),
                       Text(
-                        'RECARGAR PUNTOS',
+                        'CHAT DE RECARGAS',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

@@ -1,6 +1,8 @@
 # transita_bolivia
 
-A new Flutter project.
+App Flutter de Transita Bolivia. La guía de configuración y prueba está en
+`../README.md`. Firebase es el modo predeterminado para pagos QR, chat de recargas
+y retiros diarios atendidos por el administrador.
 
 ## Getting Started
 

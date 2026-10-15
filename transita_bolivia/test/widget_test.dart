@@ -9,23 +9,7 @@ import 'package:transita_bolivia/services/driver_api_service.dart';
 import 'package:transita_bolivia/services/admin_auth_service.dart';
 import 'package:transita_bolivia/main.dart';
 import 'package:transita_bolivia/screens/passenger/pay_trip_screen.dart';
-import 'package:transita_bolivia/screens/passenger/recharge_screen.dart';
 import 'package:transita_bolivia/screens/driver/charge_screen.dart';
-import 'package:transita_bolivia/models/user.dart';
-
-class _PassengerAuth extends AuthService {
-  @override
-  User get currentUser => User(
-    id: 1,
-    nombre: 'Ana',
-    apellido: 'Perez',
-    ci: '',
-    email: '',
-    tipo: 'estudiante',
-    puntos: 10,
-    estado: 'activo',
-  );
-}
 
 void main() {
   testWidgets('Cobrar solo ofrece QR y se adapta a una pantalla estrecha', (
@@ -44,30 +28,26 @@ void main() {
     expect(find.text('MOSTRAR QR'), findsOneWidget);
     expect(find.textContaining('NFC'), findsNothing);
     expect(find.byIcon(Icons.nfc), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Cancelar una recarga no procesa ni acredita puntos', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ChangeNotifierProvider<AuthService>(
-        create: (_) => _PassengerAuth(),
-        child: const MaterialApp(home: RechargeScreen()),
-      ),
+    final grid = tester.widget<GridView>(
+      find.byKey(const Key('passenger-type-grid')),
     );
-    await tester.tap(find.text('Bs 5'));
+    expect(
+      (grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
+          .crossAxisCount,
+      2,
+    );
+    expect(find.byIcon(Icons.school_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.person_outline), findsOneWidget);
+    expect(find.byIcon(Icons.elderly), findsOneWidget);
+    expect(find.byIcon(Icons.accessible), findsOneWidget);
+    await tester.ensureVisible(find.byTooltip('Agregar un pasaje'));
+    await tester.tap(find.byTooltip('Agregar un pasaje'));
     await tester.pump();
-    await tester.ensureVisible(find.text('RECARGAR PUNTOS'));
-    await tester.tap(find.text('RECARGAR PUNTOS'));
-    await tester.pumpAndSettle();
-    expect(find.text('Recarga de demostración'), findsOneWidget);
-    await tester.tap(find.text('CANCELAR'));
-    await tester.pumpAndSettle();
-    expect(find.text('Recarga Exitosa'), findsNothing);
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(find.text('10 PUNTOS'), findsOneWidget);
+    await tester.tap(find.byTooltip('Agregar un pasaje'));
+    await tester.pump();
+    expect(find.text('3 pasaje(s)'), findsOneWidget);
+    expect(find.text('Total: 3 punto(s) = Bs 3.00'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('App renders role selection screen', (WidgetTester tester) async {
