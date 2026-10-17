@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -11,61 +12,93 @@ class RoleSelectionScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E88E5),
-              Color(0xFF1565C0),
-            ],
+            colors: [AppColors.primary, AppColors.primaryDark],
           ),
         ),
         child: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.directions_bus,
-                  size: 100,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Transita Bolivia',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.directions_bus,
+                    size: 100,
                     color: Colors.white,
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  '¿Cómo vas a usar Transita Bolivia?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Transita Bolivia',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                _buildRoleButton(
-                  context,
-                  icon: Icons.person,
-                  title: 'Viajero / Pasajero',
-                  subtitle: 'Paga tus viajes con puntos',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/passenger/type',
-                        arguments: {'role': 'passenger'});
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildRoleButton(
-                  context,
-                  icon: Icons.directions_car,
-                  title: 'Conductor',
-                  subtitle: 'Cobra tus viajes como conductor',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/driver/login');
-                  },
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  const Text(
+                    '¿Cómo vas a usar Transita Bolivia?',
+                    style: TextStyle(fontSize: 18, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 40),
+                  _buildRoleButton(
+                    context,
+                    icon: Icons.person,
+                    title: 'Viajero / Pasajero',
+                    subtitle: 'Paga tus viajes con puntos',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/passenger/type',
+                        arguments: {'role': 'passenger'},
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildRoleButton(
+                    context,
+                    icon: Icons.directions_car,
+                    title: 'Conductor',
+                    subtitle: 'Cobra tus viajes como conductor',
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/driver/login');
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildRequirementsButton(context),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequirementsButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.pushNamed(context, '/passenger/requirements');
+          },
+          icon: const Icon(Icons.assignment, color: Colors.white),
+          label: const Text(
+            'Requisitos para el registro',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.white, width: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
         ),
@@ -89,7 +122,7 @@ class RoleSelectionScreen extends StatelessWidget {
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1E88E5),
+            foregroundColor: AppColors.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -117,10 +150,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),

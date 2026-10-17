@@ -22,6 +22,8 @@ jobs:
           else
             echo "PHP no instalado; omitiendo lint."
           fi
+      - name: Verificar importes con centavos
+        run: php tests/money_test.php
 
   flutter:
     name: Flutter (transita_bolivia)
