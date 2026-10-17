@@ -19,7 +19,7 @@ class DriverApiService {
   Future<({bool ok, String message})> registerTrip({
     required int conductorId,
     required String tipoUsuario,
-    required int puntos,
+    required num puntos,
     required String metodoPago,
     int? userId,
   }) async {

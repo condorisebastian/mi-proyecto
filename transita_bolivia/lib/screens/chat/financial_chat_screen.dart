@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -112,16 +113,20 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
                 TextFormField(
                   controller: amount,
                   autofocus: true,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  maxLength: 7,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
+                  maxLength: 10,
                   decoration: const InputDecoration(
                     labelText: 'Monto en Bs',
-                    helperText: 'Bolivianos enteros',
+                    helperText: 'Admite centavos, por ejemplo 3.50',
                   ),
                   validator: (value) {
-                    final n = int.tryParse(value ?? '');
-                    return n == null || n < 1 || n > 1000000
+                    final n = Money.tryParse(value ?? '');
+                    return n == null || n <= 0 || n > 1000000
                         ? 'Introduce un monto válido'
                         : null;
                   },
@@ -163,7 +168,7 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
       ),
     );
     final confirmed = await Navigator.of(context).push(dialog);
-    final value = int.tryParse(amount.text);
+    final value = Money.tryParse(amount.text);
     final text = detail.text;
     await dialog.completed;
     amount.dispose();
@@ -202,8 +207,8 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
               Text(
                 approve
                     ? (request.isWithdrawal
-                          ? 'Confirma solo si entregaste Bs ${request.monto}.00 al conductor.'
-                          : 'Confirma solo si verificaste el pago de Bs ${request.monto}.00 del pasajero.')
+                          ? 'Confirma solo si entregaste Bs ${Money.format(request.monto)} al conductor.'
+                          : 'Confirma solo si verificaste el pago de Bs ${Money.format(request.monto)} del pasajero.')
                     : 'La solicitud quedará rechazada. Un retiro rechazado libera el monto reservado.',
               ),
               const SizedBox(height: 16),
@@ -404,7 +409,7 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
                 child: Text(
                   b == null
                       ? 'Consultando recaudación...'
-                      : 'Disponible: Bs ${b.disponible}.00 · Pendiente: Bs ${b.reservado}.00\nRetirado en el día: Bs ${b.retirado}.00',
+                      : 'Disponible: Bs ${Money.format(b.disponible)} · Pendiente: Bs ${Money.format(b.reservado)}\nRetirado en el día: Bs ${Money.format(b.retirado)}',
                 ),
               );
             },
@@ -459,7 +464,7 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${req.isWithdrawal ? 'Retiro' : 'Recarga'} · Bs ${req.monto}.00',
+                            '${req.isWithdrawal ? 'Retiro' : 'Recarga'} · Bs ${Money.format(req.monto)}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),

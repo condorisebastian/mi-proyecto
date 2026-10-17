@@ -53,8 +53,19 @@ mi-proyecto/
 App unificada para pasajeros y conductores con selección de rol al iniciar:
 
 - **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, chat de recargas con el operador, pago individual o grupal por QR e historial.
-- **Conductor**: login/registro por PIN, cobro por QR con cuadrícula de categorías e iconos, cantidad de pasajes, alerta sonora y visual, resumen, historial y chat de retiros diarios.
-- **Administrador**: bandeja Chats, conversación en vivo y confirmación/rechazo de solicitudes de recarga y retiro.
+- **Conductor**: login/registro por PIN, cobro por QR con cuadrícula de categorías e iconos, cantidad de pasajes, alerta sonora y visual, resumen y chat de retiros diarios. El QR aparece al tocar una categoría, sin un botón adicional.
+- **Administrador**: bandeja Chats, conversación en vivo y confirmación/rechazo de solicitudes de recarga y retiro. Su acceso no se muestra en la selección principal de roles.
+
+Tarifas del prototipo: civil **Bs 3.50**; estudiante, adulto mayor y persona
+con discapacidad **Bs 1.00**. Una persona puede pagar hasta 50 pasajes de una
+misma categoría mediante un solo QR. Los cálculos se hacen en centavos enteros;
+los campos existentes `puntos` siguen representando bolivianos y admiten
+valores decimales en Firebase, JSON y MySQL (`DECIMAL`). Los saldos enteros
+anteriores siguen siendo válidos. Recargas y retiros también admiten centavos.
+
+El acceso precarga el carnet del perfil de prueba y recuerda el último CI de
+cada perfil tras un acceso correcto, sin guardar el PIN. El usuario puede
+editar el carnet para acceder con otra cuenta.
 
 Con Apache corriendo y la API publicada:
 

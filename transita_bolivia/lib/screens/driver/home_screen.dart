@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../theme.dart';
@@ -9,7 +10,6 @@ import '../../services/payment_alert_service.dart';
 import '../../models/driver_payment.dart';
 import '../../config.dart';
 import 'charge_screen.dart';
-import 'history_screen.dart';
 import 'summary_screen.dart';
 import '../soporte/support_screen.dart';
 import '../../models/financial_chat.dart';
@@ -37,8 +37,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
 
   late final AnimationController _chargePulse;
 
-  final GlobalKey<DriverHistoryScreenState> _historyKey =
-      GlobalKey<DriverHistoryScreenState>();
   final GlobalKey<DriverSummaryScreenState> _summaryKey =
       GlobalKey<DriverSummaryScreenState>();
 
@@ -132,7 +130,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                             ),
                           ),
                           Text(
-                            '+${payment.puntos} punto(s) · ${payment.cantidad} pasaje(s)\n${payment.pasajero.isEmpty ? 'Pasajero' : payment.pasajero}',
+                            '+${Money.format(payment.puntos)} punto(s) · ${payment.cantidad} pasaje(s)\n${payment.pasajero.isEmpty ? 'Pasajero' : payment.pasajero}',
                             style: const TextStyle(color: Colors.white),
                           ),
                         ],
@@ -178,7 +176,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
         children: [
           _buildHomeTab(conductor, authService),
           const DriverChargeScreen(),
-          DriverHistoryScreen(key: _historyKey),
           DriverSummaryScreen(key: _summaryKey),
           FinancialChatScreen(
             owner: ChatIdentity(
@@ -198,8 +195,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           if (index == 0) {
             _loadDailySummary();
           } else if (index == 2) {
-            _historyKey.currentState?.reload();
-          } else if (index == 3) {
             _summaryKey.currentState?.reload();
           }
         },
@@ -211,10 +206,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money),
             label: 'Cobrar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.assessment),
@@ -371,7 +362,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${_dailySummary['total_puntos'] ?? 0} PUNTOS',
+                      '${Money.format(_dailySummary['total_puntos'] ?? 0)} PUNTOS',
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -379,7 +370,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                       ),
                     ),
                     Text(
-                      '= Bs ${_dailySummary['total_puntos'] ?? 0}.00',
+                      '= Bs ${Money.format(_dailySummary['total_puntos'] ?? 0)}',
                       style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 16),
@@ -439,7 +430,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                       Icon(Icons.qr_code, size: 24),
                       SizedBox(width: 12),
                       Text(
-                        'MOSTRAR QR',
+                        'COBRAR PASAJES',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

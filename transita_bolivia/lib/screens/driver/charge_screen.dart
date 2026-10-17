@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
@@ -36,97 +37,6 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Tipo de pasajero',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final labelStyle = Theme.of(context).textTheme.bodyMedium!
-                    .copyWith(fontWeight: FontWeight.bold, fontSize: 14);
-                final fareStyle = Theme.of(
-                  context,
-                ).textTheme.bodySmall!.copyWith(fontSize: 11);
-                final width = (constraints.maxWidth - 12) / 2 - 24;
-                double textHeight(String text, TextStyle style) {
-                  final painter = TextPainter(
-                    text: TextSpan(text: text, style: style),
-                    textDirection: Directionality.of(context),
-                    textScaler: MediaQuery.textScalerOf(context),
-                  )..layout(maxWidth: width);
-                  final height = painter.height;
-                  painter.dispose();
-                  return height;
-                }
-
-                final labelHeight = _labels.values
-                    .map((text) => textHeight(text, labelStyle))
-                    .reduce(math.max);
-                final tileHeight = math.max(
-                  132.0,
-                  labelHeight + textHeight('3 punto / persona', fareStyle) + 70,
-                );
-                return GridView(
-                  key: const Key('passenger-type-grid'),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    mainAxisExtent: tileHeight,
-                  ),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: _labels.entries.map((entry) {
-                    final selected = _tipo == entry.key;
-                    final color = Theme.of(context).colorScheme.primary;
-                    return Semantics(
-                      selected: selected,
-                      button: true,
-                      child: Material(
-                        color: selected
-                            ? color.withValues(alpha: 0.12)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          onTap: () => setState(() => _tipo = entry.key),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: selected ? color : Colors.grey.shade300,
-                                width: selected ? 2 : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(_icons[entry.key], size: 30, color: color),
-                                const SizedBox(height: 8),
-                                Text(
-                                  entry.value,
-                                  textAlign: TextAlign.center,
-                                  style: labelStyle,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${TripQr.fares[entry.key]} punto / persona',
-                                  textAlign: TextAlign.center,
-                                  style: fareStyle,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -184,22 +94,105 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Total: ${TripQr.fares[_tipo]! * _cantidad} punto(s) = Bs ${TripQr.fares[_tipo]! * _cantidad}.00',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            const Text(
+              'Tipo de pasajero',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _showChargeQr,
-              icon: const Icon(Icons.qr_code_2),
-              label: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('MOSTRAR QR'),
-              ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final labelStyle = Theme.of(context).textTheme.bodyMedium!
+                    .copyWith(fontWeight: FontWeight.bold, fontSize: 14);
+                final fareStyle = Theme.of(
+                  context,
+                ).textTheme.bodySmall!.copyWith(fontSize: 11);
+                final width = (constraints.maxWidth - 12) / 2 - 24;
+                double textHeight(String text, TextStyle style) {
+                  final painter = TextPainter(
+                    text: TextSpan(text: text, style: style),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                  )..layout(maxWidth: width);
+                  final height = painter.height;
+                  painter.dispose();
+                  return height;
+                }
+
+                final labelHeight = _labels.values
+                    .map((text) => textHeight(text, labelStyle))
+                    .reduce(math.max);
+                final tileHeight = math.max(
+                  132.0,
+                  labelHeight + textHeight('Bs 3.50 / persona', fareStyle) + 70,
+                );
+                return GridView(
+                  key: const Key('passenger-type-grid'),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: tileHeight,
+                  ),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _labels.entries.map((entry) {
+                    final selected = _tipo == entry.key;
+                    final color = Theme.of(context).colorScheme.primary;
+                    return Semantics(
+                      selected: selected,
+                      button: true,
+                      child: Material(
+                        color: selected
+                            ? color.withValues(alpha: 0.12)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _tipo = entry.key);
+                            _showChargeQr();
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selected ? color : Colors.grey.shade300,
+                                width: selected ? 2 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(_icons[entry.key], size: 30, color: color),
+                                const SizedBox(height: 8),
+                                Text(
+                                  entry.value,
+                                  textAlign: TextAlign.center,
+                                  style: labelStyle,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Bs ${Money.format(TripQr.fares[entry.key])} / persona',
+                                  textAlign: TextAlign.center,
+                                  style: fareStyle,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
+            const SizedBox(height: 16),
+            const SizedBox(height: 16),
             const SizedBox(height: 20),
             const Text(
-              'El pasajero escanea este QR y confirma el pago en su teléfono. '
+              'Toca un tipo de pasajero para mostrar el QR automáticamente. '
+              'El pasajero lo escanea y confirma el pago. '
               'Recibirás un aviso y un sonido cuando el pago sea confirmado.',
               textAlign: TextAlign.center,
             ),
@@ -215,7 +208,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
     final qr = TripQr(
       conductorId: conductor.id,
       tipo: _tipo,
-      puntos: TripQr.fares[_tipo]! * _cantidad,
+      puntos: Money.multiply(TripQr.fares[_tipo]!, _cantidad),
       reference: TripQr.newReference(),
       cantidad: _cantidad,
     );
@@ -241,14 +234,14 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                   color: Colors.white,
                   child: QrImageView(
                     data: qr.encode(),
-                    size: 250,
+                    size: math.min(250, MediaQuery.sizeOf(context).width - 100),
                     gapless: false,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                '${_labels[_tipo]} · ${qr.cantidad} pasaje(s)\nTotal: ${qr.puntos} punto(s)',
+                '${_labels[_tipo]} · ${qr.cantidad} pasaje(s)\nTotal: Bs ${Money.format(qr.puntos)}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 18,

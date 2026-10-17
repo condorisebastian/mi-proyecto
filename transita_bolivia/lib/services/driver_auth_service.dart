@@ -1,3 +1,4 @@
+import 'login_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -197,6 +198,7 @@ class DriverAuthService extends ChangeNotifier {
 
   Future<void> _saveSession() async {
     try {
+      await LoginPreferences.saveCi('conductor', _currentConductor!.ci);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         _kSessionKey,

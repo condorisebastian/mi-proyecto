@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'money.dart';
 
 /// El QR identifica un cobro, sin contener el PIN ni el saldo del pasajero.
 class TripQr {
@@ -12,14 +13,14 @@ class TripQr {
 
   static const fares = {
     'estudiante': 1,
-    'civil': 3,
+    'civil': 3.5,
     'adulto_mayor': 1,
     'discapacitado': 1,
   };
 
   final int conductorId;
   final String tipo;
-  final int puntos;
+  final num puntos;
   final String reference;
   final int cantidad;
   static const maxPassengers = 50;
@@ -39,7 +40,7 @@ class TripQr {
       return null;
     }
     final id = int.tryParse(parts[1]);
-    final puntos = int.tryParse(parts[3]);
+    final puntos = Money.tryParse(parts[3]);
     final cantidad = parts.length == 6 ? int.tryParse(parts[5]) : 1;
     if (id == null ||
         id <= 0 ||
@@ -49,7 +50,8 @@ class TripQr {
         cantidad == null ||
         cantidad < 1 ||
         cantidad > maxPassengers ||
-        (fares[parts[2]] ?? 0) * cantidad != puntos) {
+        Money.cents(Money.multiply(fares[parts[2]] ?? 0, cantidad)) !=
+            Money.cents(puntos)) {
       return null;
     }
     final reference = parts.length >= 5 ? parts[4] : newReference();

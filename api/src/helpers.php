@@ -91,3 +91,20 @@ function bearer_payload(string $secret): array
     json_out(['error' => 'No autorizado'], 401);
     exit;
 }
+
+/** Convierte bolivianos a centavos sin truncar ni aceptar fracciones menores. */
+function money_cents($value): ?int
+{
+    if (!is_int($value) && !is_float($value) && !is_string($value)) return null;
+    $text = trim(str_replace(',', '.', (string)$value));
+    if (!preg_match('/^([0-9]{1,10})(?:\.([0-9]{1,2}))?$/D', $text, $parts)) return null;
+    $whole = (int)$parts[1];
+    if ($whole > 1000000000) return null;
+    return $whole * 100 + (int)str_pad($parts[2] ?? '', 2, '0');
+}
+
+/** Cadena decimal exacta para enlazar importes a columnas DECIMAL de MySQL. */
+function money_decimal(int $cents): string
+{
+    return intdiv($cents, 100) . '.' . str_pad((string)($cents % 100), 2, '0', STR_PAD_LEFT);
+}

@@ -42,7 +42,7 @@ class ApiService {
 
   Future<({bool ok, String message})> rechargePoints(
     int userId,
-    int points,
+    num points,
     String metodoPago,
   ) async {
     if (AppConfig.useFirebase) {
@@ -83,7 +83,7 @@ class ApiService {
   Future<({bool ok, String message})> payTrip(
     int userId,
     int conductorId,
-    int puntos,
+    num puntos,
     String metodoPago, {
     String? tipoUsuario,
     String? paymentReference,

@@ -54,7 +54,8 @@ service cloud.firestore {
     match /solicitudes_financieras/{id} {
       allow read: if true;
       allow create: if request.resource.data.estado == 'pendiente'
-          && request.resource.data.monto is int && request.resource.data.monto > 0;
+          && request.resource.data.monto is number && request.resource.data.monto > 0
+          && request.resource.data.monto <= 1000000;
       allow update: if resource.data.estado == 'pendiente'
           && request.resource.data.estado in ['aprobada', 'rechazada']
           && request.resource.data.diff(resource.data).affectedKeys()

@@ -1,8 +1,10 @@
+import 'money.dart';
+
 class Transaction {
   final int id;
   final int? idUsuario;
   final int idConductor;
-  final int puntos;
+  final num puntos;
   final String tipo;
   final String metodoPago;
   final String estado;
@@ -26,7 +28,7 @@ class Transaction {
       id: json['id'],
       idUsuario: json['id_usuario'],
       idConductor: json['id_conductor'],
-      puntos: json['puntos'],
+      puntos: Money.read(json['puntos']),
       tipo: json['tipo'],
       metodoPago: json['metodo_pago'],
       estado: json['estado'],

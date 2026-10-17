@@ -8,7 +8,7 @@ class DriverPayment {
   });
 
   final String documentId;
-  final int puntos;
+  final num puntos;
   final String pasajero;
   final DateTime fecha;
   final int cantidad;

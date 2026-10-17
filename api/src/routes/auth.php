@@ -184,7 +184,7 @@ function handle_auth(string $method, array $seg): void
                 'ci'      => $row['ci'] ?? '',
                 'email'   => $row['correo'],
                 'tipo'    => $row['tipo'],
-                'puntos'  => (int)round((float)$row['saldo_actual']),
+                'puntos'  => (float)$row['saldo_actual'],
                 'estado'  => $row['estado'],
             ],
             'token' => jwt_sign(['id' => $id, 'tipo' => $row['tipo']], $secret, $ttl),

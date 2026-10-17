@@ -1,3 +1,4 @@
+import '../models/money.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/financial_chat.dart';
@@ -103,7 +104,7 @@ class FinancialChatService {
     }
   }
 
-  int _income(Iterable<Map<String, dynamic>> documents, DateTime day) {
+  num _income(Iterable<Map<String, dynamic>> documents, DateTime day) {
     final start = DateTime(day.year, day.month, day.day);
     final end = start.add(const Duration(days: 1));
     var total = 0;
@@ -116,10 +117,10 @@ class FinancialChatService {
       }
       final local = date.toDate().toLocal();
       if (!local.isBefore(start) && local.isBefore(end)) {
-        total += (m['puntos'] as num?)?.toInt() ?? 0;
+        total += Money.cents(Money.read(m['puntos']));
       }
     }
-    return total;
+    return Money.fromCents(total);
   }
 
   Future<WithdrawalBalance> withdrawalBalance(int id, {DateTime? day}) async {
@@ -134,8 +135,8 @@ class FinancialChatService {
     ).get(const GetOptions(source: Source.server))).data();
     return WithdrawalBalance(
       ingresos: _income(income.docs.map((d) => d.data()), date),
-      reservado: (ledger?['reservado'] as num?)?.toInt() ?? 0,
-      retirado: (ledger?['retirado'] as num?)?.toInt() ?? 0,
+      reservado: Money.read(ledger?['reservado']),
+      retirado: Money.read(ledger?['retirado']),
     );
   }
 
@@ -151,8 +152,8 @@ class FinancialChatService {
       controller.add(
         WithdrawalBalance(
           ingresos: _income(income!, selectedDay),
-          reservado: (ledger?['reservado'] as num?)?.toInt() ?? 0,
-          retirado: (ledger?['retirado'] as num?)?.toInt() ?? 0,
+          reservado: Money.read(ledger?['reservado']),
+          retirado: Money.read(ledger?['retirado']),
         ),
       );
     }
@@ -188,13 +189,16 @@ class FinancialChatService {
 
   Future<String> request(
     ChatIdentity owner,
-    int amount,
+    num amount,
     String detail, {
     DateTime? day,
   }) async {
-    if (amount <= 0 || amount > 1000000 || detail.trim().length > 1000) {
+    if (!Money.valid(amount) ||
+        amount <= 0 ||
+        amount > 1000000 ||
+        detail.trim().length > 1000) {
       throw const ChatFailure(
-        'Introduce un monto válido en bolivianos enteros.',
+        'Introduce un monto válido con hasta dos decimales.',
       );
     }
     await ensureChat(owner);
@@ -219,9 +223,10 @@ class FinancialChatService {
       Map<String, dynamic>? ledger;
       if (owner.isDriver) {
         ledger = (await txn.get(ledgerRef)).data();
-        final reserved = (ledger?['reservado'] as num?)?.toInt() ?? 0;
-        final paid = (ledger?['retirado'] as num?)?.toInt() ?? 0;
-        if (amount > income - reserved - paid) {
+        final reserved = Money.read(ledger?['reservado']);
+        final paid = Money.read(ledger?['retirado']);
+        if (Money.cents(amount) >
+            Money.cents(income) - Money.cents(reserved) - Money.cents(paid)) {
           throw const ChatFailure(
             'El monto supera tu recaudación diaria disponible.',
           );
@@ -229,7 +234,7 @@ class FinancialChatService {
         txn.set(ledgerRef, {
           'id_conductor': owner.id,
           'dia': dayKey(date),
-          'reservado': reserved + amount,
+          'reservado': Money.add(reserved, amount),
           'retirado': paid,
         });
       }
@@ -247,7 +252,7 @@ class FinancialChatService {
         txn,
         owner.chatId,
         'solicitud-${ref.id}',
-        'Solicitud de ${owner.operation}: Bs $amount.00. Pendiente de confirmación del operador.'
+        'Solicitud de ${owner.operation}: Bs ${Money.format(amount)}. Pendiente de confirmación del operador.'
             '${detail.trim().isEmpty ? '' : '\n${detail.trim()}'}',
       );
     });
@@ -288,7 +293,7 @@ class FinancialChatService {
       Map<String, dynamic>? user;
       if (req.isWithdrawal) {
         ledger = (await txn.get(ledgerRef)).data();
-        if (((ledger?['reservado'] as num?)?.toInt() ?? 0) < req.monto) {
+        if ((Money.read(ledger?['reservado'])) < req.monto) {
           throw const ChatFailure(
             'No hay una reserva válida para este retiro.',
           );
@@ -301,15 +306,18 @@ class FinancialChatService {
       }
       if (req.isWithdrawal) {
         txn.update(ledgerRef, {
-          'reservado':
-              ((ledger?['reservado'] as num?)?.toInt() ?? 0) - req.monto,
-          'retirado':
-              ((ledger?['retirado'] as num?)?.toInt() ?? 0) +
-              (approve ? req.monto : 0),
+          'reservado': Money.subtract(
+            Money.read(ledger?['reservado']),
+            req.monto,
+          ),
+          'retirado': Money.add(
+            Money.read(ledger?['retirado']),
+            approve ? req.monto : 0,
+          ),
         });
       } else if (approve) {
         txn.update(userRef, {
-          'puntos': ((user?['puntos'] as num?)?.toInt() ?? 0) + req.monto,
+          'puntos': Money.add(Money.read(user?['puntos']), req.monto),
         });
       }
       if (approve) {
@@ -338,7 +346,7 @@ class FinancialChatService {
         txn,
         req.chatId,
         'resolucion-$requestId',
-        '${req.isWithdrawal ? 'Retiro' : 'Recarga'} de Bs ${req.monto}.00 '
+        '${req.isWithdrawal ? 'Retiro' : 'Recarga'} de Bs ${Money.format(req.monto)} '
             '${approve ? 'confirmado' : 'rechazado'} por $adminName.'
             '${note.trim().isEmpty ? '' : '\n${note.trim()}'}',
       );

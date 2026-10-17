@@ -1,3 +1,5 @@
+import '../../widgets/login_progress_indicator.dart';
+import '../../services/login_preferences.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _ciController = TextEditingController();
   final _pinController = TextEditingController();
   String _tipo = 'estudiante';
+  String? _ciProfile;
   bool _obscurePin = true;
 
   @override
@@ -30,6 +33,24 @@ class _LoginScreenState extends State<LoginScreen> {
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args['tipo'] != null) {
       _tipo = args['tipo'];
+    }
+    if (_ciProfile != _tipo) {
+      _ciProfile = _tipo;
+      _ciController.text = LoginPreferences.defaultCi(_tipo);
+      _restoreCi(_tipo);
+    }
+  }
+
+  Future<void> _restoreCi(String profile) async {
+    try {
+      final ci = await LoginPreferences.readCi(profile);
+      if (mounted &&
+          _tipo == profile &&
+          _ciController.text == LoginPreferences.defaultCi(profile)) {
+        _ciController.text = ci;
+      }
+    } catch (_) {
+      // Se mantiene el carnet de ejemplo si falla la lectura local.
     }
   }
 
@@ -197,9 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             child: authService.isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
+                                ? const LoginProgressIndicator()
                                 : const Text(
                                     'INICIAR SESIÓN',
                                     style: TextStyle(

@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
@@ -26,11 +27,7 @@ const Map<String, Color> _estadoColor = {
 };
 
 class IncidenciaPanelScreen extends StatefulWidget {
-  const IncidenciaPanelScreen({
-    super.key,
-    this.incidencia,
-    this.cliente,
-  });
+  const IncidenciaPanelScreen({super.key, this.incidencia, this.cliente});
 
   /// Ticket de la cola (mapa con `docId`).
   final Map<String, dynamic>? incidencia;
@@ -97,12 +94,13 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
     if (inc == null) return;
     final accion = 'Operador ${_estados[_estadoTicket] ?? _estadoTicket}';
     await _aplicarAccionTicket(accion);
-    await FirebaseService.instance.actualizarIncidencia(inc['docId'] as String, {
-      'estado': _estadoTicket,
-      'respuesta': _respuestaController.text.trim(),
-      if (_estadoTicket == 'resuelta' || _estadoTicket == 'cerrada')
-        'fecha_resolucion': DateTime.now().toUtc(),
-    });
+    await FirebaseService.instance
+        .actualizarIncidencia(inc['docId'] as String, {
+          'estado': _estadoTicket,
+          'respuesta': _respuestaController.text.trim(),
+          if (_estadoTicket == 'resuelta' || _estadoTicket == 'cerrada')
+            'fecha_resolucion': DateTime.now().toUtc(),
+        });
     _mostrarSnack('Ticket actualizado');
   }
 
@@ -110,16 +108,16 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
     final inc = widget.incidencia;
     final texto = _notaController.text.trim();
     if (inc == null || texto.isEmpty) return;
-    final notas =
-        List<Map<String, dynamic>>.from(inc['notas'] as List? ?? []);
+    final notas = List<Map<String, dynamic>>.from(inc['notas'] as List? ?? []);
     notas.add({
       'autor': 'Operador',
       'texto': texto,
       'fecha': DateTime.now().toUtc().toIso8601String(),
     });
-    await FirebaseService.instance.actualizarIncidencia(inc['docId'] as String, {
-      'notas': notas,
-    });
+    await FirebaseService.instance.actualizarIncidencia(
+      inc['docId'] as String,
+      {'notas': notas},
+    );
     if (!mounted) return;
     _mostrarSnack('Nota guardada');
     Navigator.pop(context);
@@ -128,14 +126,17 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
   Future<void> _aplicarAccionTicket(String accion) async {
     final inc = widget.incidencia;
     if (inc == null) return;
-    final acciones =
-        List<Map<String, dynamic>>.from(inc['acciones'] as List? ?? []);
+    final acciones = List<Map<String, dynamic>>.from(
+      inc['acciones'] as List? ?? [],
+    );
     acciones.add({
       'accion': accion,
       'fecha': DateTime.now().toUtc().toIso8601String(),
     });
-    await FirebaseService.instance
-        .actualizarIncidencia(inc['docId'] as String, {'acciones': acciones});
+    await FirebaseService.instance.actualizarIncidencia(
+      inc['docId'] as String,
+      {'acciones': acciones},
+    );
   }
 
   Future<void> _toggleBloqueo() async {
@@ -143,13 +144,12 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
         ? 'inactivo'
         : 'activo';
     final result = _esConductor
-        ? await FirebaseService.instance
-            .setConductorEstado(_idCliente(), nuevo)
+        ? await FirebaseService.instance.setConductorEstado(_idCliente(), nuevo)
         : await FirebaseService.instance.setUsuarioEstado(_idCliente(), nuevo);
     if (result.ok) {
-      await _aplicarAccionTicket(nuevo == 'activo'
-          ? 'Cliente desbloqueado'
-          : 'Cliente bloqueado');
+      await _aplicarAccionTicket(
+        nuevo == 'activo' ? 'Cliente desbloqueado' : 'Cliente bloqueado',
+      );
       await _reloadCliente();
     }
     _mostrarSnack(result.message);
@@ -170,13 +170,13 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
   Future<void> _recargaManual() async {
     if (_esConductor) return;
     final controller = TextEditingController();
-    final monto = await showDialog<int>(
+    final monto = await showDialog<num>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Recarga manual'),
         content: TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
             labelText: 'Cantidad de puntos (Bs)',
             border: OutlineInputBorder(),
@@ -189,7 +189,7 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
           ),
           ElevatedButton(
             onPressed: () =>
-                Navigator.pop(ctx, int.tryParse(controller.text.trim()) ?? 0),
+                Navigator.pop(ctx, Money.tryParse(controller.text.trim()) ?? 0),
             child: const Text('RECARGAR'),
           ),
         ],
@@ -202,9 +202,9 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
       puntos: monto,
       metodoPago: 'manual_admin',
     );
-    await _aplicarAccionTicket('Recarga manual de $monto pts');
+    await _aplicarAccionTicket('Recarga manual de ${Money.format(monto)} pts');
     await _reloadCliente();
-    _mostrarSnack('Recarga de $monto pts aplicada');
+    _mostrarSnack('Recarga de ${Money.format(monto)} pts aplicada');
   }
 
   Future<void> _cambiarTipo() async {
@@ -229,8 +229,11 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
                     SizedBox(
                       width: 20,
                       child: e.key == actual
-                          ? const Icon(Icons.check_circle,
-                              color: AppColors.primary, size: 18)
+                          ? const Icon(
+                              Icons.check_circle,
+                              color: AppColors.primary,
+                              size: 18,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 6),
@@ -243,7 +246,10 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
       ),
     );
     if (nuevo == null || nuevo == actual) return;
-    final ok = await FirebaseService.instance.cambiarTipoUsuario(_idCliente(), nuevo);
+    final ok = await FirebaseService.instance.cambiarTipoUsuario(
+      _idCliente(),
+      nuevo,
+    );
     if (ok.ok) {
       await _aplicarAccionTicket('Tipo cambiado a $nuevo');
       await _reloadCliente();
@@ -255,14 +261,21 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
 
   int _idCliente() {
     final id = (_cliente?['id'] as num?)?.toInt();
-    return id ?? int.tryParse(((_cliente?['docId'] as String?) ?? '')
-            .replaceAll(RegExp(r'[^0-9]'), '')) ??
+    return id ??
+        int.tryParse(
+          ((_cliente?['docId'] as String?) ?? '').replaceAll(
+            RegExp(r'[^0-9]'),
+            '',
+          ),
+        ) ??
         0;
   }
 
   Future<void> _reloadCliente() async {
-    final c = await FirebaseService.instance
-        .fetchClienteDoc(_esUsuario, _idCliente());
+    final c = await FirebaseService.instance.fetchClienteDoc(
+      _esUsuario,
+      _idCliente(),
+    );
     if (c != null && mounted) {
       setState(() => _cliente = c);
     }
@@ -297,8 +310,7 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (widget.incidencia != null)
-            _buildTicketCard(widget.incidencia!),
+          if (widget.incidencia != null) _buildTicketCard(widget.incidencia!),
           if (_cliente != null) _buildClienteCard(),
           _buildAcciones(),
           if (widget.incidencia != null) _buildBitacora(widget.incidencia!),
@@ -318,11 +330,14 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: (_estadoColor[estado] ?? Colors.grey)
-                        .withValues(alpha: 0.15),
+                    color: (_estadoColor[estado] ?? Colors.grey).withValues(
+                      alpha: 0.15,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -348,22 +363,27 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
             const SizedBox(height: 6),
             Text(inc['descripcion'] as String? ?? ''),
             const SizedBox(height: 14),
-            const Text('Estado',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              'Estado',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               initialValue: _estadoTicket,
               items: _estados.entries
-                  .map((e) => DropdownMenuItem(
-                      value: e.key, child: Text(e.value)))
+                  .map(
+                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
+                  )
                   .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _estadoTicket = v);
               },
             ),
             const SizedBox(height: 14),
-            const Text('Respuesta al cliente',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              'Respuesta al cliente',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: _respuestaController,
@@ -405,15 +425,20 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
                 Text(
                   '${c['nombre'] ?? ''} ${c['apellido'] ?? ''}',
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Spacer(),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: (activo ? AppColors.success : Colors.red)
-                        .withValues(alpha: 0.15),
+                    color: (activo ? AppColors.success : Colors.red).withValues(
+                      alpha: 0.15,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -433,7 +458,7 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
             _fila('CI', (c['ci'] as String? ?? '').isEmpty ? '—' : c['ci']),
             if (!_esConductor) ...[
               _fila('Tipo', _tipoLabel(c['tipo'] as String? ?? 'civil')),
-              _fila('Puntos', '${c['puntos'] ?? 0}'),
+              _fila('Puntos', Money.format(c['puntos'] ?? 0)),
             ] else
               _fila('Licencia', c['licencia'] ?? '—'),
           ],
@@ -449,14 +474,16 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
         children: [
           SizedBox(
             width: 90,
-            child: Text(etiqueta,
-                style:
-                    const TextStyle(fontSize: 13, color: Colors.grey)),
+            child: Text(
+              etiqueta,
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
           ),
           Expanded(
-            child: Text('$valor',
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600)),
+            child: Text(
+              '$valor',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -473,8 +500,10 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Acciones del operador',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            const Text(
+              'Acciones del operador',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             _botonAccion(
               icon: activo ? Icons.block : Icons.lock_open,
@@ -504,9 +533,10 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
             ],
             if (widget.incidencia != null) ...[
               const SizedBox(height: 8),
-              const Text('Nota de seguimiento',
-                  style:
-                      TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              const Text(
+                'Nota de seguimiento',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 6),
               TextField(
                 controller: _notaController,
@@ -546,8 +576,7 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
         ),
         dense: true,
         leading: Icon(icon, color: color),
-        title: Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
@@ -556,33 +585,49 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
 
   Widget _buildBitacora(Map<String, dynamic> inc) {
     final notas = List<Map<String, dynamic>>.from(inc['notas'] as List? ?? []);
-    final acciones =
-        List<Map<String, dynamic>>.from(inc['acciones'] as List? ?? []);
+    final acciones = List<Map<String, dynamic>>.from(
+      inc['acciones'] as List? ?? [],
+    );
     if (notas.isEmpty && acciones.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text('Sin actividad aún.',
-            style: TextStyle(color: Colors.grey)),
+        child: Text('Sin actividad aún.', style: TextStyle(color: Colors.grey)),
       );
     }
     final items = <Widget>[];
     for (final a in acciones) {
-      items.add(ListTile(
-        dense: true,
-        leading: const Icon(Icons.history, color: AppColors.primary, size: 20),
-        title: Text(a['accion'] as String? ?? ''),
-        subtitle: Text(_formatIso(a['fecha']),
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ));
+      items.add(
+        ListTile(
+          dense: true,
+          leading: const Icon(
+            Icons.history,
+            color: AppColors.primary,
+            size: 20,
+          ),
+          title: Text(a['accion'] as String? ?? ''),
+          subtitle: Text(
+            _formatIso(a['fecha']),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ),
+      );
     }
     for (final n in notas) {
-      items.add(ListTile(
-        dense: true,
-        leading: const Icon(Icons.sticky_note_2, color: Colors.orange, size: 20),
-        title: Text('${n['autor'] ?? ''}: ${n['texto'] ?? ''}'),
-        subtitle: Text(_formatIso(n['fecha']),
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ));
+      items.add(
+        ListTile(
+          dense: true,
+          leading: const Icon(
+            Icons.sticky_note_2,
+            color: Colors.orange,
+            size: 20,
+          ),
+          title: Text('${n['autor'] ?? ''}: ${n['texto'] ?? ''}'),
+          subtitle: Text(
+            _formatIso(n['fecha']),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ),
+      );
     }
     return Card(
       child: Padding(
@@ -592,9 +637,10 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
           children: [
             const Padding(
               padding: EdgeInsets.all(8),
-              child: Text('Bitácora',
-                  style:
-                      TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              child: Text(
+                'Bitácora',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ),
             ...items,
           ],
@@ -607,8 +653,8 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
     final d = f is Timestamp
         ? f.toDate()
         : f is DateTime
-            ? f
-            : null;
+        ? f
+        : null;
     if (d == null) return '';
     return '${d.day}/${d.month}/${d.year} '
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
@@ -622,10 +668,10 @@ class _IncidenciaPanelScreenState extends State<IncidenciaPanelScreen> {
   }
 
   String _tipoLabel(String t) => switch (t) {
-        'estudiante' => 'Estudiante',
-        'civil' => 'Civil',
-        'adulto_mayor' => 'Adulto mayor',
-        'discapacitado' => 'Discapacitado',
-        _ => t,
-      };
+    'estudiante' => 'Estudiante',
+    'civil' => 'Civil',
+    'adulto_mayor' => 'Adulto mayor',
+    'discapacitado' => 'Discapacitado',
+    _ => t,
+  };
 }

@@ -12,10 +12,7 @@ class RoleSelectionScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.primaryDark,
-            ],
+            colors: [AppColors.primary, AppColors.primaryDark],
           ),
         ),
         child: SafeArea(
@@ -25,61 +22,51 @@ class RoleSelectionScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                const Icon(
-                  Icons.directions_bus,
-                  size: 100,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Transita Bolivia',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                  const Icon(
+                    Icons.directions_bus,
+                    size: 100,
                     color: Colors.white,
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  '¿Cómo vas a usar Transita Bolivia?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Transita Bolivia',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 40),
-                _buildRoleButton(
-                  context,
-                  icon: Icons.person,
-                  title: 'Viajero / Pasajero',
-                  subtitle: 'Paga tus viajes con puntos',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/passenger/type',
-                        arguments: {'role': 'passenger'});
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildRoleButton(
-                  context,
-                  icon: Icons.directions_car,
-                  title: 'Conductor',
-                  subtitle: 'Cobra tus viajes como conductor',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/driver/login');
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildRoleButton(
-                  context,
-                  icon: Icons.admin_panel_settings,
-                  title: 'Administración',
-                  subtitle: 'Panel con registros en tiempo real',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/admin/login');
-                  },
-                ),
-                const SizedBox(height: 24),
-                _buildRequirementsButton(context),
+                  const SizedBox(height: 10),
+                  const Text(
+                    '¿Cómo vas a usar Transita Bolivia?',
+                    style: TextStyle(fontSize: 18, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 40),
+                  _buildRoleButton(
+                    context,
+                    icon: Icons.person,
+                    title: 'Viajero / Pasajero',
+                    subtitle: 'Paga tus viajes con puntos',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/passenger/type',
+                        arguments: {'role': 'passenger'},
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildRoleButton(
+                    context,
+                    icon: Icons.directions_car,
+                    title: 'Conductor',
+                    subtitle: 'Cobra tus viajes como conductor',
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/driver/login');
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _buildRequirementsButton(context),
                 ],
               ),
             ),
@@ -163,10 +150,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),

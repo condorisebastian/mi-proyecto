@@ -1,3 +1,5 @@
+import '../../widgets/login_progress_indicator.dart';
+import '../../services/login_preferences.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
@@ -12,9 +14,29 @@ class DriverLoginScreen extends StatefulWidget {
 
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _ciController = TextEditingController();
+  final _ciController = TextEditingController(
+    text: LoginPreferences.defaultCi('conductor'),
+  );
   final _pinController = TextEditingController();
   bool _obscurePin = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreCi();
+  }
+
+  Future<void> _restoreCi() async {
+    try {
+      final ci = await LoginPreferences.readCi('conductor');
+      if (mounted &&
+          _ciController.text == LoginPreferences.defaultCi('conductor')) {
+        _ciController.text = ci;
+      }
+    } catch (_) {
+      // El carnet de ejemplo sigue disponible si falla la lectura local.
+    }
+  }
 
   @override
   void dispose() {
@@ -33,10 +55,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.primaryDark,
-            ],
+            colors: [AppColors.primary, AppColors.primaryDark],
           ),
         ),
         child: SafeArea(
@@ -63,10 +82,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Panel Conductor',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
                   const SizedBox(height: 40),
                   Container(
@@ -124,14 +140,16 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                               labelText: 'PIN (4 dígitos)',
                               prefixIcon: const Icon(Icons.lock),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePin
-                                    ? Icons.visibility_off
-                                    : Icons.visibility),
+                                icon: Icon(
+                                  _obscurePin
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
                                 tooltip: _obscurePin
                                     ? 'Mostrar PIN'
                                     : 'Ocultar PIN',
-                                onPressed: () => setState(
-                                    () => _obscurePin = !_obscurePin),
+                                onPressed: () =>
+                                    setState(() => _obscurePin = !_obscurePin),
                               ),
                               counterText: '',
                               border: OutlineInputBorder(
@@ -145,36 +163,39 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                               return null;
                             },
                           ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: authService.isLoading
-                                ? null
-                                : () async {
-                                    if (_formKey.currentState!.validate()) {
-                                      final success = await authService.login(
-                                        _pinController.text,
-                                        ci: _ciController.text.trim(),
-                                      );
-                                      if (success && context.mounted) {
-                                        Navigator.pushReplacementNamed(
-                                            context, '/driver/home');
-                                      } else if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                          ..hideCurrentSnackBar()
-                                          ..showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                authService.lastLoginError ??
-                                                    'Carnet o PIN incorrectos'),
-                                              backgroundColor: Colors.red,
-                                            ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: authService.isLoading
+                                  ? null
+                                  : () async {
+                                      if (_formKey.currentState!.validate()) {
+                                        final success = await authService.login(
+                                          _pinController.text,
+                                          ci: _ciController.text.trim(),
+                                        );
+                                        if (success && context.mounted) {
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            '/driver/home',
                                           );
+                                        } else if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                            ..hideCurrentSnackBar()
+                                            ..showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  authService.lastLoginError ??
+                                                      'Carnet o PIN incorrectos',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                        }
                                       }
-                                    }
-                                  },
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
@@ -183,8 +204,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                 ),
                               ),
                               child: authService.isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white)
+                                  ? const LoginProgressIndicator()
                                   : const Text(
                                       'INICIAR SESIÓN',
                                       style: TextStyle(
@@ -198,8 +218,10 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           TextButton(
                             onPressed: () {
                               Navigator.pushNamed(
-                                  context, '/passenger/requirements',
-                                  arguments: {'role': 'driver'});
+                                context,
+                                '/passenger/requirements',
+                                arguments: {'role': 'driver'},
+                              );
                             },
                             child: const Text(
                               '¿No tienes cuenta? Regístrate',

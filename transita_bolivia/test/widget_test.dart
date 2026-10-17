@@ -25,7 +25,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('MOSTRAR QR'), findsOneWidget);
+    expect(find.text('MOSTRAR QR'), findsNothing);
     expect(find.textContaining('NFC'), findsNothing);
     expect(find.byIcon(Icons.nfc), findsNothing);
     final grid = tester.widget<GridView>(
@@ -46,7 +46,7 @@ void main() {
     await tester.tap(find.byTooltip('Agregar un pasaje'));
     await tester.pump();
     expect(find.text('3 pasaje(s)'), findsOneWidget);
-    expect(find.text('Total: 3 punto(s) = Bs 3.00'), findsOneWidget);
+    expect(find.text('Bs 3.50 / persona'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -73,6 +73,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Transita Bolivia'), findsOneWidget);
+    expect(find.text('Administración'), findsNothing);
+    expect(find.byIcon(Icons.admin_panel_settings), findsNothing);
   });
 
   testWidgets(

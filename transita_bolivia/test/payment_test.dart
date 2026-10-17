@@ -57,7 +57,7 @@ void main() {
       },
     );
     test('admite los QR anteriores de cuatro campos', () {
-      expect(TripQr.tryParse('CONDUCTOR:2:civil:3')?.puntos, 3);
+      expect(TripQr.tryParse('CONDUCTOR:2:estudiante:1')?.puntos, 1);
     });
   });
 
@@ -139,9 +139,9 @@ void main() {
       paymentReference: reference,
       cantidadPasajeros: quantity,
     );
-    Future<int> balance() async =>
+    Future<num> balance() async =>
         (await db.collection('usuarios').doc('u-1').get()).data()!['puntos']
-            as int;
+            as num;
 
     test(
       'un pasajero paga tres pasajes con un solo descuento y tres personas en el resumen',

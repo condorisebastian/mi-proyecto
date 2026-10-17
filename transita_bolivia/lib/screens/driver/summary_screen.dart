@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:share_plus/share_plus.dart';
@@ -154,7 +155,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '${_summary['total_puntos'] ?? 0} PUNTOS',
+                                '${Money.format(_summary['total_puntos'] ?? 0)} PUNTOS',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 36,
@@ -162,7 +163,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                                 ),
                               ),
                               Text(
-                                '= Bs ${_summary['total_puntos'] ?? 0}.00',
+                                '= Bs ${Money.format(_summary['total_puntos'] ?? 0)}',
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 16,
@@ -263,7 +264,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
         'Transita Bolivia — Resumen del ${now.day}/${now.month}/${now.year}\n'
         'Conductor: ${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}\n'
         'Viajes: ${_summary['total_pasajeros'] ?? 0}\n'
-        'Recaudación: ${_summary['total_puntos'] ?? 0} puntos\n'
+        'Recaudación: ${Money.format(_summary['total_puntos'] ?? 0)} puntos\n'
         'Estudiantes: ${_summary['estudiantes'] ?? 0}\n'
         'Civiles: ${_summary['civiles'] ?? 0}\n'
         'Adultos mayores: ${_summary['mayores'] ?? 0}\n'

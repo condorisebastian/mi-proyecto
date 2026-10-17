@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme.dart';
@@ -465,7 +466,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   children: [
                     if (esUsuario)
                       Text(
-                        '${m['puntos'] ?? 0} pts',
+                        '${Money.format(m['puntos'] ?? 0)} pts',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
@@ -543,7 +544,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             ),
           ),
           Text(
-            '${esRecarga ? '+' : '-'}${m['puntos'] ?? 0} pts',
+            '${esRecarga ? '+' : '-'}${Money.format(m['puntos'] ?? 0)} pts',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: esRecarga ? AppColors.success : Colors.red,

@@ -25,12 +25,13 @@ function handle_transactions(string $method, array $seg): void
     if ($method === 'POST' && $action === 'pay') {
         $payload = bearer_payload($secret);
         $conductorId = (int)($body['conductor_id'] ?? 0);
-        $puntos      = (int)($body['puntos'] ?? 0);
+        $centavos    = money_cents($body['puntos'] ?? 0);
+        $puntos      = $centavos === null ? '0.00' : money_decimal($centavos);
         $userIdIn    = (int)($body['user_id'] ?? 0);
         $reference = $body['payment_reference'] ?? null;
-        $cantidad = (int)($body['cantidad_pasajeros'] ?? 1);
+        $cantidad = filter_var($body['cantidad_pasajeros'] ?? 1, FILTER_VALIDATE_INT);
 
-        if (!$conductorId || $puntos <= 0 || $cantidad < 1 || $cantidad > 50) {
+        if (!$conductorId || $centavos === null || $centavos <= 0 || $cantidad === false || $cantidad < 1 || $cantidad > 50) {
             json_out(['error' => 'conductor_id y puntos son obligatorios'], 400);
         }
         if (($body['metodo_pago'] ?? 'qr') !== 'qr'
@@ -85,8 +86,8 @@ function handle_transactions(string $method, array $seg): void
                     $pdo->rollBack();
                     json_out(['error' => 'Usuario no encontrado'], 404);
                 }
-                $tarifas = ['estudiante' => 1, 'civil' => 3, 'adulto_mayor' => 1, 'discapacitado' => 1];
-                if (($tarifas[$row['tipo']] ?? 0) * $cantidad !== $puntos
+                $tarifas = ['estudiante' => 100, 'civil' => 350, 'adulto_mayor' => 100, 'discapacitado' => 100];
+                if (($tarifas[$row['tipo']] ?? 0) * $cantidad !== $centavos
                     || (isset($body['tipo_usuario']) && $body['tipo_usuario'] !== $row['tipo'])) {
                     $pdo->rollBack();
                     json_out(['error' => 'El QR no corresponde a tu tipo de pasajero o tarifa'], 400);
@@ -97,7 +98,7 @@ function handle_transactions(string $method, array $seg): void
                     $pdo->rollBack();
                     json_out(['error' => 'Este QR ya fue pagado. Pide al conductor uno nuevo.'], 409);
                 }
-                if ((float)($row['saldo_actual'] ?? 0) < $puntos) {
+                if (money_cents($row['saldo_actual'] ?? 0) < $centavos) {
                     $pdo->rollBack();
                     json_out(['error' => 'Saldo insuficiente'], 400);
                 }
@@ -134,7 +135,8 @@ function handle_transactions(string $method, array $seg): void
     if ($method === 'POST' && $action === 'recharge') {
         $payload = bearer_payload($secret);
         $userId     = (int)($body['user_id'] ?? 0);
-        $puntos     = (int)($body['puntos'] ?? 0);
+        $centavos   = money_cents($body['puntos'] ?? 0);
+        $puntos     = $centavos === null ? '0.00' : money_decimal($centavos);
         $metodoPago = $body['metodo_pago'] ?? '';
 
         // Solo un pasajero puede recargar SU cuenta.
@@ -142,7 +144,7 @@ function handle_transactions(string $method, array $seg): void
             json_out(['error' => 'No autorizado'], 401);
         }
 
-        if (!$userId || $puntos <= 0) {
+        if (!$userId || $centavos === null || $centavos <= 0) {
             json_out(['error' => 'user_id y puntos son obligatorios'], 400);
         }
 
@@ -212,7 +214,7 @@ function handle_transactions(string $method, array $seg): void
             "(SELECT c.id_cobro AS id,
                     u.id_usuario AS id_usuario,
                     c.id_conductor AS id_conductor,
-                    CAST(c.monto AS SIGNED) AS puntos,
+                    c.monto AS puntos,
                     'cobro_viaje' AS tipo,
                     c.metodo_pago,
                     c.estado,
@@ -226,7 +228,7 @@ function handle_transactions(string $method, array $seg): void
              SELECT -r.id_recarga AS id,
                     u.id_usuario AS id_usuario,
                     1 AS id_conductor,
-                    CAST(r.monto AS SIGNED) AS puntos,
+                    r.monto AS puntos,
                     'recarga' AS tipo,
                     r.metodo_pago,
                     r.estado,
@@ -247,7 +249,7 @@ function handle_transactions(string $method, array $seg): void
                 'id'           => (int)$r['id'],
                 'id_usuario'   => (int)$r['id_usuario'],
                 'id_conductor' => (int)$r['id_conductor'],
-                'puntos'       => (int)$r['puntos'],
+                'puntos'       => (float)$r['puntos'],
                 'tipo'         => $r['tipo'],
                 'metodo_pago'  => $r['metodo_pago'],
                 'estado'       => $r['estado'],
@@ -284,7 +286,7 @@ function handle_transactions(string $method, array $seg): void
 
         json_out([
             'total_pasajeros' => (int)$r['total_pasajeros'],
-            'total_puntos'    => (int)round((float)$r['total_puntos']),
+            'total_puntos'    => (float)$r['total_puntos'],
             'estudiantes'     => (int)$r['estudiantes'],
             'civiles'         => (int)$r['civiles'],
             'mayores'         => (int)$r['mayores'],
@@ -304,7 +306,7 @@ function handle_transactions(string $method, array $seg): void
             "SELECT c.id_cobro AS id,
                     u.id_usuario AS id_usuario,
                     c.id_conductor AS id_conductor,
-                    CAST(c.monto AS SIGNED) AS puntos,
+                    c.monto AS puntos,
                     'cobro_viaje' AS tipo,
                     c.metodo_pago,
                     c.estado,
@@ -328,7 +330,7 @@ function handle_transactions(string $method, array $seg): void
                 'id'           => (int)$r['id'],
                 'id_usuario'   => $r['id_usuario'] !== null ? (int)$r['id_usuario'] : null,
                 'id_conductor' => (int)$r['id_conductor'],
-                'puntos'       => (int)$r['puntos'],
+                'puntos'       => (float)$r['puntos'],
                 'tipo'         => $r['tipo'],
                 'metodo_pago'  => $r['metodo_pago'],
                 'estado'       => $r['estado'],

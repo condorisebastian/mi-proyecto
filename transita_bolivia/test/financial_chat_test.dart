@@ -35,9 +35,9 @@ void main() {
       'fecha': Timestamp.fromDate(day),
     });
   });
-  Future<int> points() async =>
+  Future<num> points() async =>
       (await db.collection('usuarios').doc('u-1').get()).data()!['puntos']
-          as int;
+          as num;
   Future<void> resolve(String id, {bool approve = true, int admin = 0}) =>
       service.resolve(
         id,
@@ -197,4 +197,34 @@ void main() {
       );
     },
   );
+  test('recargar cincuenta centavos conserva la fracción del saldo', () async {
+    final id = await service.request(passenger, 0.50, 'Recarga con centavos');
+    await resolve(id);
+    final data = (await db.collection('usuarios').doc('u-1').get()).data()!;
+    expect(data['puntos'], 10.50);
+  });
+
+  test('recaudación y retiro diario conservan cincuenta centavos', () async {
+    await db.collection('transacciones').doc('civil').set({
+      'id_conductor': 2,
+      'tipo': 'cobro_viaje',
+      'estado': 'exitoso',
+      'puntos': 3.50,
+      'fecha': Timestamp.fromDate(day),
+    });
+    final id = await service.request(driver, 3.50, 'Retiro', day: day);
+    var balance = await service.withdrawalBalance(2, day: day);
+    expect(balance.ingresos, 23.50);
+    expect(balance.reservado, 3.50);
+    expect(balance.disponible, 20);
+    await resolve(id);
+    balance = await service.withdrawalBalance(2, day: day);
+    expect(balance.retirado, 3.50);
+    expect(balance.reservado, 0);
+    expect(balance.disponible, 20);
+    await expectLater(
+      service.request(passenger, 0.001, ''),
+      throwsA(isA<ChatFailure>()),
+    );
+  });
 }

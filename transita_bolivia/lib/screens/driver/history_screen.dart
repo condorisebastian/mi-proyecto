@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../theme.dart';
@@ -145,7 +146,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
 
   Widget _buildHistoryItem(Map<String, dynamic> item) {
     final DateTime fecha = DateTime.parse(item['fecha']);
-    final int puntos = item['puntos'];
+    final num puntos = Money.read(item['puntos']);
     final String metodo = _metodoLabel(item['metodo_pago']);
     final String tipoUsuario = _tipoLabel(item['tipo_usuario']);
 
@@ -193,7 +194,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
             ),
           ),
           Text(
-            '+$puntos pts',
+            '+${Money.format(puntos)} pts',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,

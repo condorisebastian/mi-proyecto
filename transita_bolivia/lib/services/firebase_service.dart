@@ -1,3 +1,4 @@
+import '../models/money.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -327,13 +328,13 @@ class FirebaseService {
 
   /// Incrementa (o resta si `delta` es negativo) los puntos del usuario.
   /// Usa una transacción para evitar pérdidas de actualización (doble gasto).
-  Future<void> addPuntos(int userId, int delta) async {
+  Future<void> addPuntos(int userId, num delta) async {
     final ref = _db.collection(_usersCollection).doc('u-$userId');
     await _db.runTransaction((txn) async {
       final doc = await txn.get(ref);
       if (!doc.exists) return;
-      final current = (doc.data()?['puntos'] as num?)?.toInt() ?? 0;
-      final nuevo = current + delta;
+      final current = Money.read(doc.data()?['puntos']);
+      final nuevo = Money.add(current, delta);
       if (nuevo < 0) return;
       txn.update(ref, {'puntos': nuevo});
     });
@@ -356,10 +357,12 @@ class FirebaseService {
   /// Registra una recarga de puntos y actualiza el saldo del usuario.
   Future<void> recargar({
     required int userId,
-    required int puntos,
+    required num puntos,
     required String metodoPago,
   }) async {
-    if (puntos <= 0) throw ArgumentError('La recarga debe ser positiva');
+    if (!Money.valid(puntos) || puntos <= 0) {
+      throw ArgumentError('La recarga debe ser positiva');
+    }
     final userRef = _db.collection(_usersCollection).doc('u-$userId');
     final recargaRef = _db.collection(_transaccionesCollection).doc();
     await _db.runTransaction((txn) async {
@@ -367,8 +370,8 @@ class FirebaseService {
       if (!userDoc.exists || userDoc.data()?['estado'] != 'activo') {
         throw StateError('Usuario no disponible');
       }
-      final saldo = (userDoc.data()?['puntos'] as num?)?.toInt() ?? 0;
-      txn.update(userRef, {'puntos': saldo + puntos});
+      final saldo = Money.read(userDoc.data()?['puntos']);
+      txn.update(userRef, {'puntos': Money.add(saldo, puntos)});
       txn.set(recargaRef, {
         'id': -DateTime.now().microsecondsSinceEpoch,
         'id_usuario': userId,
@@ -388,7 +391,7 @@ class FirebaseService {
   Future<({bool ok, String message})> pagarViaje({
     required int userId,
     required int conductorId,
-    required int puntos,
+    required num puntos,
     required String metodoPago,
     String? tipoUsuario,
     String? paymentReference,
@@ -396,6 +399,7 @@ class FirebaseService {
   }) async {
     if (userId <= 0 ||
         conductorId <= 0 ||
+        !Money.valid(puntos) ||
         puntos <= 0 ||
         metodoPago != 'qr' ||
         cantidadPasajeros < 1 ||
@@ -435,19 +439,22 @@ class FirebaseService {
           return (ok: false, message: 'Pasajero o conductor no disponible');
         }
         final tipo = data['tipo'] as String?;
-        if ((TripQr.fares[tipo] ?? 0) * cantidadPasajeros != puntos ||
+        if (Money.cents(
+                  Money.multiply(TripQr.fares[tipo] ?? 0, cantidadPasajeros),
+                ) !=
+                Money.cents(puntos) ||
             (tipoUsuario != null && tipoUsuario != tipo)) {
           return (
             ok: false,
             message: 'El QR no corresponde a tu tipo de pasajero o tarifa.',
           );
         }
-        final saldo = (data['puntos'] as num?)?.toInt() ?? 0;
+        final saldo = Money.read(data['puntos']);
         if (saldo < puntos) {
           return (ok: false, message: 'Saldo insuficiente');
         }
 
-        txn.update(userRef, {'puntos': saldo - puntos});
+        txn.update(userRef, {'puntos': Money.subtract(saldo, puntos)});
         txn.set(cobroRef, {
           'id': DateTime.now().microsecondsSinceEpoch,
           'id_usuario': userId,
@@ -492,7 +499,7 @@ class FirebaseService {
   Future<({bool ok, String message})> registrarCobro({
     required int conductorId,
     required String tipoUsuario,
-    required int puntos,
+    required num puntos,
     required String metodoPago,
     int? userId,
   }) async {
@@ -523,7 +530,7 @@ class FirebaseService {
         .get();
 
     int totalPasajeros = 0;
-    int totalPuntos = 0;
+    int totalCentavos = 0;
     int estudiantes = 0;
     int civiles = 0;
     int mayores = 0;
@@ -538,7 +545,7 @@ class FirebaseService {
 
       final cantidad = (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1;
       totalPasajeros += cantidad;
-      totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
+      totalCentavos += Money.cents(Money.read(m['puntos']));
       final tipo = m['tipo_usuario'] as String? ?? 'civil';
       switch (tipo) {
         case 'estudiante':
@@ -558,7 +565,7 @@ class FirebaseService {
 
     return {
       'total_pasajeros': totalPasajeros,
-      'total_puntos': totalPuntos,
+      'total_puntos': Money.fromCents(totalCentavos),
       'estudiantes': estudiantes,
       'civiles': civiles,
       'mayores': mayores,
@@ -649,7 +656,7 @@ class FirebaseService {
                   final data = doc.data();
                   return DriverPayment(
                     documentId: doc.id,
-                    puntos: (data['puntos'] as num).toInt(),
+                    puntos: Money.read(data['puntos']),
                     pasajero:
                         '${data['nombre_pasajero'] ?? ''} ${data['apellido_pasajero'] ?? ''}'
                             .trim(),
@@ -691,7 +698,7 @@ class FirebaseService {
           final end = start.add(const Duration(days: 1));
 
           int totalPasajeros = 0;
-          int totalPuntos = 0;
+          int totalCentavos = 0;
           int estudiantes = 0;
           int civiles = 0;
           int mayores = 0;
@@ -706,7 +713,7 @@ class FirebaseService {
 
             final cantidad = (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1;
             totalPasajeros += cantidad;
-            totalPuntos += (m['puntos'] as num?)?.toInt() ?? 0;
+            totalCentavos += Money.cents(Money.read(m['puntos']));
             final tipo = m['tipo_usuario'] as String? ?? 'civil';
             switch (tipo) {
               case 'estudiante':
@@ -726,7 +733,7 @@ class FirebaseService {
 
           return {
             'total_pasajeros': totalPasajeros,
-            'total_puntos': totalPuntos,
+            'total_puntos': Money.fromCents(totalCentavos),
             'estudiantes': estudiantes,
             'civiles': civiles,
             'mayores': mayores,
@@ -1084,7 +1091,7 @@ class FirebaseService {
       ci: (m['ci'] as String?) ?? '',
       email: (m['email'] as String?) ?? '',
       tipo: m['tipo'] as String,
-      puntos: (m['puntos'] as num?)?.toInt() ?? 0,
+      puntos: Money.read(m['puntos']),
       estado: m['estado'] as String,
     );
   }
@@ -1102,7 +1109,7 @@ class FirebaseService {
       id: (m['id'] as num).toInt(),
       idUsuario: (m['id_usuario'] as num?)?.toInt(),
       idConductor: (m['id_conductor'] as num).toInt(),
-      puntos: (m['puntos'] as num).toInt(),
+      puntos: Money.read(m['puntos']),
       tipo: m['tipo'] as String,
       metodoPago: m['metodo_pago'] as String,
       estado: m['estado'] as String,

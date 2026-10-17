@@ -36,7 +36,7 @@ function handle_users(string $method, array $seg): void
             'ci'      => $row['ci'] ?? '',
             'email'   => $row['email'],
             'tipo'    => $row['tipo'],
-            'puntos'  => (int)round((float)$row['saldo_actual']),
+            'puntos'  => (float)$row['saldo_actual'],
             'estado'  => $row['estado'],
         ]);
     }

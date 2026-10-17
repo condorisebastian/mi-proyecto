@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'money.dart';
 
 class ChatIdentity {
   const ChatIdentity({
@@ -29,7 +30,7 @@ class FinancialRequest {
   final String chatId;
   final int ownerId;
   final String canal;
-  final int monto;
+  final num monto;
   final String estado;
   final String detalle;
   final String dia;
@@ -47,7 +48,7 @@ class FinancialRequest {
       chatId: data['chat_id'] as String,
       ownerId: (data['id_cliente'] as num).toInt(),
       canal: data['canal'] as String,
-      monto: (data['monto'] as num).toInt(),
+      monto: Money.read(data['monto']),
       estado: data['estado'] as String,
       detalle: data['detalle'] as String? ?? '',
       dia: data['dia'] as String? ?? '',
@@ -61,10 +62,14 @@ class WithdrawalBalance {
     this.reservado = 0,
     this.retirado = 0,
   });
-  final int ingresos;
-  final int reservado;
-  final int retirado;
-  int get disponible => (ingresos - reservado - retirado).clamp(0, ingresos);
+  final num ingresos;
+  final num reservado;
+  final num retirado;
+  num get disponible => Money.fromCents(
+    (Money.cents(ingresos) - Money.cents(reservado) - Money.cents(retirado))
+        .clamp(0, Money.cents(ingresos))
+        .toInt(),
+  );
 }
 
 class ChatFailure implements Exception {

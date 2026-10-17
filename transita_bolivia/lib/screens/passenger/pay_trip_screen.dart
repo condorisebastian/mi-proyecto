@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -80,7 +81,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Costo: ${user?.costoViaje ?? 1} punto(s)',
+                        'Costo: ${Money.format(user?.costoViaje ?? 1)} punto(s)',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -93,19 +94,18 @@ class _PayTripScreenState extends State<PayTripScreen> {
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 8,
                           children: [
-                            Flexible(
-                              child: Text(
-                                'Tu saldo:',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 16),
-                              ),
+                            const Text(
+                              'Tu saldo:',
+                              style: TextStyle(fontSize: 16),
                             ),
-                            const SizedBox(width: 8),
                             Text(
-                              '${user?.puntos ?? 0} puntos',
+                              '${Money.format(user?.puntos ?? 0)} puntos',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -303,15 +303,17 @@ class _PayTripScreenState extends State<PayTripScreen> {
             Text('Tipo de pasajero: ${_tipoLabel(tipo)}'),
             const SizedBox(height: 8),
             Text('Cantidad: ${parsed.cantidad} pasaje(s)'),
-            Text('Tarifa por persona: ${user.costoViaje} punto(s)'),
+            Text(
+              'Tarifa por persona: ${Money.format(user.costoViaje)} punto(s)',
+            ),
             const SizedBox(height: 8),
             Text(
-              '¿Confirmas el pago de $puntos punto(s)?',
+              '¿Confirmas el pago de ${Money.format(puntos)} punto(s)?',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Saldo disponible: ${user.puntos} puntos',
+              'Saldo disponible: ${Money.format(user.puntos)} puntos',
               style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
           ],
@@ -421,13 +423,13 @@ class _PayTripScreenState extends State<PayTripScreen> {
                               const Divider(height: 24),
                               _receiptRow(
                                 'Monto',
-                                '-$puntos punto(s)',
+                                '-${Money.format(puntos)} punto(s)',
                                 valueColor: Colors.redAccent,
                                 bold: true,
                               ),
                               _receiptRow(
                                 'Nuevo saldo',
-                                '${u?.puntos ?? 0} puntos',
+                                '${Money.format(u?.puntos ?? 0)} puntos',
                                 valueColor: AppColors.primary,
                                 bold: true,
                               ),

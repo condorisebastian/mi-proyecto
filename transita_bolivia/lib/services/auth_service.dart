@@ -1,3 +1,4 @@
+import 'login_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -204,6 +205,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> _saveSession() async {
     try {
+      await LoginPreferences.saveCi(_currentUser!.tipo, _currentUser!.ci);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
         _kSessionKey,

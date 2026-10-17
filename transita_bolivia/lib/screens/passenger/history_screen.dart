@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
@@ -60,10 +61,7 @@ class HistoryScreenState extends State<HistoryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.2],
           ),
         ),
@@ -78,7 +76,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     _buildStatCard(
                       'Saldo Actual',
-                      '${user?.puntos ?? 0} pts',
+                      '${Money.format(user?.puntos ?? 0)} pts',
                       Icons.account_balance_wallet,
                       AppColors.primary,
                     ),
@@ -111,9 +109,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                         color: AppColors.primary,
                         onRefresh: _loadHistory,
                         child: _loading
-                            ? const Center(
-                                child: CircularProgressIndicator(),
-                              )
+                            ? const Center(child: CircularProgressIndicator())
                             : _buildHistoryBody(_transactions),
                       ),
               ),
@@ -140,10 +136,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'No hay transacciones',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 18, color: Colors.grey[500]),
                     ),
                   ],
                 ),
@@ -164,7 +157,11 @@ class HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -182,13 +179,7 @@ class HistoryScreenState extends State<HistoryScreen> {
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 4),
           Text(
             value,
@@ -250,23 +241,17 @@ class HistoryScreenState extends State<HistoryScreen> {
                 const SizedBox(height: 4),
                 Text(
                   '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 Text(
                   transaction.metodoPagoDisplay,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
           ),
           Text(
-            '${isPositive ? '+' : '-'}${transaction.puntos} pts',
+            '${isPositive ? '+' : '-'}${Money.format(transaction.puntos)} pts',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,

@@ -1,3 +1,4 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 import 'package:provider/provider.dart';
@@ -157,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${user.puntos}',
+                      Money.format(user.puntos),
                       style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -165,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      '(= Bs ${user.puntos}.00)',
+                      '(= Bs ${Money.format(user.puntos)})',
                       style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
@@ -329,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             Text(
-                              '-${trip.puntos} pts',
+                              '-${Money.format(trip.puntos)} pts',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,
