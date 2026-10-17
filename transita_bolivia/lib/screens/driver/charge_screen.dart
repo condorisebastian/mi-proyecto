@@ -1,5 +1,6 @@
 import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -20,13 +21,23 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
     'discapacitado': 'Persona con discapacidad',
   };
   String _tipo = 'estudiante';
-  int _cantidad = 1;
+  final _cantidadController = TextEditingController(text: '1');
+  final _montoController = TextEditingController();
+  final _cantidadKey = GlobalKey<FormFieldState<String>>();
+  final _montoKey = GlobalKey<FormFieldState<String>>();
   static const _icons = {
     'estudiante': Icons.school_outlined,
     'civil': Icons.person_outline,
     'adulto_mayor': Icons.elderly,
     'discapacitado': Icons.accessible,
   };
+
+  @override
+  void dispose() {
+    _cantidadController.dispose();
+    _montoController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,33 +72,61 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                       'Una persona puede pagar los pasajes de su grupo.',
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          tooltip: 'Quitar un pasaje',
-                          onPressed: _cantidad > 1
-                              ? () => setState(() => _cantidad--)
-                              : null,
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                        Flexible(
-                          child: Text(
-                            '$_cantidad pasaje(s)',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'Agregar un pasaje',
-                          onPressed: _cantidad < TripQr.maxPassengers
-                              ? () => setState(() => _cantidad++)
-                              : null,
-                          icon: const Icon(Icons.add_circle_outline),
-                        ),
-                      ],
+                    TextFormField(
+                      key: _cantidadKey,
+                      controller: _cantidadController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Cantidad de pasajes',
+                        hintText: '1',
+                        errorMaxLines: 3,
+                      ),
+                      validator: (value) {
+                        final cantidad = int.tryParse(value?.trim() ?? '');
+                        if (cantidad == null ||
+                            cantidad < 1 ||
+                            cantidad > TripQr.maxPassengers) {
+                          return 'Introduce entre 1 y ${TripQr.maxPassengers} pasajes';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: _montoKey,
+                      controller: _montoController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: 'Monto total (Bs)',
+                        hintText: 'Ej. 10.50',
+                        helperText: 'Total a cobrar por todos los pasajes.',
+                        helperMaxLines: 2,
+                        errorMaxLines: 3,
+                      ),
+                      validator: (value) {
+                        final monto = Money.tryParse(value ?? '');
+                        if (monto == null ||
+                            monto <= 0 ||
+                            monto > TripQr.maxAmount) {
+                          return 'Introduce un monto válido con hasta 2 decimales';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) => _showChargeQr(custom: true),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showChargeQr(custom: true),
+                        icon: const Icon(Icons.qr_code),
+                        label: const Text('MOSTRAR QR'),
+                      ),
                     ),
                   ],
                 ),
@@ -187,8 +226,6 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                 );
               },
             ),
-            const SizedBox(height: 16),
-            const SizedBox(height: 16),
             const SizedBox(height: 20),
             const Text(
               'Toca un tipo de pasajero para mostrar el QR automáticamente. '
@@ -202,15 +239,22 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
     );
   }
 
-  void _showChargeQr() {
+  void _showChargeQr({bool custom = false}) {
+    final validQuantity = _cantidadKey.currentState!.validate();
+    final validAmount = !custom || _montoKey.currentState!.validate();
+    if (!validQuantity || !validAmount) return;
     final conductor = context.read<DriverAuthService>().currentConductor;
     if (conductor == null) return;
+    FocusScope.of(context).unfocus();
+    final cantidad = int.parse(_cantidadController.text.trim());
     final qr = TripQr(
       conductorId: conductor.id,
-      tipo: _tipo,
-      puntos: Money.multiply(TripQr.fares[_tipo]!, _cantidad),
+      tipo: custom ? TripQr.customType : _tipo,
+      puntos: custom
+          ? Money.read(_montoController.text)
+          : Money.multiply(TripQr.fares[_tipo]!, cantidad),
       reference: TripQr.newReference(),
-      cantidad: _cantidad,
+      cantidad: cantidad,
     );
     showDialog<void>(
       context: context,
@@ -241,7 +285,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                '${_labels[_tipo]} · ${qr.cantidad} pasaje(s)\nTotal: Bs ${Money.format(qr.puntos)}',
+                '${qr.isCustom ? 'Monto personalizado' : _labels[qr.tipo]} · ${qr.cantidad} pasaje(s)\nTotal: Bs ${Money.format(qr.puntos)}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 18,

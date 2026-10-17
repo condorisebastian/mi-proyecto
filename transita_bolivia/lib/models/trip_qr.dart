@@ -24,6 +24,10 @@ class TripQr {
   final String reference;
   final int cantidad;
   static const maxPassengers = 50;
+  static const maxAmount = 1000000;
+  static const customType = 'personalizado';
+
+  bool get isCustom => tipo == customType;
 
   static String newReference() {
     final random = Random.secure();
@@ -46,12 +50,14 @@ class TripQr {
         id <= 0 ||
         puntos == null ||
         puntos <= 0 ||
-        !fares.containsKey(parts[2]) ||
+        puntos > maxAmount ||
+        (!fares.containsKey(parts[2]) && parts[2] != customType) ||
         cantidad == null ||
         cantidad < 1 ||
         cantidad > maxPassengers ||
-        Money.cents(Money.multiply(fares[parts[2]] ?? 0, cantidad)) !=
-            Money.cents(puntos)) {
+        (parts[2] != customType &&
+            Money.cents(Money.multiply(fares[parts[2]] ?? 0, cantidad)) !=
+                Money.cents(puntos))) {
       return null;
     }
     final reference = parts.length >= 5 ? parts[4] : newReference();

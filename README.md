@@ -53,7 +53,7 @@ mi-proyecto/
 App unificada para pasajeros y conductores con selección de rol al iniciar:
 
 - **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, chat de recargas con el operador, pago individual o grupal por QR e historial.
-- **Conductor**: login/registro por PIN, cobro por QR con cuadrícula de categorías e iconos, cantidad de pasajes, alerta sonora y visual, resumen y chat de retiros diarios. El QR aparece al tocar una categoría, sin un botón adicional.
+- **Conductor**: login/registro por PIN, cobro por QR con cuadrícula de categorías e iconos, cantidad de pasajes editable, alerta sonora y visual, resumen y chat de retiros diarios. El QR aparece al tocar una categoría. Solo la sección **Pago** tiene un campo de monto total personalizado y el botón **MOSTRAR QR**.
 - **Administrador**: bandeja Chats, conversación en vivo y confirmación/rechazo de solicitudes de recarga y retiro. Su acceso no se muestra en la selección principal de roles.
 
 Tarifas del prototipo: civil **Bs 3.50**; estudiante, adulto mayor y persona
@@ -62,6 +62,11 @@ misma categoría mediante un solo QR. Los cálculos se hacen en centavos enteros
 los campos existentes `puntos` siguen representando bolivianos y admiten
 valores decimales en Firebase, JSON y MySQL (`DECIMAL`). Los saldos enteros
 anteriores siguen siendo válidos. Recargas y retiros también admiten centavos.
+En **Cobrar → Pago**, el conductor puede escribir la cantidad de pasajes y el
+monto total acordado (por ejemplo, 3 pasajes por Bs 7.50), y pulsar **MOSTRAR QR**.
+El importe ingresado ya es el total: no se multiplica de nuevo por la cantidad.
+El pasajero ve que es un monto personalizado y lo confirma antes del descuento.
+Las cuatro categorías conservan sus tarifas y generan el QR automáticamente.
 
 El acceso precarga el carnet del perfil de prueba y recuerda el último CI de
 cada perfil tras un acceso correcto, sin guardar el PIN. El usuario puede
@@ -121,8 +126,9 @@ sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
 4. Comprobar que el pasajero tenga saldo. En **Chat → Solicitar recarga**, enviar
    monto y referencia. En **Administración → Chats**, el operador responde y
    confirma el pago verificado; entonces se acreditan los puntos una sola vez.
-5. En el Tecno, elegir **Cobrar → Estudiante**. En **Pago**, usar + / − para
-   seleccionar 1, 2, 3 o más pasajes; el QR incluye la cantidad y el total.
+5. En el Tecno, elegir **Cobrar**, escribir la cantidad de pasajes y tocar
+   **Estudiante** para usar la tarifa fija. Para un cobro personalizado, escribir
+   también el **Monto total (Bs)** en **Pago** y pulsar **MOSTRAR QR**.
 6. En el Samsung, elegir **Pagar → Escanear QR del conductor → Pagar**.
 7. El Samsung muestra el comprobante y el nuevo saldo. El Tecno emite dos tonos,
    vibra y muestra **PAGO EXITOSO** sobre el QR, con el importe y el pasajero.

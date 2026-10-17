@@ -280,7 +280,9 @@ class _PayTripScreenState extends State<PayTripScreen> {
     final conductorId = parsed.conductorId;
     final puntos = parsed.puntos;
     final tipo = parsed.tipo;
-    if (tipo != user.tipo || puntos != user.costoViaje * parsed.cantidad) {
+    if (!parsed.isCustom &&
+        (tipo != user.tipo ||
+            puntos != Money.multiply(user.costoViaje, parsed.cantidad))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pide al conductor un QR para tu tipo de pasajero.'),
@@ -300,12 +302,17 @@ class _PayTripScreenState extends State<PayTripScreen> {
           children: [
             Text('Conductor N° $conductorId'),
             const SizedBox(height: 8),
-            Text('Tipo de pasajero: ${_tipoLabel(tipo)}'),
+            Text(
+              parsed.isCustom
+                  ? 'Monto personalizado por el conductor'
+                  : 'Tipo de pasajero: ${_tipoLabel(tipo)}',
+            ),
             const SizedBox(height: 8),
             Text('Cantidad: ${parsed.cantidad} pasaje(s)'),
-            Text(
-              'Tarifa por persona: ${Money.format(user.costoViaje)} punto(s)',
-            ),
+            if (!parsed.isCustom)
+              Text(
+                'Tarifa por persona: ${Money.format(user.costoViaje)} punto(s)',
+              ),
             const SizedBox(height: 8),
             Text(
               '¿Confirmas el pago de ${Money.format(puntos)} punto(s)?',
@@ -492,6 +499,8 @@ class _PayTripScreenState extends State<PayTripScreen> {
         return 'Adulto Mayor';
       case 'discapacitado':
         return 'Discapacitado';
+      case TripQr.customType:
+        return 'Monto personalizado';
       default:
         return tipo;
     }

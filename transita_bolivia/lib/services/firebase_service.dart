@@ -401,6 +401,7 @@ class FirebaseService {
         conductorId <= 0 ||
         !Money.valid(puntos) ||
         puntos <= 0 ||
+        puntos > TripQr.maxAmount ||
         metodoPago != 'qr' ||
         cantidadPasajeros < 1 ||
         cantidadPasajeros > TripQr.maxPassengers) {
@@ -439,11 +440,17 @@ class FirebaseService {
           return (ok: false, message: 'Pasajero o conductor no disponible');
         }
         final tipo = data['tipo'] as String?;
-        if (Money.cents(
-                  Money.multiply(TripQr.fares[tipo] ?? 0, cantidadPasajeros),
-                ) !=
-                Money.cents(puntos) ||
-            (tipoUsuario != null && tipoUsuario != tipo)) {
+        final personalizado = tipoUsuario == TripQr.customType;
+        if (!TripQr.fares.containsKey(tipo) ||
+            (!personalizado &&
+                (Money.cents(
+                          Money.multiply(
+                            TripQr.fares[tipo] ?? 0,
+                            cantidadPasajeros,
+                          ),
+                        ) !=
+                        Money.cents(puntos) ||
+                    (tipoUsuario != null && tipoUsuario != tipo)))) {
           return (
             ok: false,
             message: 'El QR no corresponde a tu tipo de pasajero o tarifa.',
@@ -466,6 +473,7 @@ class FirebaseService {
           'fecha': FieldValue.serverTimestamp(),
           'fecha_cliente': DateTime.now().toUtc(),
           'tipo_usuario': tipo,
+          'modalidad_cobro': personalizado ? 'personalizado' : 'tarifa',
           'cantidad_pasajeros': cantidadPasajeros,
           'nombre_pasajero': data['nombre'],
           'apellido_pasajero': data['apellido'],

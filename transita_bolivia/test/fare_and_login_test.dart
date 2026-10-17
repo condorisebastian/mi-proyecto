@@ -156,14 +156,20 @@ void main() {
         child: const MaterialApp(home: DriverChargeScreen()),
       ),
     );
-    await tester.tap(find.byTooltip('Agregar un pasaje'));
-    await tester.pump();
-    await tester.tap(find.byTooltip('Agregar un pasaje'));
+    expect(find.text('MOSTRAR QR'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Cantidad de pasajes'),
+      '3',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Monto total (Bs)'),
+      '0.50',
+    );
+    tester.testTextInput.hide();
     await tester.pump();
     await tester.ensureVisible(find.text('Civil'));
     await tester.tap(find.text('Civil'));
     await tester.pumpAndSettle();
-    expect(find.text('MOSTRAR QR'), findsNothing);
     expect(find.byType(QrImageView), findsOneWidget);
     final qrSemantics = tester
         .widgetList<Semantics>(find.byType(Semantics))
@@ -179,6 +185,88 @@ void main() {
     expect(parsed.puntos, 10.50);
     expect(find.textContaining('Total: Bs 10.50'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Pago genera un QR por el total escrito, sin volver a multiplicarlo',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<DriverAuthService>.value(
+          value: _Driver(),
+          child: const MaterialApp(home: DriverChargeScreen()),
+        ),
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Cantidad de pasajes'),
+        '3',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Monto total (Bs)'),
+        '7,50',
+      );
+      tester.testTextInput.hide();
+      await tester.pump();
+      await tester.ensureVisible(find.text('MOSTRAR QR'));
+      await tester.tap(find.text('MOSTRAR QR'));
+      await tester.pumpAndSettle();
+      final semantics = tester
+          .widgetList<Semantics>(find.byType(Semantics))
+          .firstWhere(
+            (widget) =>
+                widget.properties.label?.startsWith('QR de cobro: ') == true,
+          );
+      final qr = TripQr.tryParse(
+        semantics.properties.label!.substring('QR de cobro: '.length),
+      )!;
+      expect(qr.isCustom, isTrue);
+      expect(qr.cantidad, 3);
+      expect(qr.puntos, 7.50);
+      expect(find.textContaining('Total: Bs 7.50'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('Pago exige cantidad e importe válidos antes de mostrar el QR', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider<DriverAuthService>.value(
+        value: _Driver(),
+        child: const MaterialApp(home: DriverChargeScreen()),
+      ),
+    );
+    final quantity = find.widgetWithText(TextFormField, 'Cantidad de pasajes');
+    final amount = find.widgetWithText(TextFormField, 'Monto total (Bs)');
+    for (final input in [('', ''), ('0', '-1'), ('51', '3.501')]) {
+      await tester.enterText(quantity, input.$1);
+      await tester.enterText(amount, input.$2);
+      tester.testTextInput.hide();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('MOSTRAR QR'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('MOSTRAR QR'));
+      await tester.pumpAndSettle();
+      expect(find.byType(QrImageView), findsNothing);
+      expect(find.text('Introduce entre 1 y 50 pasajes'), findsOneWidget);
+      expect(
+        find.text('Introduce un monto válido con hasta 2 decimales'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    }
+    await tester.enterText(quantity, '1');
+    await tester.enterText(amount, '0.50');
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('MOSTRAR QR'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MOSTRAR QR'));
+    await tester.pumpAndSettle();
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.textContaining('Total: Bs 0.50'), findsOneWidget);
   });
 
   test('recuerda el carnet por perfil sin guardar el PIN', () async {

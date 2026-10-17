@@ -6,6 +6,36 @@ import 'package:transita_bolivia/services/firebase_service.dart';
 
 void main() {
   group('QR de cobro', () {
+    test(
+      'el monto personalizado conserva el total y valida centavos y cantidad',
+      () {
+        const qr = TripQr(
+          conductorId: 2,
+          tipo: TripQr.customType,
+          puntos: 7.50,
+          reference: 'monto-libre',
+          cantidad: 3,
+        );
+        final parsed = TripQr.tryParse(qr.encode())!;
+        expect(parsed.isCustom, isTrue);
+        expect(parsed.puntos, 7.50);
+        expect(parsed.cantidad, 3);
+        for (final value in ['0', '-1', '3.501', '1000000.01', 'NaN']) {
+          expect(
+            TripQr.tryParse('CONDUCTOR:2:personalizado:$value:libre:1'),
+            isNull,
+          );
+        }
+        expect(
+          TripQr.tryParse('CONDUCTOR:2:personalizado:7.50:libre:0'),
+          isNull,
+        );
+        expect(
+          TripQr.tryParse('CONDUCTOR:2:personalizado:7.50:libre:51'),
+          isNull,
+        );
+      },
+    );
     test('codifica un pago grupal y rechaza cantidad o total manipulados', () {
       const qr = TripQr(
         conductorId: 2,
@@ -125,7 +155,7 @@ void main() {
       });
     });
     Future<({bool ok, String message})> pay({
-      int points = 1,
+      num points = 1,
       int driver = 2,
       String type = 'estudiante',
       String reference = 'viaje-1',
@@ -142,6 +172,56 @@ void main() {
     Future<num> balance() async =>
         (await db.collection('usuarios').doc('u-1').get()).data()!['puntos']
             as num;
+
+    test(
+      'cobra el monto personalizado una sola vez y conserva el tipo del pasajero',
+      () async {
+        expect(
+          (await pay(points: 7.50, type: TripQr.customType, quantity: 3)).ok,
+          isTrue,
+        );
+        expect(await balance(), 2.50);
+        expect(
+          (await pay(points: 7.50, type: TripQr.customType, quantity: 3)).ok,
+          isFalse,
+        );
+        expect(await balance(), 2.50);
+        final payment = (await db.collection('transacciones').get()).docs.single
+            .data();
+        expect(payment['puntos'], 7.50);
+        expect(payment['modalidad_cobro'], 'personalizado');
+        expect(payment['tipo_usuario'], 'estudiante');
+        final summary = await service.getDailySummary(2);
+        expect(summary['total_puntos'], 7.50);
+        expect(summary['total_pasajeros'], 3);
+      },
+    );
+
+    test(
+      'el monto personalizado respeta saldo, precisión, cantidad y cuentas activas',
+      () async {
+        for (final amount in [-1, 0, 3.501, 10.50, 1000000.01]) {
+          expect(
+            (await pay(points: amount, type: TripQr.customType)).ok,
+            isFalse,
+          );
+        }
+        expect((await pay(type: TripQr.customType, quantity: 0)).ok, isFalse);
+        expect((await pay(type: TripQr.customType, quantity: 51)).ok, isFalse);
+        expect((await pay(type: TripQr.customType, driver: 99)).ok, isFalse);
+        await db.collection('usuarios').doc('u-1').update({
+          'estado': 'bloqueado',
+        });
+        expect((await pay(type: TripQr.customType)).ok, isFalse);
+        await db.collection('usuarios').doc('u-1').update({'estado': 'activo'});
+        await db.collection('conductores').doc('c-2').update({
+          'estado': 'bloqueado',
+        });
+        expect((await pay(type: TripQr.customType)).ok, isFalse);
+        expect(await balance(), 10);
+        expect((await db.collection('transacciones').get()).docs, isEmpty);
+      },
+    );
 
     test(
       'un pasajero paga tres pasajes con un solo descuento y tres personas en el resumen',

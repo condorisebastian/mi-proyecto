@@ -31,10 +31,11 @@ function handle_transactions(string $method, array $seg): void
         $reference = $body['payment_reference'] ?? null;
         $cantidad = filter_var($body['cantidad_pasajeros'] ?? 1, FILTER_VALIDATE_INT);
 
-        if (!$conductorId || $centavos === null || $centavos <= 0 || $cantidad === false || $cantidad < 1 || $cantidad > 50) {
+        if (!$conductorId || $centavos === null || $centavos <= 0 || $centavos > 100000000 || $cantidad === false || $cantidad < 1 || $cantidad > 50) {
             json_out(['error' => 'conductor_id y puntos son obligatorios'], 400);
         }
         if (($body['metodo_pago'] ?? 'qr') !== 'qr'
+            || (isset($body['tipo_usuario']) && !is_string($body['tipo_usuario']))
             || ($reference !== null && (!is_string($reference)
                 || !preg_match('/^[a-zA-Z0-9_-]{1,80}$/', $reference)))) {
             json_out(['error' => 'Datos de pago inválidos'], 400);
@@ -86,9 +87,7 @@ function handle_transactions(string $method, array $seg): void
                     $pdo->rollBack();
                     json_out(['error' => 'Usuario no encontrado'], 404);
                 }
-                $tarifas = ['estudiante' => 100, 'civil' => 350, 'adulto_mayor' => 100, 'discapacitado' => 100];
-                if (($tarifas[$row['tipo']] ?? 0) * $cantidad !== $centavos
-                    || (isset($body['tipo_usuario']) && $body['tipo_usuario'] !== $row['tipo'])) {
+                if (!trip_payment_matches($row['tipo'], $body['tipo_usuario'] ?? null, $centavos, $cantidad)) {
                     $pdo->rollBack();
                     json_out(['error' => 'El QR no corresponde a tu tipo de pasajero o tarifa'], 400);
                 }
@@ -105,6 +104,7 @@ function handle_transactions(string $method, array $seg): void
 
                 $idPasajero = (int)$row['id_pasajero'];
                 $metodoPago = $body['metodo_pago'] ?? 'qr';
+                $tipoUsuario = $row['tipo'];
 
                 $st = $pdo->prepare(
                     'UPDATE saldos SET saldo_actual = saldo_actual - ? WHERE id_pasajero = ?'
@@ -112,8 +112,10 @@ function handle_transactions(string $method, array $seg): void
                 $st->execute([$puntos, $idPasajero]);
             }
 
-            $tipoUsuario = isset($body['tipo_usuario']) && $body['tipo_usuario'] !== ''
-                ? $body['tipo_usuario'] : null;
+            if ($tipoUsuario === null && isset($body['tipo_usuario'])
+                && $body['tipo_usuario'] !== '' && $body['tipo_usuario'] !== 'personalizado') {
+                $tipoUsuario = $body['tipo_usuario'];
+            }
 
             $st = $pdo->prepare(
                 'INSERT INTO cobros (id_pasajero, id_conductor, monto, metodo_pago, tipo_usuario, codigo_transaccion, cantidad_pasajeros)

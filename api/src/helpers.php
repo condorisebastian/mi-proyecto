@@ -108,3 +108,14 @@ function money_decimal(int $cents): string
 {
     return intdiv($cents, 100) . '.' . str_pad((string)($cents % 100), 2, '0', STR_PAD_LEFT);
 }
+
+/** El monto personalizado es el total acordado; las categorías mantienen su tarifa. */
+function trip_payment_matches(string $passengerType, ?string $qrType, int $cents, int $quantity): bool
+{
+    $fares = ['estudiante' => 100, 'civil' => 350, 'adulto_mayor' => 100, 'discapacitado' => 100];
+    if (!isset($fares[$passengerType]) || $cents <= 0 || $cents > 100000000
+        || $quantity < 1 || $quantity > 50) return false;
+    if ($qrType === 'personalizado') return true;
+    return ($qrType === null || $qrType === $passengerType)
+        && $fares[$passengerType] * $quantity === $cents;
+}
