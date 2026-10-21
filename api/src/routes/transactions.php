@@ -11,7 +11,6 @@
 function handle_transactions(string $method, array $seg): void
 {
     $action = $seg[1] ?? '';
-    $pdo    = db();
     $body   = json_input();
     $cfg    = require __DIR__ . '/../../config/database.php';
     $secret = $cfg['jwt_secret'];
@@ -43,18 +42,12 @@ function handle_transactions(string $method, array $seg): void
         $codigo = $reference === null ? uniqid('TXN-')
             : 'QR-' . substr(hash('sha256', $userIdIn . ':' . $conductorId . ':' . $reference), 0, 40);
 
-        // El cobro lo hace el conductor autenticado (siempre) y si paga un
-        // pasajero vinculado, este debe ser el dueño del token.
-        if ($isConductor($payload)) {
-            if ((int)$payload['id'] !== $conductorId) {
-                json_out(['error' => 'No autorizado'], 401);
-            }
-        } else {
-            if (!$userIdIn || (int)$payload['id'] !== $userIdIn) {
-                json_out(['error' => 'No autorizado'], 401);
-            }
+        // La identidad procede del token firmado, nunca del identificador enviado.
+        if (!passenger_can_authorize_payment($payload, $userIdIn)) {
+            json_out(['error' => 'El pasajero debe autorizar su propio pago'], 403);
         }
 
+        $pdo = db();
         $pdo->beginTransaction();
         try {
             $st = $pdo->prepare(
@@ -135,64 +128,13 @@ function handle_transactions(string $method, array $seg): void
 
     // ---------- POST /transactions/recharge ----------
     if ($method === 'POST' && $action === 'recharge') {
-        $payload = bearer_payload($secret);
-        $userId     = (int)($body['user_id'] ?? 0);
-        $centavos   = money_cents($body['puntos'] ?? 0);
-        $puntos     = $centavos === null ? '0.00' : money_decimal($centavos);
-        $metodoPago = $body['metodo_pago'] ?? '';
-
-        // Solo un pasajero puede recargar SU cuenta.
-        if ($isConductor($payload) || (int)$payload['id'] !== $userId) {
-            json_out(['error' => 'No autorizado'], 401);
-        }
-
-        if (!$userId || $centavos === null || $centavos <= 0) {
-            json_out(['error' => 'user_id y puntos son obligatorios'], 400);
-        }
-
-        $validMethods = ['qr', 'recarga', 'qr_bancario', 'tigo_money', 'unnocc'];
-        if (!in_array($metodoPago, $validMethods, true)) {
-            json_out(['error' => 'Método de pago inválido'], 400);
-        }
-
-        $st = $pdo->prepare("SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND estado = 'activo'");
-        $st->execute([$userId]);
-        if (!$st->fetch()) {
-            json_out(['error' => 'Usuario no encontrado'], 404);
-        }
-
-        $pdo->beginTransaction();
-        try {
-            $st = $pdo->prepare(
-                'SELECT p.id_pasajero FROM pasajeros p WHERE p.id_usuario = ?'
-            );
-            $st->execute([$userId]);
-            $row = $st->fetch();
-            if (!$row) {
-                throw new RuntimeException('pasajero inexistente');
-            }
-            $idPasajero = (int)$row['id_pasajero'];
-
-            $st = $pdo->prepare(
-                'UPDATE saldos SET saldo_actual = saldo_actual + ? WHERE id_pasajero = ?'
-            );
-            $st->execute([$puntos, $idPasajero]);
-
-            $st = $pdo->prepare(
-                'INSERT INTO recargas (id_pasajero, monto, metodo_pago) VALUES (?, ?, ?)'
-            );
-            $st->execute([$idPasajero, $puntos, $metodoPago]);
-
-            $pdo->commit();
-            json_out(['ok' => true]);
-        } catch (Throwable $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            json_out(['error' => 'Error interno del servidor'], 500);
-        }
+        bearer_payload($secret);
+        // Conocer un método de pago no demuestra que se haya entregado dinero.
+        // Solo un futuro flujo de operador/proveedor verificado podrá acreditar.
+        json_out(['error' => 'Las recargas requieren verificación del operador; utiliza el chat de recargas'], 403);
     }
 
+    $pdo = db();
     // ---------- GET /transactions/user/{userId} ----------
     if ($method === 'GET' && $action === 'user' && isset($seg[2]) && ctype_digit($seg[2])) {
         $userId = (int)$seg[2];

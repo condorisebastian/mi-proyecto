@@ -29,7 +29,11 @@ mi-proyecto/
    ```
    mklink /J C:\xampp\htdocs\transporte_api <ruta-del-repo>\api
    ```
-3. Credenciales de BD en `api/config/database.php` (por defecto: root sin clave).
+3. Para desarrollo local, ejecutar `php api/migrate_private_config.php --development`.
+   La configuración privada queda en `.transita-private/`, fuera de `api/` e
+   ignorada por Git. El modo local conserva la compatibilidad con XAMPP.
+   En producción usar `APP_ENV=production`, un usuario limitado de BD con clave
+   y un secreto JWT de al menos 32 bytes, suministrados por el servidor.
 4. Verificar: `http://localhost/transporte_api/health`
 
 ### Endpoints principales
@@ -42,11 +46,58 @@ mi-proyecto/
 | POST   | `/auth/login-conductor`           | Login de conductor                 |
 | GET    | `/users/{id}`                     | Datos/saldo de un usuario          |
 | POST   | `/transactions/pay`               | Cobrar un viaje                    |
-| POST   | `/transactions/recharge`          | Recargar saldo                     |
+| POST   | `/transactions/recharge`          | Bloqueado hasta verificación de recarga |
 | GET    | `/transactions/user/{userId}`     | Historial del usuario              |
 | GET    | `/transactions/summary/{conductorId}` | Resumen diario del conductor   |
 | GET    | `/transactions/history/{conductorId}` | Historial diario del conductor |
 | GET    | `/health`                         | Health check                       |
+
+## Seguridad: primera etapa
+
+La primera etapa protege el backend PHP y añade verificaciones automáticas.
+No convierte el entorno Firebase de demostración en una instalación de producción.
+
+- Apache bloquea configuración, archivos ocultos, código interno, pruebas y
+  scripts de mantenimiento. Los scripts de configuración solo admiten CLI.
+- JWT y credenciales SQL se leen de variables del proceso o de un directorio
+  privado fuera del directorio publicado. `api/.env.example` enumera las
+  variables; copiar ese archivo no configura automáticamente Apache/PHP.
+- Producción es el modo predeterminado: requiere un secreto configurado y
+  rechaza el usuario SQL root y las contraseñas vacías. El entorno local se
+  habilita explícitamente con la migración indicada arriba.
+- Un conductor no puede descontar el saldo de un pasajero. El pago PHP requiere
+  el token del propio pasajero. La recarga directa PHP devuelve 403: aún falta
+  implementar su verificación por operador/proveedor. El chat financiero de
+  demostración sigue usando Firebase; no acredita la base de datos SQL.
+- Los errores de acceso no reproducen el PIN, el CI ni el perfil de la cuenta.
+- Gitleaks revisa los archivos versionables y el historial Git. La salida se
+  limita a ubicación y regla, sin imprimir claves ni coincidencias. Solo se
+  exceptúa el identificador público de Firebase en sus archivos de cliente;
+  las claves privadas dentro de esos archivos siguen detectándose.
+- CI comprueba autorización HTTP, configuración privada y las restricciones
+  sobre un Apache real, además de las pruebas funcionales Flutter y PHP.
+
+Para ejecutar las verificaciones locales:
+
+```powershell
+php api/tests/security_test.php
+php api/tests/money_test.php
+python tools/security/test_api_http.py
+# Configurar GITLEAKS_BIN con la ruta del ejecutable Gitleaks 8.30.1 verificado.
+python tools/security/test_secret_scan.py
+python tools/security/scan_secrets.py
+python tools/security/scan_secrets.py --history
+# Con Apache local iniciado y api/ publicado en /transporte_api:
+python tools/security/test_apache_access.py http://localhost/transporte_api
+```
+
+Pendiente para producción: autenticar cada cuenta con Firebase Authentication,
+asignar roles desde el servidor, trasladar la autorización financiera a un
+backend confiable, restringir Firestore por propietario, proteger las sesiones,
+exigir HTTPS y configurar firma de producción y App Check. Las reglas actuales
+siguen siendo de demostración. La migración debe instalar y probar los clientes
+compatibles antes de retirar ese acceso; no desplegar reglas incompatibles sobre
+los teléfonos actuales.
 
 ## App Flutter (transita_bolivia)
 

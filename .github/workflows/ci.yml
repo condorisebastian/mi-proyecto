@@ -6,7 +6,31 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 jobs:
+  secrets:
+    name: Secretos (archivos e historial)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preparar Gitleaks verificado
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --location --retry 3 https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz -o "$RUNNER_TEMP/gitleaks.tar.gz"
+          printf '%s  %s\n' '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb' "$RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --status
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          echo "GITLEAKS_BIN=$RUNNER_TEMP/gitleaks" >> "$GITHUB_ENV"
+      - name: Comprobar excepciones y ocultación de valores
+        run: python3 tools/security/test_secret_scan.py
+      - name: Revisar archivos sin mostrar credenciales
+        run: python3 tools/security/scan_secrets.py
+      - name: Revisar historial sin mostrar credenciales
+        run: python3 tools/security/scan_secrets.py --history
+
   php_api:
     name: API PHP (sintaxis)
     runs-on: ubuntu-latest
@@ -18,12 +42,27 @@ jobs:
       - name: Verificar sintaxis PHP
         run: |
           if [ -x "$(command -v php)" ]; then
-            find src -name "*.php" -print0 | xargs -0 -n1 php -l
+            find . -name "*.php" -print0 | xargs -0 -n1 php -l
           else
-            echo "PHP no instalado; omitiendo lint."
+            echo "PHP es obligatorio para verificar seguridad."
+            exit 1
           fi
       - name: Verificar importes con centavos
         run: php tests/money_test.php
+      - name: Verificar autorización y configuración privada
+        run: php tests/security_test.php
+      - name: Verificar endpoints sin utilizar datos reales
+        run: python3 ../tools/security/test_api_http.py
+      - name: Verificar restricciones en Apache real
+        shell: bash
+        run: |
+          trap 'docker rm -f transita-apache-test >/dev/null 2>&1 || true' EXIT
+          docker run -d --name transita-apache-test -p 127.0.0.1:18080:80 -v "$PWD:/var/www/html:ro" -v "$GITHUB_WORKSPACE/tools/security/apache-test.conf:/etc/apache2/conf-enabled/transita-security.conf:ro" php:8.2-apache bash -c 'a2enmod rewrite >/dev/null && apache2-foreground' >/dev/null
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then break; fi
+            sleep 1
+          done
+          python3 ../tools/security/test_apache_access.py http://127.0.0.1:18080
 
   flutter:
     name: Flutter (transita_bolivia)

@@ -76,18 +76,11 @@ class FirebaseService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) {
-        return (
-          user: null,
-          error: 'El PIN $pin no existe. Usa tu PIN de 4 dígitos o regístrate.',
-        );
+        return (user: null, error: 'Datos de acceso incorrectos.');
       }
       final user = _userFromMap(snap.docs.first.data());
       if (user.tipo != tipo) {
-        return (
-          user: null,
-          error:
-              'Tu cuenta es de tipo "${_tipoLabel(user.tipo)}" y estás ingresando como "${_tipoLabel(tipo)}". Elige el perfil correcto.',
-        );
+        return (user: null, error: 'Datos de acceso incorrectos.');
       }
       if (user.estado != 'activo') {
         return (
@@ -96,7 +89,7 @@ class FirebaseService {
         );
       }
       if (ci.isNotEmpty && user.ci.isNotEmpty && user.ci != ci) {
-        return (user: null, error: 'El carnet (CI) no coincide con el PIN.');
+        return (user: null, error: 'Datos de acceso incorrectos.');
       }
       return (user: user, error: null);
     } catch (e) {
@@ -119,17 +112,11 @@ class FirebaseService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) {
-        return (
-          conductor: null,
-          error: 'El PIN $pin no existe. Revisa tu PIN o regístrate.',
-        );
+        return (conductor: null, error: 'Datos de acceso incorrectos.');
       }
       final conductor = _conductorFromMap(snap.docs.first.data());
       if (ci.isNotEmpty && conductor.ci.isNotEmpty && conductor.ci != ci) {
-        return (
-          conductor: null,
-          error: 'El carnet (CI) no coincide con el PIN.',
-        );
+        return (conductor: null, error: 'Datos de acceso incorrectos.');
       }
       if (conductor.estado != 'activo') {
         return (
@@ -828,7 +815,7 @@ class FirebaseService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) {
-        return (user: null, error: 'PIN de administrador incorrecto.');
+        return (user: null, error: 'Datos de acceso incorrectos.');
       }
       return (user: _userFromMap(snap.docs.first.data()), error: null);
     } catch (e) {
@@ -1103,14 +1090,6 @@ class FirebaseService {
       estado: m['estado'] as String,
     );
   }
-
-  String _tipoLabel(String t) => switch (t) {
-    'estudiante' => 'Estudiante',
-    'civil' => 'Ciudadano',
-    'adulto_mayor' => 'Adulto mayor',
-    'discapacitado' => 'Discapacitado',
-    _ => t,
-  };
 
   app_tx.Transaction _transactionFromMap(Map<String, dynamic> m) {
     return app_tx.Transaction(

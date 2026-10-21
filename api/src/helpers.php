@@ -30,9 +30,9 @@ function b64url_encode(string $s): string
     return rtrim(strtr(base64_encode($s), '+/', '-_'), '=');
 }
 
-function b64url_decode(string $s): string
+function b64url_decode(string $s): string|false
 {
-    return base64_decode(strtr($s, '-_', '+/') . str_repeat('=', (4 - strlen($s) % 4) % 4));
+    return base64_decode(strtr($s, '-_', '+/') . str_repeat('=', (4 - strlen($s) % 4) % 4), true);
 }
 
 function jwt_sign(array $payload, string $secret, int $ttl): string
@@ -47,18 +47,26 @@ function jwt_sign(array $payload, string $secret, int $ttl): string
 
 function jwt_verify(string $token, string $secret): ?array
 {
+    if (strlen($token) > 8192 || !preg_match('/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]{43}$/D', $token)) return null;
     $parts = explode('.', $token);
     if (count($parts) !== 3) return null;
     [$h, $b, $s] = $parts;
     if ($h === '' || $b === '' || $s === '') return null;
 
-    $payload = json_decode(b64url_decode($b), true);
-    if (!is_array($payload)) return null;
+    $headerBytes = b64url_decode($h);
+    $payloadBytes = b64url_decode($b);
+    if ($headerBytes === false || $payloadBytes === false) return null;
+    $header = json_decode($headerBytes, true);
+    $payload = json_decode($payloadBytes, true);
+    if (!is_array($header) || ($header['alg'] ?? null) !== 'HS256'
+        || ($header['typ'] ?? null) !== 'JWT' || !is_array($payload)) return null;
 
     $sig = b64url_encode(hash_hmac('sha256', "$h.$b", $secret, true));
     if (!hash_equals($sig, $s)) return null;
 
-    if (!isset($payload['exp']) || (int)$payload['exp'] < time()) return null;
+    if (!is_int($payload['exp'] ?? null) || !is_int($payload['iat'] ?? null)
+        || $payload['exp'] <= time() || $payload['iat'] > time() + 60
+        || $payload['exp'] <= $payload['iat']) return null;
     return $payload;
 }
 
@@ -90,6 +98,14 @@ function bearer_payload(string $secret): array
     }
     json_out(['error' => 'No autorizado'], 401);
     exit;
+}
+
+/** Un conductor nunca puede debitar la cuenta de un pasajero por su cuenta. */
+function passenger_can_authorize_payment(array $payload, int $userId): bool
+{
+    return $userId > 0 && ($payload['id'] ?? null) === $userId
+        && !isset($payload['rol'])
+        && in_array($payload['tipo'] ?? null, ['estudiante', 'civil', 'adulto_mayor', 'discapacitado'], true);
 }
 
 /** Convierte bolivianos a centavos sin truncar ni aceptar fracciones menores. */
