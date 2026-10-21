@@ -1,9 +1,11 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../models/trip_qr.dart';
 
 class PayTripScreen extends StatefulWidget {
   const PayTripScreen({super.key});
@@ -24,7 +26,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pagar Viaje'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -32,10 +34,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -64,12 +63,12 @@ class _PayTripScreenState extends State<PayTripScreen> {
                         user?.tipo == 'estudiante'
                             ? Icons.school
                             : user?.tipo == 'civil'
-                                ? Icons.person
-                                : user?.tipo == 'adulto_mayor'
-                                    ? Icons.elderly
-                                    : Icons.accessible,
+                            ? Icons.person
+                            : user?.tipo == 'adulto_mayor'
+                            ? Icons.elderly
+                            : Icons.accessible,
                         size: 60,
-                        color: const Color(0xFF1E88E5),
+                        color: AppColors.primary,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -82,7 +81,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Costo: ${user?.costoViaje ?? 1} punto(s)',
+                        'Costo: ${Money.format(user?.costoViaje ?? 1)} punto(s)',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -95,19 +94,22 @@ class _PayTripScreenState extends State<PayTripScreen> {
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 12,
+                          runSpacing: 8,
                           children: [
                             const Text(
                               'Tu saldo:',
                               style: TextStyle(fontSize: 16),
                             ),
                             Text(
-                              '${user?.puntos ?? 0} puntos',
+                              '${Money.format(user?.puntos ?? 0)} puntos',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E88E5),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -116,10 +118,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                       const SizedBox(height: 32),
                       const Text(
                         'Escanea el QR que muestra el conductor',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
@@ -128,63 +127,33 @@ class _PayTripScreenState extends State<PayTripScreen> {
                         child: ElevatedButton(
                           onPressed: _isProcessing ? null : _showQRScanner,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E88E5),
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
                           child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.qr_code_scanner, size: 24),
-                              SizedBox(width: 12),
-                              Text(
-                                'ESCANEAR QR DEL CONDUCTOR',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                              SizedBox(width: 10),
+                              Flexible(
+                                child: Text(
+                                  'ESCANEAR QR DEL CONDUCTOR',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 60,
-                        child: OutlinedButton.icon(
-                          onPressed: _showMyQR,
-                          icon: const Icon(Icons.qr_code),
-                          label: const Text(
-                            'MOSTRAR MI QR',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF1E88E5),
-                            side: const BorderSide(
-                              color: Color(0xFF1E88E5),
-                              width: 2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'O muestra tu QR para que el conductor cobre el viaje',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -199,6 +168,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
   }
 
   Future<void> _showQRScanner() async {
+    bool scannedOnce = false;
     final scanned = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -224,10 +194,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
                 padding: EdgeInsets.all(20),
                 child: Text(
                   'Escanea el QR del conductor',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
@@ -237,9 +204,11 @@ class _PayTripScreenState extends State<PayTripScreen> {
                     borderRadius: BorderRadius.circular(16),
                     child: MobileScanner(
                       onDetect: (capture) {
+                        if (scannedOnce) return;
                         for (final barcode in capture.barcodes) {
                           final raw = barcode.rawValue;
                           if (raw != null && raw.isNotEmpty) {
+                            scannedOnce = true;
                             Navigator.pop(context, raw);
                             return;
                           }
@@ -293,8 +262,8 @@ class _PayTripScreenState extends State<PayTripScreen> {
   }
 
   void _handleScannedCode(String raw) {
-    final conductorId = _parseConductorId(raw);
-    if (conductorId == null) {
+    final parsed = TripQr.tryParse(raw);
+    if (parsed == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('QR inválido: no corresponde a un conductor'),
@@ -308,7 +277,20 @@ class _PayTripScreenState extends State<PayTripScreen> {
     final user = authService.currentUser;
     if (user == null) return;
 
-    final puntos = user.costoViaje;
+    final conductorId = parsed.conductorId;
+    final puntos = parsed.puntos;
+    final tipo = parsed.tipo;
+    if (!parsed.isCustom &&
+        (tipo != user.tipo ||
+            puntos != Money.multiply(user.costoViaje, parsed.cantidad))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pide al conductor un QR para tu tipo de pasajero.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     showDialog<void>(
       context: context,
@@ -321,12 +303,24 @@ class _PayTripScreenState extends State<PayTripScreen> {
             Text('Conductor N° $conductorId'),
             const SizedBox(height: 8),
             Text(
-              '¿Confirmas el pago de $puntos punto(s)?',
+              parsed.isCustom
+                  ? 'Monto personalizado por el conductor'
+                  : 'Tipo de pasajero: ${_tipoLabel(tipo)}',
+            ),
+            const SizedBox(height: 8),
+            Text('Cantidad: ${parsed.cantidad} pasaje(s)'),
+            if (!parsed.isCustom)
+              Text(
+                'Tarifa por persona: ${Money.format(user.costoViaje)} punto(s)',
+              ),
+            const SizedBox(height: 8),
+            Text(
+              '¿Confirmas el pago de ${Money.format(puntos)} punto(s)?',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Saldo disponible: ${user.puntos} puntos',
+              'Saldo disponible: ${Money.format(user.puntos)} puntos',
               style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
           ],
@@ -338,6 +332,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
+              if (_isProcessing) return;
               Navigator.pop(dialogContext);
               setState(() {
                 _isProcessing = true;
@@ -348,6 +343,9 @@ class _PayTripScreenState extends State<PayTripScreen> {
                 conductorId,
                 puntos,
                 'qr',
+                tipoUsuario: tipo.isNotEmpty ? tipo : user.tipo,
+                paymentReference: parsed.reference,
+                cantidadPasajeros: parsed.cantidad,
               );
 
               if (!mounted) return;
@@ -358,26 +356,117 @@ class _PayTripScreenState extends State<PayTripScreen> {
               if (result.ok) {
                 await authService.refreshUser();
                 if (!mounted) return;
+                final u = authService.currentUser;
+                final now = DateTime.now();
+                final fecha =
+                    '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} '
+                    '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
                 showDialog<void>(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Row(
+                  builder: (context) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green, size: 30),
-                        SizedBox(width: 12),
-                        Text('Viaje pagado'),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 28),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.white,
+                                  size: 46,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              const Text(
+                                '¡Pago exitoso!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Comprobante de pago',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                          child: Column(
+                            children: [
+                              _receiptRow(
+                                'Pasajero',
+                                '${u?.nombre ?? ''} ${u?.apellido ?? ''}'
+                                    .trim(),
+                              ),
+                              _receiptRow('Tipo', _tipoLabel(tipo)),
+                              _receiptRow('Pasajes', '${parsed.cantidad}'),
+                              _receiptRow('Conductor', '#$conductorId'),
+                              const Divider(height: 24),
+                              _receiptRow(
+                                'Monto',
+                                '-${Money.format(puntos)} punto(s)',
+                                valueColor: Colors.redAccent,
+                                bold: true,
+                              ),
+                              _receiptRow(
+                                'Nuevo saldo',
+                                '${Money.format(u?.puntos ?? 0)} puntos',
+                                valueColor: AppColors.primary,
+                                bold: true,
+                              ),
+                              _receiptRow('Fecha', fecha),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                'LISTO',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    content: Text(
-                      'Se descontaron $puntos punto(s).\nNuevo saldo: '
-                      '${authService.currentUser?.puntos ?? 0} puntos',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('OK'),
-                      ),
-                    ],
                   ),
                 );
               } else {
@@ -390,7 +479,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('PAGAR'),
@@ -400,95 +489,50 @@ class _PayTripScreenState extends State<PayTripScreen> {
     );
   }
 
-  int? _parseConductorId(String raw) {
-    if (raw.startsWith('CONDUCTOR:')) {
-      final parts = raw.split(':');
-      if (parts.length >= 2) {
-        return int.tryParse(parts[1]);
-      }
+  String _tipoLabel(String tipo) {
+    switch (tipo) {
+      case 'estudiante':
+        return 'Estudiante';
+      case 'civil':
+        return 'Civil';
+      case 'adulto_mayor':
+        return 'Adulto Mayor';
+      case 'discapacitado':
+        return 'Discapacitado';
+      case TripQr.customType:
+        return 'Monto personalizado';
+      default:
+        return tipo;
     }
-    return null;
   }
 
-  void _showMyQR() {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user == null) return;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _receiptRow(
+    String label,
+    String value, {
+    Color? valueColor,
+    bool bold = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+                color: valueColor ?? Colors.grey[850],
+              ),
+            ),
           ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Mi código QR',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: QrImageView(
-                    data: 'PASAJERO:${user.id}:${user.ci}',
-                    version: QrVersions.auto,
-                    size: 250,
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Muestra este código al conductor para pagar',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${user.nombre} ${user.apellido}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('CERRAR'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

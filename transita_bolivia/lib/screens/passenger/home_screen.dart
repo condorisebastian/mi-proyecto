@@ -1,13 +1,17 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import '../../models/transaction.dart';
-import 'recharge_screen.dart';
+import '../../models/financial_chat.dart';
+import '../chat/financial_chat_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
-import 'card_screen.dart';
+import '../soporte/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,9 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = authService.currentUser;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -39,7 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: [
           _buildHomeTab(user, authService),
-          const RechargeScreen(),
+          FinancialChatScreen(
+            owner: ChatIdentity(
+              canal: 'pasajero',
+              id: user.id,
+              nombre: '${user.nombre} ${user.apellido}',
+            ),
+          ),
           const PayTripScreen(),
           HistoryScreen(key: _historyKey),
         ],
@@ -57,16 +65,13 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF1E88E5),
+        selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_card),
-            label: 'Recargar',
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.qr_code_scanner),
@@ -87,10 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1E88E5),
-            Color(0xFFF5F5F5),
-          ],
+          colors: [AppColors.primary, AppColors.background],
           stops: [0.0, 0.3],
         ),
       ),
@@ -114,9 +116,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.white,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID: #${user.id}  ·  CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                   IconButton(
+                    tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),
                     onPressed: () {
                       _confirmLogout(context, authService);
@@ -143,26 +154,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       'TUS PUNTOS',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${user.puntos}',
+                      Money.format(user.puntos),
                       style: const TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E88E5),
+                        color: AppColors.primary,
                       ),
                     ),
                     Text(
-                      '(= Bs ${user.puntos}.00)',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      '(= Bs ${Money.format(user.puntos)})',
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -173,15 +178,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 60,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RechargeScreen(),
-                      ),
-                    );
+                    setState(() => _currentIndex = 1);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -190,10 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_card, size: 24),
+                      Icon(Icons.chat_bubble_outline, size: 24),
                       SizedBox(width: 12),
                       Text(
-                        'RECARGAR PUNTOS',
+                        'CHAT DE RECARGAS',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -203,72 +203,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CardScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.nfc, size: 20),
-                        label: const Text(
-                          'MI TARJETA',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
-                          side: const BorderSide(
-                            color: Color(0xFF1E88E5),
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SupportScreen(
+                          canal: 'pasajero',
+                          id: user.id,
+                          nombre: '${user.nombre} ${user.apellido}',
                         ),
                       ),
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent),
+                  label: const Text(
+                    'AYUDA / SOPORTE',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    side: BorderSide(
+                      color: AppColors.primaryDark.withValues(alpha: 0.5),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          _showMyQR(context);
-                        },
-                        icon: const Icon(Icons.qr_code, size: 20),
-                        label: const Text(
-                          'MI QR',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
-                          side: const BorderSide(
-                            color: Color(0xFF1E88E5),
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -280,8 +246,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              FutureBuilder<List<Transaction>>(
-                future: _apiService.getTransactionHistory(user.id),
+              StreamBuilder<List<Transaction>>(
+                stream: AppConfig.useFirebase
+                    ? FirebaseService.instance.transactionHistoryStream(user.id)
+                    : Stream.fromFuture(
+                        _apiService.getTransactionHistory(user.id),
+                      ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -360,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             Text(
-                              '-${trip.puntos} pts',
+                              '-${Money.format(trip.puntos)} pts',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,
@@ -381,7 +351,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmLogout(
-      BuildContext context, AuthService authService) async {
+    BuildContext context,
+    AuthService authService,
+  ) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -395,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('SALIR'),
@@ -410,87 +382,5 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, '/');
       }
     }
-  }
-
-  void _showMyQR(BuildContext context) {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user == null) return;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Mi código QR',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: QrImageView(
-                    data: 'PASAJERO:${user.id}:${user.ci}',
-                    version: QrVersions.auto,
-                    size: 250,
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Muestra este código al conductor para pagar',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${user.nombre} ${user.apellido}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('CERRAR'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }

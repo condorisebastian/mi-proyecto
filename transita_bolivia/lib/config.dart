@@ -5,4 +5,11 @@ class AppConfig {
   );
 
   static const Duration timeout = Duration(seconds: 20);
+
+  /// Firestore permite sincronizar los dos teléfonos en tiempo real.
+  /// El backend PHP se puede seleccionar con `--dart-define=USE_FIREBASE=false`.
+  static const bool useFirebase = bool.fromEnvironment(
+    'USE_FIREBASE',
+    defaultValue: true,
+  );
 }
