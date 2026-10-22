@@ -12,6 +12,8 @@ import '../chat/financial_chat_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
 import '../soporte/support_screen.dart';
+import '../province_routes_screen.dart';
+import 'nfc_card_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -202,6 +204,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ProvinceRoutesScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.route),
+                    label: const Text('Provincias'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const NfcCardScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.contactless),
+                    label: const Text('Mi tarjeta NFC'),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               SizedBox(

@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'money.dart';
+import '../data/province_routes.dart';
+import 'province_route.dart';
 
 /// El QR identifica un cobro, sin contener el PIN ni el saldo del pasajero.
 class TripQr {
@@ -28,6 +30,15 @@ class TripQr {
   static const customType = 'personalizado';
 
   bool get isCustom => tipo == customType;
+  ProvinceRoute? get provinceRoute => routeForType(tipo);
+  bool get isProvince => provinceRoute != null;
+
+  static ProvinceRoute? routeForType(String type) {
+    for (final route in provinceRoutes) {
+      if (route.qrType == type && route.canCharge) return route;
+    }
+    return null;
+  }
 
   static String newReference() {
     final random = Random.secure();
@@ -45,18 +56,20 @@ class TripQr {
     }
     final id = int.tryParse(parts[1]);
     final puntos = Money.tryParse(parts[3]);
+    final province = routeForType(parts[2]);
+    final fare = province == null ? fares[parts[2]] : province.fareCents! / 100;
     final cantidad = parts.length == 6 ? int.tryParse(parts[5]) : 1;
     if (id == null ||
         id <= 0 ||
         puntos == null ||
         puntos <= 0 ||
         puntos > maxAmount ||
-        (!fares.containsKey(parts[2]) && parts[2] != customType) ||
+        (fare == null && parts[2] != customType) ||
         cantidad == null ||
         cantidad < 1 ||
         cantidad > maxPassengers ||
         (parts[2] != customType &&
-            Money.cents(Money.multiply(fares[parts[2]] ?? 0, cantidad)) !=
+            Money.cents(Money.multiply(fare ?? 0, cantidad)) !=
                 Money.cents(puntos))) {
       return null;
     }

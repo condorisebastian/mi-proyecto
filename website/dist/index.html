@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Conoce Transita Bolivia: saldo recargable, pagos de pasajes con QR y el proyecto de tarjeta NFC para el transporte de Santa Cruz.">
+  <meta name="theme-color" content="#123fba"><title>Transita Bolivia · Tu ciudad, más cerca</title>
+  <link rel="stylesheet" href="styles.css"><script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#contenido">Ir al contenido</a>
+  <header class="nav"><a class="brand" href="#inicio" aria-label="Transita Bolivia, inicio"><span class="brand-mark">↗</span><span>transita<span class="brand-country"> BOLIVIA</span></span></a>
+    <nav aria-label="Principal"><a href="#rutas">Provincias</a><a href="#como-funciona">Cómo funciona</a><a href="#tarjeta">Tarjeta NFC</a><a class="nav-button" href="#ayuda">Ayuda ↗</a></nav>
+  </header>
+  <main id="contenido">
+    <section class="hero" id="inicio">
+      <div class="hero-copy"><p class="eyebrow"><span class="dot"></span> MOVILIDAD QUE CONECTA</p>
+        <h1>Tu próximo viaje,<br><span>más simple.</span></h1>
+        <p class="lead">Recarga tu saldo, consulta tu destino y paga el pasaje desde Transita Bolivia. Menos vueltas al cobrar. Más tiempo para llegar.</p>
+        <div class="actions"><a class="button primary" href="#rutas">Consultar pasajes <span>↗</span></a><a class="button secondary" href="#como-funciona">Conocer la app <span>→</span></a></div>
+        <div class="hero-foot"><span>◉ Santa Cruz de la Sierra</span><span>Importes en bolivianos</span></div>
+      </div>
+      <div class="hero-art" aria-label="Ilustración de un viaje de Santa Cruz a El Torno">
+        <div class="art-grid"></div><div class="route-line"></div><span class="route-point point-one"></span><span class="route-point point-two"></span>
+        <div class="origin-label">SANTA CRUZ<br><strong>Tu punto de partida</strong></div>
+        <div class="ticket"><div class="ticket-top"><span>TRANSITA BOLIVIA</span><span>↗</span></div><span class="ticket-label">PRÓXIMO DESTINO</span><h2>El Torno</h2><p>Desde Santa Cruz de la Sierra</p><div class="ticket-bottom"><span>Pasaje del piloto</span><strong>Bs 8,50</strong></div><div class="ticket-dashes"></div><span class="ticket-small">Consulta el total antes de pagar.</span></div>
+        <div class="bus" aria-hidden="true"><div class="bus-window"></div><div class="bus-line"></div><span class="wheel a"></span><span class="wheel b"></span><span class="bus-logo">transita ↗</span></div>
+        <div class="art-caption"><span>01 / SANTA CRUZ</span><span>Conectamos tu camino.</span></div>
+      </div>
+    </section>
+    <div class="feature-strip"><span><b>QR</b> Confirma desde tu app</span><span><b>GRUPOS</b> Varios pasajes, un pago</span><span><b>NFC</b> Terminal en preparación</span></div>
+    <section id="rutas" class="section routes-section">
+      <div class="section-heading"><div><p class="eyebrow">ELIGE TU CAMINO</p><h2>Provincias, a un paso.</h2></div><p>Busca tu destino y calcula el total para tu grupo. Salidas desde Santa Cruz de la Sierra.</p></div>
+      <div class="route-tools"><label class="search-label">Destino o provincia<input id="search" type="search" placeholder="¿A dónde quieres ir?" autocomplete="off"></label><label>Provincia<select id="province"><option value="">Todas las provincias</option></select></label><label>Pasajes<input id="quantity" type="number" min="1" max="50" step="1" value="1" inputmode="numeric"></label></div>
+      <p id="route-status" class="muted" role="status">Cargando destinos…</p><div id="routes" class="route-cards"></div>
+      <p class="catalog-note">Los precios de La Guardia y El Torno fueron configurados para el piloto. Las demás tarifas están pendientes de verificar según servicio y vigencia. <a href="https://gacetaoficial.santacruz.gob.bo/ver/decreto-departamental-no-494" target="_blank" rel="noopener noreferrer">Consultar referencia departamental ↗</a></p>
+    </section>
+    <section class="how-section section" id="como-funciona"><div class="section-heading"><div><p class="eyebrow">DEL SALDO AL DESTINO</p><h2>Así de fácil se mueve tu día.</h2></div></div>
+      <div class="steps"><article><span class="step-number">01</span><h3>Recarga tu saldo</h3><p>Solicita una recarga en el chat de la app. El operador verifica el aporte y acredita tu saldo.</p></article><article><span class="step-number">02</span><h3>Revisa tu pasaje</h3><p>El conductor prepara el cobro. Comprueba el destino, la cantidad de pasajeros y el total.</p></article><article><span class="step-number">03</span><h3>Paga y sigue tu camino</h3><p>Escanea el QR y confirma desde tu app. Consulta el movimiento y el saldo restante.</p></article></div>
+    </section>
+    <section class="card-section section" id="tarjeta"><div class="card-copy"><p class="eyebrow light">EL SIGUIENTE PASO</p><h2>Una tarjeta.<br>Tus recargas.<br>Tu camino.</h2><p>La tarjeta Transita está diseñada para funcionar con una terminal de cobro: acercas la tarjeta y el pasaje se descuenta del saldo recargado de tu cuenta.</p><span class="status-pill">NFC · En preparación</span><p class="small light-text">La operación real requiere una tarjeta física emitida, una terminal activada y autorización del servidor.</p></div>
+      <div class="card-visual"><div class="transport-card"><div class="card-brand">transita ↗</div><span class="contactless" aria-hidden="true">)))</span><div class="card-chip"></div><p>TARJETA DE TRANSPORTE</p><strong>BOLIVIA</strong><span>SALDO RECARGABLE</span></div><p class="light-text">El mismo saldo de tu app. Sin cuenta bancaria.</p></div>
+    </section>
+    <section class="section demo-section" id="terminal"><div class="section-heading"><div><p class="eyebrow">PRUEBA EL RECORRIDO</p><h2>Del acercamiento a la confirmación.</h2></div><p>Simulador de la terminal POS. Usa saldo ficticio y permite explorar pagos grupales y saldo insuficiente.</p></div>
+      <div class="demo-layout"><div class="demo-controls"><span class="demo-badge">DEMOSTRACIÓN · SIN DINERO REAL</span><label>Destino<select id="demo-route"><option value="800">La Guardia · Bs 8,00</option><option value="850">El Torno · Bs 8,50</option></select></label><label>Cantidad de pasajes<input id="demo-quantity" type="number" min="1" max="50" value="1"></label><label>Saldo ficticio (Bs)<input id="demo-balance" type="number" min="0" max="1000000" step="0.50" value="25.50"></label><button class="button primary" id="tap">Acercar tarjeta de prueba ↗</button><button class="text-button" id="reset">Reiniciar demostración</button></div>
+        <div class="pos-device"><div class="pos-camera"></div><span class="pos-brand">TRANSITA / TERMINAL</span><div class="pos-display"><span>TOTAL DEL PASAJE</span><strong id="demo-total">Bs 8,00</strong><p id="demo-message" role="status" aria-live="polite">Lista para leer la tarjeta</p></div><div class="pos-reader" aria-hidden="true">)))<span>ACERCA AQUÍ TU TARJETA</span></div></div>
+      </div>
+    </section>
+    <section class="section help-section" id="ayuda"><div><p class="eyebrow">VIAJA CON INFORMACIÓN</p><h2>Estamos para ayudarte.</h2><p>En la app abre <strong>Ayuda / Soporte</strong> para reportar un cobro, consultar una recarga o solicitar tu tarjeta.</p></div><div class="faq"><details><summary>¿Una persona puede pagar por un grupo?</summary><p>Sí. El conductor indica la cantidad y prepara un único total. Revisa ambos datos antes de confirmar el pago.</p></details><details><summary>¿La tarjeta usa una cuenta bancaria?</summary><p>No. La tarjeta propia de Transita usará las recargas de tu cuenta. La emisión y activación NFC todavía están en preparación.</p></details><details><summary>¿Qué hago si se pierde la conexión?</summary><p>Espera la confirmación. Un cobro pendiente debe consultarse antes de repetirlo. La pantalla de saldo o una lectura de tarjeta no sustituyen el comprobante del pago.</p></details><details><summary>¿Por qué faltan algunos precios?</summary><p>El precio depende del recorrido y del servicio. Publicamos un importe cuando su fuente y aplicación están comprobadas; los demás destinos permanecen pendientes.</p></details></div></section>
+  </main>
+  <footer><a class="brand" href="#inicio"><span class="brand-mark">↗</span><span>transita<span class="brand-country"> BOLIVIA</span></span></a><p>Un proyecto para conectar personas y destinos.</p><a href="#rutas">Volver a provincias ↑</a></footer>
+</body></html>

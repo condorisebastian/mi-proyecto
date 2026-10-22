@@ -62,6 +62,13 @@ if ($seg === [] || $seg[0] === '') {
 }
 
 switch ($seg[0]) {
+    case 'catalog':
+        if ($method !== 'GET' || $seg !== ['catalog', 'routes']) {
+            json_out(['error' => 'Ruta no encontrada'], 404);
+        }
+        require_once __DIR__ . '/src/province_routes.php';
+        json_out(province_catalog());
+        break;
     case 'auth':
         handle_auth($method, $seg);
         break;

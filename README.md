@@ -2,6 +2,37 @@
 
 Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con una app Flutter unificada y un backend PHP + MySQL/MariaDB servido por XAMPP.
 
+## Web, Provincias y terminal POS
+
+La web en `website/dist` consulta el catálogo y permite calcular grupos. Su
+simulador POS usa saldo ficticio y no accede a cuentas. El catálogo fuente es
+`shared/province_routes.json`: 16 destinos de las 15 provincias de Santa Cruz.
+La Guardia (Bs 8.00) y El Torno (Bs 8.50) son precios del piloto solicitados por
+el responsable; los demás destinos permanecen pendientes de tarifa verificada.
+No se presentan precios históricos del Decreto 494 como tarifas actuales.
+
+Ejecutar `python tools/generate_routes.py` después de editar el catálogo;
+sincroniza Flutter, web y Functions. PHP publica `GET /catalog/routes` y valida
+los importes provinciales al cobrar. La app muestra Provincias en pasajero y
+conductor, admite grupos y conserva los cobros urbanos y personalizados.
+
+El POS NFC es de circuito cerrado con saldo de recargas, sin cuentas bancarias.
+Las pantallas y el backend están preparados, pero los cobros están desactivados
+hasta cerrar las reglas de demostración, activar identidades/terminales,
+desplegar Functions y emitir tarjetas. La web también identifica NFC como
+funcionalidad en preparación. No se modificaron las reglas de producción.
+
+Ver [circuito, conexiones y requisitos de activación](hardware/terminal_pos/README.md).
+El circuito de Tinkercad, el hardware físico y la depuración en teléfono siguen
+pendientes de acceso y pruebas; preparar archivos no equivale a simularlos allí.
+
+Comprobaciones adicionales:
+
+```text
+python tools/generate_routes.py --check
+node --test transita_bolivia/functions/test/payments.test.js website/test/fare_math.test.mjs
+```
+
 ## Arquitectura
 
 ```

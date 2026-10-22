@@ -281,6 +281,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
     final puntos = parsed.puntos;
     final tipo = parsed.tipo;
     if (!parsed.isCustom &&
+        !parsed.isProvince &&
         (tipo != user.tipo ||
             puntos != Money.multiply(user.costoViaje, parsed.cantidad))) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -303,13 +304,15 @@ class _PayTripScreenState extends State<PayTripScreen> {
             Text('Conductor N° $conductorId'),
             const SizedBox(height: 8),
             Text(
-              parsed.isCustom
+              parsed.isProvince
+                  ? 'Destino: ${parsed.provinceRoute!.destination}'
+                  : parsed.isCustom
                   ? 'Monto personalizado por el conductor'
                   : 'Tipo de pasajero: ${_tipoLabel(tipo)}',
             ),
             const SizedBox(height: 8),
             Text('Cantidad: ${parsed.cantidad} pasaje(s)'),
-            if (!parsed.isCustom)
+            if (!parsed.isCustom && !parsed.isProvince)
               Text(
                 'Tarifa por persona: ${Money.format(user.costoViaje)} punto(s)',
               ),

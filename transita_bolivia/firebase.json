@@ -1,4 +1,5 @@
 {
+  "functions": [{"source": "functions", "codebase": "pos", "runtime": "nodejs22"}],
   "flutter": {
     "platforms": {
       "android": {

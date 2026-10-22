@@ -33,3 +33,5 @@ gitleaks-report*
 # Caché de las herramientas de verificación.
 __pycache__/
 *.py[cod]
+**/node_modules/
+website/.openai/local/

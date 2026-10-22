@@ -428,8 +428,15 @@ class FirebaseService {
         }
         final tipo = data['tipo'] as String?;
         final personalizado = tipoUsuario == TripQr.customType;
+        final province = tipoUsuario == null
+            ? null
+            : TripQr.routeForType(tipoUsuario);
+        final provinceMatches =
+            province != null &&
+            province.fareCents! * cantidadPasajeros == Money.cents(puntos);
         if (!TripQr.fares.containsKey(tipo) ||
             (!personalizado &&
+                !provinceMatches &&
                 (Money.cents(
                           Money.multiply(
                             TripQr.fares[tipo] ?? 0,
@@ -461,6 +468,8 @@ class FirebaseService {
           'fecha_cliente': DateTime.now().toUtc(),
           'tipo_usuario': tipo,
           'modalidad_cobro': personalizado ? 'personalizado' : 'tarifa',
+          if (province != null) 'ruta_id': province.id,
+          if (province != null) 'destino': province.destination,
           'cantidad_pasajeros': cantidadPasajeros,
           'nombre_pasajero': data['nombre'],
           'apellido_pasajero': data['apellido'],

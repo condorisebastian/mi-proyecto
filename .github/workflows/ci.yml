@@ -10,6 +10,20 @@ permissions:
   contents: read
 
 jobs:
+  pos_web:
+    name: POS y web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar catálogos compartidos
+        run: python3 tools/generate_routes.py --check
+      - name: Verificar tarjeta, saldo, duplicados y tarifas
+        run: node --test transita_bolivia/functions/test/payments.test.js website/test/fare_math.test.mjs
+      - name: Verificar dependencias oficiales del backend POS
+        run: npm ci --ignore-scripts --prefix transita_bolivia/functions
   secrets:
     name: Secretos (archivos e historial)
     runs-on: ubuntu-latest

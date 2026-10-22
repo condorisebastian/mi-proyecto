@@ -13,6 +13,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
+    private var nfc: NfcTerminal? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +22,8 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        nfc = NfcTerminal(this, MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.transita.bolivia/nfc"))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.transita.bolivia/payment_alert").setMethodCallHandler { call, result ->
             if (call.method != "paymentReceived") {
@@ -41,7 +44,13 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onPause() {
+        nfc?.cancel()
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        nfc?.cancel()
         handler.removeCallbacksAndMessages(null)
         tone?.release()
         tone = null

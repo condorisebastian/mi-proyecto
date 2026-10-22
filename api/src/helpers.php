@@ -128,10 +128,15 @@ function money_decimal(int $cents): string
 /** El monto personalizado es el total acordado; las categorías mantienen su tarifa. */
 function trip_payment_matches(string $passengerType, ?string $qrType, int $cents, int $quantity): bool
 {
+    require_once __DIR__ . '/province_routes.php';
     $fares = ['estudiante' => 100, 'civil' => 350, 'adulto_mayor' => 100, 'discapacitado' => 100];
     if (!isset($fares[$passengerType]) || $cents <= 0 || $cents > 100000000
         || $quantity < 1 || $quantity > 50) return false;
     if ($qrType === 'personalizado') return true;
+    if ($qrType !== null && str_starts_with($qrType, 'provincia_')) {
+        $fare = province_fare_cents($qrType);
+        return $fare !== null && $fare * $quantity === $cents;
+    }
     return ($qrType === null || $qrType === $passengerType)
         && $fares[$passengerType] * $quantity === $cents;
 }

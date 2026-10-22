@@ -21,6 +21,8 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_auth: ^6.7.0
   share_plus: ^10.1.4
+  cloud_functions: ^6.5.0
+  firebase_app_check: ^0.4.8
 
 dev_dependencies:
   fake_cloud_firestore: ^4.3.0

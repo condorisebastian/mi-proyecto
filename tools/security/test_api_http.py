@@ -96,6 +96,12 @@ def main():
                 check(headers.get("Cache-Control") == "no-store", "respuestas sin caché")
                 check(headers.get("X-Content-Type-Options") == "nosniff", "tipo de contenido estricto")
                 check(key.encode() not in data, "respuesta sin secreto")
+                status, _, data = request(base, "/catalog/routes")
+                catalog = json.loads(data)
+                check(status == 200 and len(catalog["routes"]) == 16, "catálogo público disponible sin credenciales")
+                prices = {route["id"]: route["fare_cents"] for route in catalog["routes"]}
+                check(prices["la_guardia"] == 800 and prices["el_torno"] == 850
+                      and prices["samaipata"] is None, "tarifas del piloto y pendientes diferenciadas")
                 payment = {"user_id": 7, "conductor_id": 2, "puntos": 3.50,
                            "tipo_usuario": "civil", "metodo_pago": "qr", "payment_reference": "fixture-qr"}
                 for bearer, body, expected in [
@@ -104,6 +110,7 @@ def main():
                     (driver, payment, 403),
                     (passenger, {**payment, "user_id": 8}, 403),
                     (passenger, {**payment, "user_id": 0}, 403),
+                    (passenger, {**payment, "metodo_pago": "nfc"}, 400),
                 ]:
                     status, _, _ = request(base, "/transactions/pay", bearer=bearer, body=body)
                     check(status == expected, "pago sin autorización rechazado")

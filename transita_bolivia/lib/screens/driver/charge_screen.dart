@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../models/trip_qr.dart';
 import '../../services/driver_auth_service.dart';
+import '../province_routes_screen.dart';
+import 'pos_screen.dart';
 
 class DriverChargeScreen extends StatefulWidget {
   const DriverChargeScreen({super.key});
@@ -48,6 +50,36 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => ProvinceRoutesScreen(
+                        conductorId: context
+                            .read<DriverAuthService>()
+                            .currentConductor
+                            ?.id,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.route),
+                  label: const Text('Provincias'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(builder: (_) => const PosScreen()),
+                  ),
+                  icon: const Icon(Icons.contactless),
+                  label: const Text('Terminal POS'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
