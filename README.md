@@ -17,7 +17,8 @@ cuadrada `transita_bolivia/assets/images/logo_icon.png` evita deformar los icono
 Se generaron con la herramienta integrada `image_gen`: «Quitar únicamente el
 fondo y preservar símbolo, colores, texto y proporciones»; para el icono,
 «centrar el mismo logo en un lienzo cuadrado transparente sin estirar ni recortar».
-La portada recorre automáticamente las 15 provincias cada cinco segundos, con
+La portada recorre automáticamente las 15 provincias cada tres segundos, con
+fundido de 650 ms y precarga de la siguiente fotografía para evitar parpadeos,
 pausa manual y respeto por la preferencia de movimiento reducido. Incluye
 fotografías locales, controles accesibles, selección de provincia y créditos.
 Las fuentes revisadas están en `website/photo_sources.json`; ejecutar

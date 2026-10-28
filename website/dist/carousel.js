@@ -9,17 +9,64 @@ export function startCarousel(photos, onProvince) {
   let timer;
   let hovering = false;
   let focusing = false;
+  let requestedIndex = 0;
+  let requestVersion = 0;
+  let outgoing;
+  let fade;
+  const preloaded = new Map();
+
+  function prepare(photo) {
+    if (!preloaded.has(photo.path)) {
+      const pending = new Image();
+      pending.src = photo.path;
+      const ready = pending.decode().catch(error => {
+        preloaded.delete(photo.path);
+        throw error;
+      });
+      preloaded.set(photo.path, ready);
+    }
+    return preloaded.get(photo.path);
+  }
 
   function schedule() {
     clearTimeout(timer);
     if (!paused && !reducedMotion.matches && !document.hidden && !hovering && !focusing) {
-      timer = setTimeout(() => show(index + 1), 5000);
+      timer = setTimeout(() => show(requestedIndex + 1, 'automatic'), 3000);
     }
   }
-  function show(next) {
-    index = (next + photos.length) % photos.length;
-    const photo = photos[index];
+  async function show(next, source = 'initial') {
+    clearTimeout(timer);
+    const target = (next + photos.length) % photos.length;
+    requestedIndex = target;
+    const version = ++requestVersion;
+    const photo = photos[target];
+    try {
+      await prepare(photo);
+    } catch {
+      if (version === requestVersion) {
+        byId('photo-status').textContent = 'No se pudo cargar esta fotografía. Puedes seguir recorriendo las provincias.';
+        schedule();
+      }
+      return;
+    }
+    if (version !== requestVersion) return;
+    if (source === 'automatic' && (paused || hovering || focusing || document.hidden)) {
+      requestedIndex = index;
+      return;
+    }
     const image = byId('destination-photo');
+    fade?.cancel();
+    outgoing?.remove();
+    const animate = target !== index && !image.hidden && !reducedMotion.matches && typeof image.animate === 'function';
+    if (animate) {
+      outgoing = image.cloneNode();
+      outgoing.removeAttribute('id');
+      outgoing.setAttribute('aria-hidden', 'true');
+      outgoing.alt = '';
+      outgoing.className = 'destination-photo-outgoing';
+      image.parentElement.append(outgoing);
+    }
+    index = target;
     image.src = photo.path;
     image.alt = photo.alt;
     byId('destination-name').textContent = photo.province;
@@ -31,7 +78,18 @@ export function startCarousel(photos, onProvince) {
     byId('destination-license').href = photo.license_url;
     byId('destination-select').value = String(index);
     byId('destination-link').onclick = () => onProvince(photo.province);
+    byId('photo-status').textContent = '';
+    if (animate) {
+      const previous = outgoing;
+      fade = previous.animate([{opacity: 1}, {opacity: 0}], {duration: 650, easing: 'ease-in-out', fill: 'forwards'});
+      fade.onfinish = () => previous.remove();
+      byId('destination-caption').animate([{opacity: 0.3}, {opacity: 1}], {duration: 500, easing: 'ease-out'});
+    }
+    region.dispatchEvent(new CustomEvent('transita:destinationchange', {
+      bubbles: true, detail: {index, province: photo.province, place: photo.place, source},
+    }));
     schedule();
+    void prepare(photos[(index + 1) % photos.length]).catch(() => {});
   }
   function updatePlayback() {
     byId('destination-play').textContent = reducedMotion.matches ? 'Modo manual' : paused ? 'Reproducir' : 'Pausar';
@@ -45,9 +103,9 @@ export function startCarousel(photos, onProvince) {
     option.textContent = photo.province;
     byId('destination-select').append(option);
   }
-  byId('destination-select').addEventListener('change', event => show(Number(event.target.value)));
-  byId('destination-prev').addEventListener('click', () => show(index - 1));
-  byId('destination-next').addEventListener('click', () => show(index + 1));
+  byId('destination-select').addEventListener('change', event => show(Number(event.target.value), 'select'));
+  byId('destination-prev').addEventListener('click', () => show(requestedIndex - 1, 'previous'));
+  byId('destination-next').addEventListener('click', () => show(requestedIndex + 1, 'next'));
   byId('destination-play').addEventListener('click', () => {
     paused = !paused;
     if (!paused) {hovering = false; focusing = false;}
