@@ -7,8 +7,8 @@ foreach ($checks as [$input, $expected]) {
 if (money_decimal(1050) !== '10.50' || money_decimal(50) !== '0.50') throw new RuntimeException('Importe SQL incorrecto');
 if (money_cents('10.00') - money_cents('3.50') !== 650) throw new RuntimeException('Descuento incorrecto');
 $payments = [
-    ['civil', 'provincia_el_torno', 2550, 3, true],
-    ['estudiante', 'provincia_la_guardia', 800, 1, true],
+    ['civil', 'provincia_el_torno', 2550, 3, false],
+    ['estudiante', 'provincia_la_guardia', 800, 1, false],
     ['civil', 'provincia_el_torno', 2551, 3, false],
     ['civil', 'provincia_samaipata', 2500, 1, false],
     ['civil', 'civil', 1050, 3, true],

@@ -23,7 +23,8 @@ export function settle(input, state, key, routes) {
   }
   if (input.routeId) {
     const route = routes.find(r => r.id === input.routeId);
-    if (!route || !Number.isInteger(route.fare_cents) || route.fare_cents * quantity !== amount) {
+    if (!route || !['piloto', 'verificada'].includes(route.status) ||
+        !Number.isInteger(route.fare_cents) || route.fare_cents <= 0 || route.fare_cents * quantity !== amount) {
       throw new Declined('Tarifa de destino inválida');
     }
   }

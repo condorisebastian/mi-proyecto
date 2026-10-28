@@ -1,3 +1,4 @@
+import '../../widgets/brand_logo.dart';
 import '../../widgets/login_progress_indicator.dart';
 import '../../services/login_preferences.dart';
 import 'package:flutter/material.dart';
@@ -96,17 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        Icon(
-                          _tipo == 'estudiante'
-                              ? Icons.school
-                              : _tipo == 'civil'
-                              ? Icons.person
-                              : _tipo == 'adulto_mayor'
-                              ? Icons.elderly
-                              : Icons.accessible,
-                          size: 60,
-                          color: AppColors.primary,
-                        ),
+                        const BrandLogo(width: 190),
                         const SizedBox(height: 12),
                         Text(
                           'Bienvenido',

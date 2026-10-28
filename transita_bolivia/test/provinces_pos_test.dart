@@ -27,32 +27,21 @@ void main() {
       expect(route.fareCents, row['fare_cents']);
     }
   });
-  test(
-    'QR de provincia valida importes grupales y rechaza destinos pendientes',
-    () {
+  test('QR rechaza todas las tarifas provinciales pendientes', () {
+    for (final route in provinceRoutes) {
+      expect(route.canCharge, isFalse);
       expect(
-        TripQr.tryParse(
-          'CONDUCTOR:2:provincia_la_guardia:8:ruta-001:1',
-        )?.puntos,
-        8,
+        TripQr.tryParse('CONDUCTOR:2:${route.qrType}:8:ruta-001:1'),
+        isNull,
       );
-      expect(
-        TripQr.tryParse(
-          'CONDUCTOR:2:provincia_el_torno:25.50:ruta-002:3',
-        )?.provinceRoute?.destination,
-        'El Torno',
-      );
-      for (final raw in [
-        'CONDUCTOR:2:provincia_el_torno:25:ruta-002:3',
-        'CONDUCTOR:2:provincia_samaipata:25:ruta-002:1',
-        'CONDUCTOR:2:provincia_el_torno:0:ruta-002:0',
-      ]) {
-        expect(TripQr.tryParse(raw), isNull);
-      }
-    },
-  );
+    }
+    expect(
+      TripQr.tryParse('CONDUCTOR:2:civil:10.50:urbano-001:3')?.puntos,
+      10.5,
+    );
+  });
   test(
-    'pago provincial descuenta 25.50 una vez y no abre un atajo NFC desde el cliente',
+    'un QR provincial antiguo no descuenta saldo ni crea movimientos',
     () async {
       final db = FakeFirebaseFirestore();
       await db.collection('usuarios').doc('u-1').set({
@@ -67,27 +56,23 @@ void main() {
         'estado': 'activo',
       });
       final service = FirebaseService.forTesting(db);
-      Future<({bool ok, String message})> pay(String method) =>
-          service.pagarViaje(
-            userId: 1,
-            conductorId: 2,
-            puntos: 25.50,
-            metodoPago: method,
-            tipoUsuario: 'provincia_el_torno',
-            paymentReference: 'province-group',
-            cantidadPasajeros: 3,
-          );
-      expect((await pay('nfc')).ok, isFalse);
-      expect((await pay('qr')).ok, isTrue);
-      expect((await pay('qr')).ok, isFalse);
+      for (final method in ['qr', 'nfc']) {
+        final result = await service.pagarViaje(
+          userId: 1,
+          conductorId: 2,
+          puntos: 25.50,
+          metodoPago: method,
+          tipoUsuario: 'provincia_el_torno',
+          paymentReference: 'old-province-group',
+          cantidadPasajeros: 3,
+        );
+        expect(result.ok, isFalse);
+      }
       expect(
         (await db.collection('usuarios').doc('u-1').get()).data()!['puntos'],
-        4.5,
+        30,
       );
-      final payment = (await db.collection('transacciones').get()).docs.single
-          .data();
-      expect(payment['ruta_id'], 'el_torno');
-      expect(payment['cantidad_pasajeros'], 3);
+      expect((await db.collection('transacciones').get()).docs, isEmpty);
     },
   );
   test(
@@ -107,23 +92,28 @@ void main() {
       }
     },
   );
-  testWidgets(
-    'Provincias filtra los destinos y conserva centavos para grupos',
-    (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: ProvinceRoutesScreen()));
-      expect(find.text('La Guardia'), findsOneWidget);
-      for (var i = 0; i < 2; i++) {
-        await tester.tap(find.byTooltip('Añadir un pasaje'));
-        await tester.pump();
-      }
-      expect(find.textContaining('Total Bs 25.50'), findsOneWidget);
-      await tester.enterText(find.byType(TextField), 'Samaipata');
+  testWidgets('Provincias permite buscar y no ofrece cobros sin verificar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: ProvinceRoutesScreen(conductorId: 2)),
+    );
+    expect(find.text('La Guardia'), findsOneWidget);
+    expect(find.text('MOSTRAR QR'), findsNothing);
+    expect(find.text('COBRAR CON TARJETA'), findsNothing);
+    expect(find.byTooltip('Añadir un pasaje'), findsNothing);
+    for (final name in ['Samaipata', 'Okinawa Uno', 'Minero']) {
+      await tester.enterText(find.byType(TextField), name);
       await tester.pump();
-      expect(find.text('La Guardia'), findsNothing);
-      expect(find.text('Tarifa pendiente de verificar'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
+      expect(
+        find.descendant(of: find.byType(Card), matching: find.text(name)),
+        findsOneWidget,
+      );
+      expect(find.text('Tarifa por verificar'), findsOneWidget);
+      expect(find.text('MOSTRAR QR'), findsNothing);
+    }
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'POS de tablet no aprueba pagos cuando el servicio está sin activar',
     (tester) async {

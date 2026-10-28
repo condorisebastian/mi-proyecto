@@ -98,10 +98,9 @@ def main():
                 check(key.encode() not in data, "respuesta sin secreto")
                 status, _, data = request(base, "/catalog/routes")
                 catalog = json.loads(data)
-                check(status == 200 and len(catalog["routes"]) == 16, "catálogo público disponible sin credenciales")
+                check(status == 200 and len(catalog["routes"]) == 29, "catálogo público disponible sin credenciales")
                 prices = {route["id"]: route["fare_cents"] for route in catalog["routes"]}
-                check(prices["la_guardia"] == 800 and prices["el_torno"] == 850
-                      and prices["samaipata"] is None, "tarifas del piloto y pendientes diferenciadas")
+                check(all(value is None for value in prices.values()), "ninguna tarifa pendiente habilita cobros")
                 payment = {"user_id": 7, "conductor_id": 2, "puntos": 3.50,
                            "tipo_usuario": "civil", "metodo_pago": "qr", "payment_reference": "fixture-qr"}
                 for bearer, body, expected in [

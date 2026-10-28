@@ -10,8 +10,23 @@ import 'package:transita_bolivia/services/admin_auth_service.dart';
 import 'package:transita_bolivia/main.dart';
 import 'package:transita_bolivia/screens/passenger/pay_trip_screen.dart';
 import 'package:transita_bolivia/screens/driver/charge_screen.dart';
+import 'package:transita_bolivia/screens/passenger/user_type_screen.dart';
 
 void main() {
+  testWidgets('selección de perfil cabe en teléfono virtual de 320 por 568', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const MaterialApp(home: UserTypeScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('Pasaje: Bs 3.50'), findsOneWidget);
+    await tester.ensureVisible(find.text('Discapacitado'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Cobrar solo ofrece QR y se adapta a una pantalla estrecha', (
     tester,
   ) async {

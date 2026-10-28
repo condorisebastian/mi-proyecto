@@ -1,3 +1,4 @@
+import {startCarousel} from './carousel.js';
 import {groupTotal, money} from './fare_math.mjs';
 const el = id => document.getElementById(id);
 const text = (tag, value, className) => {const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node;};
@@ -12,10 +13,10 @@ function renderRoutes() {
   const matches=catalog.routes.filter(r=>(!province||r.province===province)&&`${r.destination} ${r.province}`.toLocaleLowerCase('es').includes(query));
   el('routes').replaceChildren();
   for (const route of matches) {
-    const active=Number.isInteger(route.fare_cents)&&route.fare_cents>0;
+    const active=['piloto','verificada'].includes(route.status)&&Number.isInteger(route.fare_cents)&&route.fare_cents>0;
     const card=text('article','',`route-card${active?'':' pending'}`);
-    card.append(text('span',active?'TARIFA DEL PILOTO':'PRÓXIMAMENTE','route-tag'),text('h3',route.destination),text('p',route.province,'province-name'));
-    card.append(text('div',active?money(route.fare_cents):'Tarifa por verificar','price'),text('span',active?'por persona':'Recorrido y servicio pendientes','unit'));
+    card.append(text('span',active?'TARIFA CONFIRMADA':'PENDIENTE DE VERIFICACIÓN','route-tag'),text('h3',route.destination),text('p',route.province,'province-name'));
+    card.append(text('div',active?money(route.fare_cents):'Tarifa por verificar','price'),text('span',active?'por persona':'Cobro disponible al confirmar la tarifa','unit'));
     if(active){const total=text('div','','total');total.append(text('span',valid?`${quantity} pasaje${quantity===1?'':'s'}`:'Cantidad inválida'),text('strong',valid?money(groupTotal(route.fare_cents,quantity)):'—'));card.append(total);}
     el('routes').append(card);
   }
@@ -28,6 +29,7 @@ try {
     const option=text('option',name);option.value=name;el('province').append(option);
   }
   renderRoutes();
+  el('quantity').closest('label').hidden = !catalog.routes.some(route => ['piloto','verificada'].includes(route.status) && Number.isInteger(route.fare_cents));
 }catch{el('route-status').textContent='No se pudo cargar el catálogo. Vuelve a cargar la página para intentarlo de nuevo.';}
 
 let busy=false;
@@ -45,4 +47,18 @@ el('tap').addEventListener('click',async()=>{
   else{display.classList.add('approved');el('demo-balance').value=((cents-amount)/100).toFixed(2);el('demo-message').textContent=`Pago simulado aprobado. Saldo de prueba: ${money(cents-amount)}.`;}
   busy=false;for(const id of ['tap','demo-balance','demo-route','demo-quantity','reset'])el(id).disabled=false;
 });
-el('reset').addEventListener('click',()=>{if(busy)return;el('demo-balance').value='25.50';el('demo-quantity').value='1';el('demo-route').value='800';document.querySelector('.pos-display').classList.remove('approved','declined');el('demo-message').textContent='Lista para leer la tarjeta';updateDemo();});
+el('reset').addEventListener('click',()=>{if(busy)return;el('demo-balance').value='25.50';el('demo-quantity').value='1';el('demo-route').value='350';document.querySelector('.pos-display').classList.remove('approved','declined');el('demo-message').textContent='Lista para leer la tarjeta';updateDemo();});
+
+try {
+  const response = await fetch('assets/destinations/credits.json');
+  if (!response.ok) throw new Error();
+  const photos = await response.json();
+  startCarousel(photos, province => {
+    el('province').value = province;
+    el('search').value = '';
+    renderRoutes();
+  });
+} catch {
+  el('photo-status').textContent = 'No se pudo cargar el carrusel. Los destinos siguen disponibles en Provincias.';
+  for (const id of ['destination-prev','destination-next','destination-play','destination-select']) el(id).disabled = true;
+}

@@ -1,3 +1,4 @@
+import '../../widgets/brand_logo.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
 
@@ -22,11 +23,7 @@ class RoleSelectionScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.directions_bus,
-                    size: 100,
-                    color: Colors.white,
-                  ),
+                  const BrandLogo(),
                   const SizedBox(height: 20),
                   const Text(
                     'Transita Bolivia',

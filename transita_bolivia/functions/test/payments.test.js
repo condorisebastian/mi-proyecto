@@ -7,9 +7,14 @@ import {settle} from '../payment_core.js';
 const publicVectorKey = Buffer.from(Array(16).fill(0));
 const proof = {uid: '04DE5F1EACC040', counter: '3D0000', mac: '94EED9EE65337086'};
 const input = {proof, amountCents: 2550, quantity: 3, conductorId: 2, reference: 'receipt-001', routeId: 'el_torno'};
-const routes = [{id: 'el_torno', fare_cents: 850}, {id: 'sin_tarifa', fare_cents: null}];
+const routes = [{id: 'el_torno', fare_cents: 850, status: 'verificada'}, {id: 'sin_tarifa', fare_cents: null, status: 'pendiente'}];
 const state = () => ({terminal: {estado: 'activo', conductorId: 2}, card: {estado: 'activo', userId: 1, lastCounter: 60},
   user: {estado: 'activo', puntos: 30}, driver: {estado: 'activo'}});
+
+test('rechaza una tarifa pendiente aunque conserve un importe anterior', () => {
+  assert.throws(() => settle(input, state(), publicVectorKey,
+    [{id: 'el_torno', fare_cents: 850, status: 'pendiente'}]), /Tarifa de destino inválida/);
+});
 
 test('valida la derivación de clave con el vector público NXP', () => {
   const vector = Buffer.from([0x5a,0xce,0x7e,0x50,0xab,0x65,0xd5,0xd5,0x1f,0xd5,0xbf,0x5a,0x16,0xb8,0x20,0x5b]);

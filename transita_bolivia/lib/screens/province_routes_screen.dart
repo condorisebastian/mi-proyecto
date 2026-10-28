@@ -39,8 +39,8 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Los importes de La Guardia y El Torno corresponden al piloto. '
-                'Los demás destinos se habilitan al verificar la tarifa y el servicio.',
+                'Tarifa por verificar. Los cobros provinciales se habilitarán '
+                'al confirmar el importe, el servicio y la vigencia.',
               ),
               const SizedBox(height: 16),
               TextField(
@@ -51,29 +51,30 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
                 onChanged: (value) => setState(() => _query = value),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Expanded(child: Text('Cantidad de pasajes')),
-                  IconButton(
-                    tooltip: 'Quitar un pasaje',
-                    onPressed: _quantity > 1
-                        ? () => setState(() => _quantity--)
-                        : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text(
-                    '$_quantity',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  IconButton(
-                    tooltip: 'Añadir un pasaje',
-                    onPressed: _quantity < TripQr.maxPassengers
-                        ? () => setState(() => _quantity++)
-                        : null,
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                ],
-              ),
+              if (provinceRoutes.any((route) => route.canCharge))
+                Row(
+                  children: [
+                    const Expanded(child: Text('Cantidad de pasajes')),
+                    IconButton(
+                      tooltip: 'Quitar un pasaje',
+                      onPressed: _quantity > 1
+                          ? () => setState(() => _quantity--)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                    ),
+                    Text(
+                      '$_quantity',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    IconButton(
+                      tooltip: 'Añadir un pasaje',
+                      onPressed: _quantity < TripQr.maxPassengers
+                          ? () => setState(() => _quantity++)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 12),
               if (routes.isEmpty)
                 const Padding(
@@ -96,7 +97,7 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
                         Text(
                           route.canCharge
                               ? 'Bs ${Money.format(route.fareCents! / 100)} / persona · Total Bs ${Money.format(route.fareCents! * _quantity / 100)}'
-                              : 'Tarifa pendiente de verificar',
+                              : 'Tarifa por verificar',
                         ),
                         if (widget.conductorId != null && route.canCharge)
                           Padding(

@@ -1,3 +1,4 @@
+import '../../widgets/brand_logo.dart';
 import '../../widgets/login_progress_indicator.dart';
 import '../../services/login_preferences.dart';
 import 'package:flutter/material.dart';
@@ -65,14 +66,10 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.directions_bus,
-                    size: 80,
-                    color: Colors.white,
-                  ),
+                  const BrandLogo(),
                   const SizedBox(height: 20),
                   const Text(
-                    'Transporte Santa Cruz',
+                    'Transita Bolivia',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

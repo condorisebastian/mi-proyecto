@@ -6,10 +6,23 @@ Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con una app F
 
 La web en `website/dist` consulta el catálogo y permite calcular grupos. Su
 simulador POS usa saldo ficticio y no accede a cuentas. El catálogo fuente es
-`shared/province_routes.json`: 16 destinos de las 15 provincias de Santa Cruz.
-La Guardia (Bs 8.00) y El Torno (Bs 8.50) son precios del piloto solicitados por
-el responsable; los demás destinos permanecen pendientes de tarifa verificada.
+`shared/province_routes.json`: 29 destinos de las 15 provincias de Santa Cruz.
+Todos los municipios muestran «Tarifa por verificar», incluidos La Guardia y
+El Torno. No se generan cobros provinciales hasta verificar sus importes.
 No se presentan precios históricos del Decreto 494 como tarifas actuales.
+
+El original es `logo_transitabolivia.png`. La versión sin fondo es
+`logo_transitabolivia_transparente.png` y se usa en la app y la web; la variante
+cuadrada `transita_bolivia/assets/images/logo_icon.png` evita deformar los iconos.
+Se generaron con la herramienta integrada `image_gen`: «Quitar únicamente el
+fondo y preservar símbolo, colores, texto y proporciones»; para el icono,
+«centrar el mismo logo en un lienzo cuadrado transparente sin estirar ni recortar».
+La portada recorre automáticamente las 15 provincias cada cinco segundos, con
+pausa manual y respeto por la preferencia de movimiento reducido. Incluye
+fotografías locales, controles accesibles, selección de provincia y créditos.
+Las fuentes revisadas están en `website/photo_sources.json`; ejecutar
+`python tools/download_destination_photos.py` para recuperar las imágenes y
+sus atribuciones. La página `credits.html` enlaza cada autor, archivo y licencia.
 
 Ejecutar `python tools/generate_routes.py` después de editar el catálogo;
 sincroniza Flutter, web y Functions. PHP publica `GET /catalog/routes` y valida
