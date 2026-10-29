@@ -1,8 +1,14 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import '../../models/transaction.dart';
+import '../../models/payment_receipt.dart';
+import 'receipt_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -25,6 +31,7 @@ class HistoryScreenState extends State<HistoryScreen> {
   Future<void> reload() => _loadHistory();
 
   Future<void> _loadHistory() async {
+    if (AppConfig.useFirebase) return;
     final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
     if (user == null) return;
@@ -49,7 +56,7 @@ class HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial'),
-        backgroundColor: const Color(0xFF1E88E5),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -57,10 +64,7 @@ class HistoryScreenState extends State<HistoryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E88E5),
-              Color(0xFFF5F5F5),
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.2],
           ),
         ),
@@ -70,73 +74,49 @@ class HistoryScreenState extends State<HistoryScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     _buildStatCard(
                       'Saldo Actual',
-                      '${user?.puntos ?? 0} pts',
+                      '${Money.format(user?.puntos ?? 0)} pts',
                       Icons.account_balance_wallet,
-                      const Color(0xFF1E88E5),
+                      AppColors.primary,
                     ),
                     _buildStatCard(
                       'Tipo',
                       user?.tipoDisplay ?? '',
                       Icons.person,
-                      const Color(0xFF4CAF50),
+                      AppColors.success,
                     ),
                   ],
                 ),
               ),
               Expanded(
-                child: RefreshIndicator(
-                  color: const Color(0xFF1E88E5),
-                  onRefresh: _loadHistory,
-                  child: _loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _transactions.isEmpty
-                          ? LayoutBuilder(
-                              builder: (context, constraints) {
-                                return SingleChildScrollView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  child: SizedBox(
-                                    height: constraints.maxHeight,
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.history,
-                                            size: 80,
-                                            color: Colors.grey[300],
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            'No hay transacciones',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.grey[500],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(20),
-                              itemCount: _transactions.length,
-                              itemBuilder: (context, index) {
-                                return _buildTransactionCard(
-                                    _transactions[index]);
-                              },
-                            ),
-                ),
+                child: AppConfig.useFirebase && user != null
+                    ? StreamBuilder<List<Transaction>>(
+                        stream: FirebaseService.instance
+                            .transactionHistoryStream(user.id),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.waiting &&
+                              !snapshot.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          return _buildHistoryBody(snapshot.data ?? []);
+                        },
+                      )
+                    : RefreshIndicator(
+                        color: AppColors.primary,
+                        onRefresh: _loadHistory,
+                        child: _loading
+                            ? const Center(child: CircularProgressIndicator())
+                            : _buildHistoryBody(_transactions),
+                      ),
               ),
             ],
           ),
@@ -145,8 +125,48 @@ class HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  Widget _buildHistoryBody(List<Transaction> transactions) {
+    if (transactions.isEmpty) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, size: 80, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No hay transacciones',
+                      style: TextStyle(fontSize: 18, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(20),
+      itemCount: transactions.length,
+      itemBuilder: (context, index) {
+        return _buildTransactionCard(transactions[index]);
+      },
+    );
+  }
+
   Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -164,13 +184,7 @@ class HistoryScreenState extends State<HistoryScreen> {
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 4),
           Text(
             value,
@@ -187,6 +201,7 @@ class HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildTransactionCard(Transaction transaction) {
     final isPositive = transaction.tipo == 'recarga';
+    final receipt = PaymentReceipt.fromTransaction(transaction);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -202,59 +217,80 @@ class HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isPositive
-                  ? Colors.green.withValues(alpha: 0.1)
-                  : Colors.orange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isPositive ? Icons.add : Icons.remove,
-              color: isPositive ? Colors.green : Colors.orange,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.tipoDisplay,
-                  style: const TextStyle(
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isPositive
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isPositive ? Icons.add : Icons.remove,
+                  color: isPositive ? Colors.green : Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.tipoDisplay,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      transaction.metodoPagoDisplay,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: Text(
+                  '${isPositive ? '+' : '-'}${Money.format(transaction.puntos)} pts',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    color: isPositive ? Colors.green : Colors.red,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                Text(
-                  transaction.metodoPagoDisplay,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Text(
-            '${isPositive ? '+' : '-'}${transaction.puntos} pts',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: isPositive ? Colors.green : Colors.red,
+          if (receipt != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: const Text('Ver comprobante'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ReceiptScreen(receipt: receipt),
+                  ),
+                ),
+              ),
             ),
-          ),
+          if (transaction.hasPendingWrites)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('Esperando confirmación del servidor'),
+            ),
         ],
       ),
     );

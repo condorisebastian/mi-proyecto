@@ -22,8 +22,8 @@ class Conductor {
       id: json['id'],
       nombre: json['nombre'],
       apellido: json['apellido'],
-      ci: json['ci'],
-      licencia: json['licencia'],
+      ci: json['ci'] ?? '',
+      licencia: json['licencia'] ?? '',
       telefono: json['telefono'],
       estado: json['estado'],
     );

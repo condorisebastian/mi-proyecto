@@ -1,6 +1,18 @@
-# Transporte API - reescribe todo a index.php (front controller)
+# Solo index.php es una entrada HTTP pública. Los scripts de instalación
+# y configuración se ejecutan exclusivamente desde la línea de comandos.
+Options -Indexes
+
+<FilesMatch "(?i)(^\.|\.(env|ini|log|sql|bak|old|pem|key|p12|jks|keystore)$)">
+    Require all denied
+</FilesMatch>
+<FilesMatch "(?i)^(?!index\.php$).*\.php$">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteRule (^|/)\. - [F,L]
+    RewriteRule ^(config|src|tests|vendor|tools)(/|$) - [F,L,NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [L,QSA]

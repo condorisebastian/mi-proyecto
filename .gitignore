@@ -8,3 +8,30 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Seguridad: secreto JWT local (se genera al primer uso)
+api/config/.jwt_secret
+# Seguridad: credenciales de BD del usuario limitado (setup_db_user.php)
+api/config/.db_creds.php
+
+# Secretos locales y material de firma (nunca se empaquetan ni versionan).
+.transita-private/
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.p12
+*.jks
+*.keystore
+key.properties
+*-firebase-adminsdk-*.json
+*service-account*.json
+*service_account*.json
+gitleaks-report*
+
+# Caché de las herramientas de verificación.
+__pycache__/
+*.py[cod]
+**/node_modules/
+website/.openai/local/

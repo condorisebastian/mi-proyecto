@@ -1,298 +1,269 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:ndef/ndef.dart';
+import 'package:flutter/services.dart';
+import 'dart:math' as math;
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import '../../models/trip_qr.dart';
 import '../../services/driver_auth_service.dart';
-import '../../services/driver_api_service.dart';
+import '../province_routes_screen.dart';
+import 'pos_screen.dart';
 
 class DriverChargeScreen extends StatefulWidget {
   const DriverChargeScreen({super.key});
-
   @override
   State<DriverChargeScreen> createState() => _DriverChargeScreenState();
 }
 
 class _DriverChargeScreenState extends State<DriverChargeScreen> {
-  final DriverApiService _apiService = DriverApiService();
-  String _lastPayment = '';
-  bool _isProcessing = false;
+  static const _labels = {
+    'estudiante': 'Estudiante',
+    'civil': 'Civil',
+    'adulto_mayor': 'Adulto mayor',
+    'discapacitado': 'Persona con discapacidad',
+  };
+  String _tipo = 'estudiante';
+  final _cantidadController = TextEditingController(text: '1');
+  final _montoController = TextEditingController();
+  final _cantidadKey = GlobalKey<FormFieldState<String>>();
+  final _montoKey = GlobalKey<FormFieldState<String>>();
+  static const _icons = {
+    'estudiante': Icons.school_outlined,
+    'civil': Icons.person_outline,
+    'adulto_mayor': Icons.elderly,
+    'discapacitado': Icons.accessible,
+  };
 
-  final List<({String id, String nombre, int puntos})> _tipos = [
-    (id: 'estudiante', nombre: 'Estudiante', puntos: 1),
-    (id: 'civil', nombre: 'Civil', puntos: 3),
-    (id: 'adulto_mayor', nombre: 'Adulto Mayor', puntos: 1),
-    (id: 'discapacitado', nombre: 'Discapacitado', puntos: 1),
-  ];
-  ({String id, String nombre, int puntos}) _tipo =
-      (id: 'estudiante', nombre: 'Estudiante', puntos: 1);
+  @override
+  void dispose() {
+    _cantidadController.dispose();
+    _montoController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cobrar'),
-        backgroundColor: const Color(0xFFE53935),
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
-            ],
-            stops: [0.0, 0.3],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
+      appBar: AppBar(title: const Text('Cobrar con QR')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => ProvinceRoutesScreen(
+                        conductorId: context
+                            .read<DriverAuthService>()
+                            .currentConductor
+                            ?.id,
                       ),
-                    ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'TIPO DE PASAJERO',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: _tipos.map((tipo) {
-                          final isSelected = tipo.id == _tipo.id;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _tipo = tipo;
-                                });
-                              },
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 4),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFFE53935)
-                                      : Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFFE53935)
-                                        : Colors.grey[300]!,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      tipo.nombre,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : Colors.grey[700],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${tipo.puntos} pt',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: isSelected
-                                            ? Colors.white70
-                                            : const Color(0xFFE53935),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Monto a cobrar: ${_tipo.puntos} punto(s) = Bs ${_tipo.puntos}.00',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFE53935),
-                        ),
-                      ),
-                    ],
-                  ),
+                  icon: const Icon(Icons.route),
+                  label: const Text('Provincias'),
                 ),
-                const SizedBox(height: 20),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(builder: (_) => const PosScreen()),
                   ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'OPCIONES DE PAGO',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildPaymentOption(
-                        context,
-                        icon: Icons.nfc,
-                        title: 'Tarjeta NFC',
-                        subtitle: 'Acerca la tarjeta al celular',
-                        onTap: _readNFC,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildPaymentOption(
-                        context,
-                        icon: Icons.qr_code_scanner,
-                        title: 'QR del Celular',
-                        subtitle: 'Escanea el QR del pasajero',
-                        onTap: _showQRScanner,
-                      ),
-                      const SizedBox(height: 24),
-                      if (_lastPayment.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _lastPayment,
-                                  style: const TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Mantén el celular cerca del pasajero',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  icon: const Icon(Icons.contactless),
+                  label: const Text('Terminal POS'),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.payments_outlined),
+                        SizedBox(width: 8),
+                        Text(
+                          'Pago',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Una persona puede pagar los pasajes de su grupo.',
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      key: _cantidadKey,
+                      controller: _cantidadController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Cantidad de pasajes',
+                        hintText: '1',
+                        errorMaxLines: 3,
+                      ),
+                      validator: (value) {
+                        final cantidad = int.tryParse(value?.trim() ?? '');
+                        if (cantidad == null ||
+                            cantidad < 1 ||
+                            cantidad > TripQr.maxPassengers) {
+                          return 'Introduce entre 1 y ${TripQr.maxPassengers} pasajes';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: _montoKey,
+                      controller: _montoController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: 'Monto total (Bs)',
+                        hintText: 'Ej. 10.50',
+                        helperText: 'Total a cobrar por todos los pasajes.',
+                        helperMaxLines: 2,
+                        errorMaxLines: 3,
+                      ),
+                      validator: (value) {
+                        final monto = Money.tryParse(value ?? '');
+                        if (monto == null ||
+                            monto <= 0 ||
+                            monto > TripQr.maxAmount) {
+                          return 'Introduce un monto válido con hasta 2 decimales';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) => _showChargeQr(custom: true),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showChargeQr(custom: true),
+                        icon: const Icon(Icons.qr_code),
+                        label: const Text('MOSTRAR QR'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Tipo de pasajero',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final labelStyle = Theme.of(context).textTheme.bodyMedium!
+                    .copyWith(fontWeight: FontWeight.bold, fontSize: 14);
+                final fareStyle = Theme.of(
+                  context,
+                ).textTheme.bodySmall!.copyWith(fontSize: 11);
+                final width = (constraints.maxWidth - 12) / 2 - 24;
+                double textHeight(String text, TextStyle style) {
+                  final painter = TextPainter(
+                    text: TextSpan(text: text, style: style),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                  )..layout(maxWidth: width);
+                  final height = painter.height;
+                  painter.dispose();
+                  return height;
+                }
 
-  Widget _buildPaymentOption(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.grey[200]!,
-            width: 2,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE53935).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: const Color(0xFFE53935),
-                size: 30,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                final labelHeight = _labels.values
+                    .map((text) => textHeight(text, labelStyle))
+                    .reduce(math.max);
+                final tileHeight = math.max(
+                  132.0,
+                  labelHeight + textHeight('Bs 3.50 / persona', fareStyle) + 70,
+                );
+                return GridView(
+                  key: const Key('passenger-type-grid'),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: tileHeight,
                   ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _labels.entries.map((entry) {
+                    final selected = _tipo == entry.key;
+                    final color = Theme.of(context).colorScheme.primary;
+                    return Semantics(
+                      selected: selected,
+                      button: true,
+                      child: Material(
+                        color: selected
+                            ? color.withValues(alpha: 0.12)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _tipo = entry.key);
+                            _showChargeQr();
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selected ? color : Colors.grey.shade300,
+                                width: selected ? 2 : 1,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(_icons[entry.key], size: 30, color: color),
+                                const SizedBox(height: 8),
+                                Text(
+                                  entry.value,
+                                  textAlign: TextAlign.center,
+                                  style: labelStyle,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Bs ${Money.format(TripQr.fares[entry.key])} / persona',
+                                  textAlign: TextAlign.center,
+                                  style: fareStyle,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Colors.grey,
+            const SizedBox(height: 20),
+            const Text(
+              'Toca un tipo de pasajero para mostrar el QR automáticamente. '
+              'El pasajero lo escanea y confirma el pago. '
+              'Recibirás un aviso y un sonido cuando el pago sea confirmado.',
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -300,268 +271,72 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
     );
   }
 
-  Future<void> _readNFC() async {
-    if (_isProcessing) return;
-
-    try {
-      final availability = await FlutterNfcKit.nfcAvailability;
-      if (availability != NFCAvailability.available) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Este celular no soporta lectura NFC'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      setState(() {
-        _isProcessing = true;
-      });
-
-      final tag = await FlutterNfcKit.poll(
-        timeout: const Duration(seconds: 20),
-      );
-      final text = await _readNdefText();
-      await FlutterNfcKit.finish();
-
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-      });
-      _onScanned('NFC', text ?? tag.id);
-    } catch (e) {
-      try {
-        await FlutterNfcKit.finish();
-      } catch (_) {}
-      if (!mounted) return;
-      setState(() {
-        _isProcessing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error al leer tarjeta NFC'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<String?> _readNdefText() async {
-    final records = await FlutterNfcKit.readNDEFRecords();
-    for (final record in records) {
-      final text = record is TextRecord ? record.text : null;
-      if (text != null && text.isNotEmpty) {
-        return text;
-      }
-    }
-    return null;
-  }
-
-  Future<void> _showQRScanner() async {
-    final scanned = await showModalBottomSheet<String>(
+  void _showChargeQr({bool custom = false}) {
+    final validQuantity = _cantidadKey.currentState!.validate();
+    final validAmount = !custom || _montoKey.currentState!.validate();
+    if (!validQuantity || !validAmount) return;
+    final conductor = context.read<DriverAuthService>().currentConductor;
+    if (conductor == null) return;
+    FocusScope.of(context).unfocus();
+    final cantidad = int.parse(_cantidadController.text.trim());
+    final qr = TripQr(
+      conductorId: conductor.id,
+      tipo: custom ? TripQr.customType : _tipo,
+      puntos: custom
+          ? Money.read(_montoController.text)
+          : Money.multiply(TripQr.fares[_tipo]!, cantidad),
+      reference: TripQr.newReference(),
+      cantidad: cantidad,
+    );
+    showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+              const Text(
+                'Escanea para pagar',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Escanea el QR del pasajero',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              const SizedBox(height: 8),
+              Text('${conductor.nombre} ${conductor.apellido}'),
+              const SizedBox(height: 16),
+              Semantics(
+                label: 'QR de cobro: ${qr.encode()}',
+                child: Container(
+                  color: Colors.white,
+                  child: QrImageView(
+                    data: qr.encode(),
+                    size: math.min(250, MediaQuery.sizeOf(context).width - 100),
+                    gapless: false,
                   ),
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: MobileScanner(
-                      onDetect: (capture) {
-                        for (final barcode in capture.barcodes) {
-                          final raw = barcode.rawValue;
-                          if (raw != null && raw.isNotEmpty) {
-                            Navigator.pop(context, raw);
-                            return;
-                          }
-                        }
-                      },
-                      errorBuilder: (context, error) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 60,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'No se pudo abrir la cámara: $error',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+              const SizedBox(height: 12),
+              Text(
+                '${qr.isCustom ? 'Monto personalizado' : _labels[qr.tipo]} · ${qr.cantidad} pasaje(s)\nTotal: Bs ${Money.format(qr.puntos)}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('CANCELAR'),
-                  ),
-                ),
+              const SizedBox(height: 12),
+              const Text(
+                'Espera el aviso de pago exitoso antes de dar por cobrado el viaje.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('CERRAR'),
               ),
             ],
           ),
-        );
-      },
-    );
-
-    if (!mounted) return;
-    if (scanned != null && scanned.isNotEmpty) {
-      _onScanned('QR', scanned);
-    }
-  }
-
-  void _onScanned(String method, String rawData) {
-    if (_isProcessing) return;
-    setState(() {
-      _isProcessing = true;
-    });
-
-    final userId = _parseUserId(rawData);
-    String passengerLabel = 'Pasajero';
-    if (userId != null) {
-      passengerLabel = 'Pasajero vinculado (ID $userId)';
-    } else if (rawData.isNotEmpty) {
-      passengerLabel = 'Pasajero (identificador: $rawData)';
-    }
-
-    _showPaymentDialog(method, userId, passengerLabel);
-  }
-
-  int? _parseUserId(String raw) {
-    if (raw.startsWith('PASAJERO:')) {
-      final parts = raw.split(':');
-      if (parts.length >= 2) {
-        return int.tryParse(parts[1]);
-      }
-    }
-    return null;
-  }
-
-  void _showPaymentDialog(String method, int? userId, String passengerLabel) {
-    final authService = Provider.of<DriverAuthService>(context, listen: false);
-    final conductor = authService.currentConductor;
-    final puntos = _tipo.puntos;
-
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Pago por $method'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('¿Cobrar viaje?'),
-            const SizedBox(height: 8),
-            Text(passengerLabel,
-                style: const TextStyle(fontSize: 13, color: Colors.grey)),
-            const SizedBox(height: 16),
-            Text(
-              'Monto: $puntos punto(s) = Bs $puntos.00',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              if (mounted) {
-                setState(() {
-                  _isProcessing = false;
-                });
-              }
-            },
-            child: const Text('CANCELAR'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-
-              final result = await _apiService.registerTrip(
-                conductorId: conductor!.id,
-                tipoUsuario: _tipo.id,
-                puntos: puntos,
-                metodoPago: method == 'NFC' ? 'tarjeta_nfc' : 'qr',
-                userId: userId,
-              );
-
-              if (!mounted) return;
-              setState(() {
-                _isProcessing = false;
-              });
-
-              if (result.ok) {
-                setState(() {
-                  _lastPayment = 'Pago exitoso: -$puntos punto(s) ($method)';
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Pago registrado exitosamente'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result.message),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('COBRAR'),
-          ),
-        ],
       ),
     );
   }

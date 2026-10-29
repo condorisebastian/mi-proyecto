@@ -1,4 +1,6 @@
+import '../../widgets/brand_logo.dart';
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 
 class UserTypeScreen extends StatelessWidget {
   const UserTypeScreen({super.key});
@@ -11,84 +13,89 @@ class UserTypeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1E88E5),
-              Color(0xFF1565C0),
-            ],
+            colors: [AppColors.primary, AppColors.primaryDark],
           ),
         ),
         child: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.directions_bus,
-                  size: 100,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Transita Bolivia',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const BrandLogo(),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Transita Bolivia',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  '¿Quién eres?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white70,
+                  const SizedBox(height: 10),
+                  const Text(
+                    '¿Quién eres?',
+                    style: TextStyle(fontSize: 18, color: Colors.white70),
                   ),
-                ),
-                const SizedBox(height: 40),
-                _buildUserTypeButton(
-                  context,
-                  icon: Icons.school,
-                  title: 'Estudiante',
-                  subtitle: 'Costo: 1 punto por viaje',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/passenger/login',
-                        arguments: {'tipo': 'estudiante'});
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildUserTypeButton(
-                  context,
-                  icon: Icons.person,
-                  title: 'Civil',
-                  subtitle: 'Costo: 3 puntos por viaje',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/passenger/login',
-                        arguments: {'tipo': 'civil'});
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildUserTypeButton(
-                  context,
-                  icon: Icons.elderly,
-                  title: 'Adulto Mayor',
-                  subtitle: 'Costo: 1 punto por viaje',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/passenger/login',
-                        arguments: {'tipo': 'adulto_mayor'});
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildUserTypeButton(
-                  context,
-                  icon: Icons.accessible,
-                  title: 'Discapacitado',
-                  subtitle: 'Costo: 1 punto por viaje',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/passenger/login',
-                        arguments: {'tipo': 'discapacitado'});
-                  },
-                ),
-              ],
+                  const SizedBox(height: 40),
+                  _buildUserTypeButton(
+                    context,
+                    icon: Icons.school,
+                    title: 'Estudiante',
+                    subtitle: 'Pasaje: Bs 1.00',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/passenger/login',
+                        arguments: {'tipo': 'estudiante'},
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildUserTypeButton(
+                    context,
+                    icon: Icons.person,
+                    title: 'Civil',
+                    subtitle: 'Pasaje: Bs 3.50',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/passenger/login',
+                        arguments: {'tipo': 'civil'},
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildUserTypeButton(
+                    context,
+                    icon: Icons.elderly,
+                    title: 'Adulto Mayor',
+                    subtitle: 'Pasaje: Bs 1.00',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/passenger/login',
+                        arguments: {'tipo': 'adulto_mayor'},
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildUserTypeButton(
+                    context,
+                    icon: Icons.accessible,
+                    title: 'Discapacitado',
+                    subtitle: 'Pasaje: Bs 1.00',
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/passenger/login',
+                        arguments: {'tipo': 'discapacitado'},
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -112,7 +119,7 @@ class UserTypeScreen extends StatelessWidget {
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1E88E5),
+            foregroundColor: AppColors.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -140,10 +147,7 @@ class UserTypeScreen extends StatelessWidget {
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),

@@ -1,0 +1,301 @@
+[
+  {
+    "slug": "andres_ibanez",
+    "province": "Andrés Ibáñez",
+    "place": "El Torno · Jardín de las Delicias",
+    "title": "File:Cascada del Jardín de las Delicias - El Torno, Bolivia (2025).jpg",
+    "alt": "Cascada del Jardín de las Delicias, El Torno",
+    "path": "assets/destinations/andres_ibanez.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Cascada_del_Jard%C3%ADn_de_las_Delicias_-_El_Torno,_Bolivia_(2025).jpg",
+    "author": "Ruditaly",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Cascada_del_Jard%C3%ADn_de_las_Delicias_-_El_Torno%2C_Bolivia_%282025%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/28/Cascada_del_Jard%C3%ADn_de_las_Delicias_-_El_Torno%2C_Bolivia_%282025%29.jpg/1280px-Cascada_del_Jard%C3%ADn_de_las_Delicias_-_El_Torno%2C_Bolivia_%282025%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "35d7343847853a1bfd8a1e1987ddee3e68ab440f94f7efdf81b3f6b56eea479d",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "La Guardia",
+      "Cotoca",
+      "El Torno",
+      "Porongo"
+    ]
+  },
+  {
+    "slug": "warnes",
+    "province": "Warnes",
+    "place": "Colonia Okinawa",
+    "title": "File:Colonia Okinawa.jpg",
+    "alt": "Vista de Colonia Okinawa en la provincia Warnes",
+    "path": "assets/destinations/warnes.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Colonia_Okinawa.jpg",
+    "author": "Fher_a_p",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Colonia_Okinawa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Colonia_Okinawa.jpg/1280px-Colonia_Okinawa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "bff4904562391e345e2714f03d2e4347d5ab866979f44a5dea440a916495cc24",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Warnes",
+      "Okinawa Uno"
+    ]
+  },
+  {
+    "slug": "obispo_santistevan",
+    "province": "Obispo Santistevan",
+    "place": "Montero",
+    "title": "File:Plaza de Montero - panoramio.jpg",
+    "alt": "Plaza de Montero",
+    "path": "assets/destinations/obispo_santistevan.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Plaza_de_Montero_-_panoramio.jpg",
+    "author": "nivardo61",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Plaza_de_Montero_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Plaza_de_Montero_-_panoramio.jpg/1280px-Plaza_de_Montero_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "a6ca8970bd1e2922d5c3f23a5b4962480a6553f775d748c123ed4df53b187561",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Montero",
+      "General Saavedra",
+      "Minero"
+    ]
+  },
+  {
+    "slug": "chiquitos",
+    "province": "Chiquitos",
+    "place": "San José de Chiquitos",
+    "title": "File:Templo de San Jose 1 (misiones jesuiticas).jpg",
+    "alt": "Templo de San José de Chiquitos",
+    "path": "assets/destinations/chiquitos.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Templo_de_San_Jose_1_(misiones_jesuiticas).jpg",
+    "author": "Maria Cristina Tajima",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Templo_de_San_Jose_1_%28misiones_jesuiticas%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/Templo_de_San_Jose_1_%28misiones_jesuiticas%29.jpg/1280px-Templo_de_San_Jose_1_%28misiones_jesuiticas%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "72f0e803acbae71a6d182909485eda21edc4ffcb465e98ba9aabbd14606848fb",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Pailón",
+      "San José de Chiquitos",
+      "Roboré"
+    ]
+  },
+  {
+    "slug": "sara",
+    "province": "Sara",
+    "place": "Portachuelo",
+    "title": "File:Iglesia Inmaculada Concepción in Portachuelo, Bolivia.png",
+    "alt": "Iglesia Inmaculada Concepción de Portachuelo",
+    "path": "assets/destinations/sara.png",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Iglesia_Inmaculada_Concepci%C3%B3n_in_Portachuelo,_Bolivia.png",
+    "author": "Ruditaly",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/d/da/Iglesia_Inmaculada_Concepci%C3%B3n_in_Portachuelo%2C_Bolivia.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/Iglesia_Inmaculada_Concepci%C3%B3n_in_Portachuelo%2C_Bolivia.png/1280px-Iglesia_Inmaculada_Concepci%C3%B3n_in_Portachuelo%2C_Bolivia.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "a4cf67b82c5b81953b718162a741f9b2e474621dab4a14b81d8ade5aeb2125a3",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Portachuelo"
+    ]
+  },
+  {
+    "slug": "nuflo_chavez",
+    "province": "Ñuflo de Chávez",
+    "place": "Concepción",
+    "title": "File:Kerk Conception Exterieur.jpg",
+    "alt": "Iglesia misional de Concepción",
+    "path": "assets/destinations/nuflo_chavez.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Kerk_Conception_Exterieur.jpg",
+    "author": "Daan at Dutch Wikipedia",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Kerk_Conception_Exterieur.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Kerk_Conception_Exterieur.jpg/1280px-Kerk_Conception_Exterieur.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "fe1cf27b9c31559ed661e3d04a91d952051ee139348193016ced88e77f561ebf",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Cuatro Cañadas",
+      "San Javier",
+      "Concepción"
+    ]
+  },
+  {
+    "slug": "ichilo",
+    "province": "Ichilo",
+    "place": "Santa Fe de Yapacaní",
+    "title": "File:Santa Fe de Yapacaní y Río Yapacaní - panoramio.jpg",
+    "alt": "Santa Fe de Yapacaní y el río Yapacaní",
+    "path": "assets/destinations/ichilo.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Santa_Fe_de_Yapacan%C3%AD_y_R%C3%ADo_Yapacan%C3%AD_-_panoramio.jpg",
+    "author": "Sam Beebe/Ecotrust",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Santa_Fe_de_Yapacan%C3%AD_y_R%C3%ADo_Yapacan%C3%AD_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Santa_Fe_de_Yapacan%C3%AD_y_R%C3%ADo_Yapacan%C3%AD_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+    "sha256": "ca4af1964583ccc39bd8bd1452763732a08773bd8526ac8638841b83628d79de",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Buena Vista",
+      "San Carlos",
+      "Yapacaní"
+    ]
+  },
+  {
+    "slug": "florida",
+    "province": "Florida",
+    "place": "Samaipata · El Fuerte",
+    "title": "File:El Fuerte Samaipata 01.jpg",
+    "alt": "Sitio arqueológico El Fuerte de Samaipata",
+    "path": "assets/destinations/florida.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:El_Fuerte_Samaipata_01.jpg",
+    "author": "Karenrek",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/El_Fuerte_Samaipata_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/El_Fuerte_Samaipata_01.jpg/1280px-El_Fuerte_Samaipata_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "3169de5bec0344467a64111a9c4cdd3edfcc2b63c596f8debff17cf882faddc6",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Samaipata",
+      "Mairana",
+      "Pampa Grande"
+    ]
+  },
+  {
+    "slug": "manuel_caballero",
+    "province": "Manuel María Caballero",
+    "place": "Comarapa",
+    "title": "File:JscRepresaComarapa1.jpg",
+    "alt": "Represa de Comarapa entre las montañas",
+    "path": "assets/destinations/manuel_caballero.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:JscRepresaComarapa1.jpg",
+    "author": "Jhonsys",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/1/12/JscRepresaComarapa1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/JscRepresaComarapa1.jpg/1280px-JscRepresaComarapa1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "9eb1d89e008c647cf46f96d796d92c346e49f95883f7f2850c5ebc020f017f70",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Comarapa"
+    ]
+  },
+  {
+    "slug": "vallegrande",
+    "province": "Vallegrande",
+    "place": "Vallegrande · Plaza 26 de Enero",
+    "title": "File:Plaza 26 de Enero - Vallegrande, Bolivia (2025).jpg",
+    "alt": "Plaza 26 de Enero de Vallegrande",
+    "path": "assets/destinations/vallegrande.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Plaza_26_de_Enero_-_Vallegrande,_Bolivia_(2025).jpg",
+    "author": "Ruditaly",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Plaza_26_de_Enero_-_Vallegrande%2C_Bolivia_%282025%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Plaza_26_de_Enero_-_Vallegrande%2C_Bolivia_%282025%29.jpg/1280px-Plaza_26_de_Enero_-_Vallegrande%2C_Bolivia_%282025%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "281ee704425683a3d1fd3d06c208413d6358ef8a60423aeeb95ac4500678846e",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Vallegrande"
+    ]
+  },
+  {
+    "slug": "cordillera",
+    "province": "Cordillera",
+    "place": "Camiri · Héroes del Chaco",
+    "title": "File:Plazuela Heroes del Chaco - Camiri.jpg",
+    "alt": "Monumento de la plazuela Héroes del Chaco en Camiri",
+    "path": "assets/destinations/cordillera.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Plazuela_Heroes_del_Chaco_-_Camiri.jpg",
+    "author": "Ariela2020",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Plazuela_Heroes_del_Chaco_-_Camiri.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Plazuela_Heroes_del_Chaco_-_Camiri.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sha256": "2b6cdab5677fbc157cb8d378d03b3c5958f49c6b65808f1bfdf1f5256763a456",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Camiri"
+    ]
+  },
+  {
+    "slug": "velasco",
+    "province": "José Miguel de Velasco",
+    "place": "Santa Ana de Velasco",
+    "title": "File:Templo de Santa Ana Bolivia.jpg",
+    "alt": "Templo misional de Santa Ana de Velasco",
+    "path": "assets/destinations/velasco.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Templo_de_Santa_Ana_Bolivia.jpg",
+    "author": "Maria Cristina Tajima",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Templo_de_Santa_Ana_Bolivia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Templo_de_Santa_Ana_Bolivia.jpg/1280px-Templo_de_Santa_Ana_Bolivia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "379d50097b7590cb81c4c2af27fb9c34eeba81e75a6742a8928ebb96715d9fd4",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "San Ignacio de Velasco"
+    ]
+  },
+  {
+    "slug": "german_busch",
+    "province": "Germán Busch",
+    "place": "Puerto Suárez",
+    "title": "File:Muelle de Puerto Suárez, Bolivia.jpg",
+    "alt": "Muelle de Puerto Suárez",
+    "path": "assets/destinations/german_busch.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Muelle_de_Puerto_Su%C3%A1rez,_Bolivia.jpg",
+    "author": "Jim McIntosh",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Muelle_de_Puerto_Su%C3%A1rez%2C_Bolivia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Muelle_de_Puerto_Su%C3%A1rez%2C_Bolivia.jpg/1280px-Muelle_de_Puerto_Su%C3%A1rez%2C_Bolivia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "d35d869c3fe7de9c6da52e9ddcde5bd587a858571568100464c2c3359f3b7c6e",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Puerto Suárez"
+    ]
+  },
+  {
+    "slug": "angel_sandoval",
+    "province": "Ángel Sandóval",
+    "place": "Paisaje de San Matías",
+    "title": "File:Atardecer de primavera.jpg",
+    "alt": "Atardecer en San Matías",
+    "path": "assets/destinations/angel_sandoval.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Atardecer_de_primavera.jpg",
+    "author": "Susana V. Rojas M.",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Atardecer_de_primavera.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b7/Atardecer_de_primavera.jpg/1280px-Atardecer_de_primavera.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "sha256": "5cd4a97126c153c21fa9019fe6109f0a16e799ede5a4cb6707657f5308cdf830",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "San Matías"
+    ]
+  },
+  {
+    "slug": "guarayos",
+    "province": "Guarayos",
+    "place": "Paisaje agrícola de Guarayos",
+    "title": "File:Plantación de arroz en Guarayos - Bolivia.jpg",
+    "alt": "Campos de arroz en Guarayos bajo un cielo de tormenta",
+    "path": "assets/destinations/guarayos.jpg",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Plantaci%C3%B3n_de_arroz_en_Guarayos_-_Bolivia.jpg",
+    "author": "CIAT",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "original_url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Plantaci%C3%B3n_de_arroz_en_Guarayos_-_Bolivia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Plantaci%C3%B3n_de_arroz_en_Guarayos_-_Bolivia.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "sha256": "9af95693e5b9c1f31c353d55306e0c5b2360eb3fbff3069ee4104f013c5f6a9e",
+    "presentation": "Miniatura de Wikimedia; encuadre visual con CSS, sin modificar el archivo.",
+    "destinations": [
+      "Ascensión de Guarayos"
+    ]
+  }
+]

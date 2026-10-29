@@ -1,7 +1,13 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:share_plus/share_plus.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 
 class DriverSummaryScreen extends StatefulWidget {
   const DriverSummaryScreen({super.key});
@@ -13,11 +19,31 @@ class DriverSummaryScreen extends StatefulWidget {
 class DriverSummaryScreenState extends State<DriverSummaryScreen> {
   final DriverApiService _apiService = DriverApiService();
   Map<String, dynamic> _summary = {};
+  StreamSubscription<Map<String, dynamic>>? _liveSub;
 
   @override
   void initState() {
     super.initState();
-    _loadSummary();
+    final authService = Provider.of<DriverAuthService>(context, listen: false);
+    if (AppConfig.useFirebase && authService.currentConductor != null) {
+      _liveSub = FirebaseService.instance
+          .dailySummaryStream(authService.currentConductor!.id)
+          .listen((summary) {
+            if (mounted) {
+              setState(() {
+                _summary = summary;
+              });
+            }
+          }, onError: (_) {});
+    } else {
+      _loadSummary();
+    }
+  }
+
+  @override
+  void dispose() {
+    _liveSub?.cancel();
+    super.dispose();
   }
 
   Future<void> reload() => _loadSummary();
@@ -28,6 +54,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
       final summary = await _apiService.getDailySummary(
         authService.currentConductor!.id,
       );
+      if (!mounted) return;
       setState(() {
         _summary = summary;
       });
@@ -42,7 +69,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Resumen del Día'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -50,16 +77,13 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
         child: SafeArea(
           child: RefreshIndicator(
-            color: const Color(0xFFE53935),
+            color: AppColors.primary,
             onRefresh: _loadSummary,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -114,8 +138,8 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Color(0xFFE53935),
-                                Color(0xFFC62828),
+                                AppColors.primary,
+                                AppColors.primaryDark,
                               ],
                             ),
                             borderRadius: BorderRadius.circular(16),
@@ -131,7 +155,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '${_summary['total_puntos'] ?? 0} PUNTOS',
+                                '${Money.format(_summary['total_puntos'] ?? 0)} PUNTOS',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 36,
@@ -139,7 +163,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                                 ),
                               ),
                               Text(
-                                '= Bs ${_summary['total_puntos'] ?? 0}.00',
+                                '= Bs ${Money.format(_summary['total_puntos'] ?? 0)}',
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 16,
@@ -183,9 +207,9 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
                             icon: const Icon(Icons.share),
                             label: const Text('COMPARTIR RESUMEN'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFE53935),
+                              foregroundColor: AppColors.primary,
                               side: const BorderSide(
-                                color: Color(0xFFE53935),
+                                color: AppColors.primary,
                                 width: 2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -211,15 +235,12 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFFE53935), size: 24),
+          Icon(icon, color: AppColors.primary, size: 24),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ),
           Text(
@@ -227,7 +248,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFE53935),
+              color: AppColors.primary,
             ),
           ),
         ],
@@ -235,12 +256,25 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
     );
   }
 
-  void _shareSummary() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Función de compartir en desarrollo'),
-        backgroundColor: Color(0xFFE53935),
-      ),
-    );
+  Future<void> _shareSummary() async {
+    final conductor = context.read<DriverAuthService>().currentConductor;
+    final now = DateTime.now();
+    try {
+      await Share.share(
+        'Transita Bolivia — Resumen del ${now.day}/${now.month}/${now.year}\n'
+        'Conductor: ${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}\n'
+        'Viajes: ${_summary['total_pasajeros'] ?? 0}\n'
+        'Recaudación: ${Money.format(_summary['total_puntos'] ?? 0)} puntos\n'
+        'Estudiantes: ${_summary['estudiantes'] ?? 0}\n'
+        'Civiles: ${_summary['civiles'] ?? 0}\n'
+        'Adultos mayores: ${_summary['mayores'] ?? 0}\n'
+        'Personas con discapacidad: ${_summary['discapacitados'] ?? 0}',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo compartir el resumen.')),
+      );
+    }
   }
 }

@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart';
 import '../models/transaction.dart';
+import 'firebase_service.dart';
 
 class ApiService {
   static String? Function()? tokenProvider;
@@ -17,6 +18,10 @@ class ApiService {
   }
 
   Future<List<Transaction>> getTransactionHistory(int userId) async {
+    if (AppConfig.useFirebase) {
+      return FirebaseService.instance.getTransactionHistory(userId);
+    }
+
     try {
       final response = await http
           .get(
@@ -36,7 +41,23 @@ class ApiService {
   }
 
   Future<({bool ok, String message})> rechargePoints(
-      int userId, int points, String metodoPago) async {
+    int userId,
+    num points,
+    String metodoPago,
+  ) async {
+    if (AppConfig.useFirebase) {
+      try {
+        await FirebaseService.instance.recargar(
+          userId: userId,
+          puntos: points,
+          metodoPago: metodoPago,
+        );
+        return (ok: true, message: 'Recarga exitosa');
+      } catch (e) {
+        return (ok: false, message: 'Error de conexión con el servidor');
+      }
+    }
+
     try {
       final response = await http
           .post(
@@ -60,7 +81,26 @@ class ApiService {
   }
 
   Future<({bool ok, String message})> payTrip(
-      int userId, int conductorId, int puntos, String metodoPago) async {
+    int userId,
+    int conductorId,
+    num puntos,
+    String metodoPago, {
+    String? tipoUsuario,
+    String? paymentReference,
+    int cantidadPasajeros = 1,
+  }) async {
+    if (AppConfig.useFirebase) {
+      return FirebaseService.instance.pagarViaje(
+        userId: userId,
+        conductorId: conductorId,
+        puntos: puntos,
+        metodoPago: metodoPago,
+        tipoUsuario: tipoUsuario,
+        paymentReference: paymentReference,
+        cantidadPasajeros: cantidadPasajeros,
+      );
+    }
+
     try {
       final response = await http
           .post(
@@ -71,6 +111,9 @@ class ApiService {
               'conductor_id': conductorId,
               'puntos': puntos,
               'metodo_pago': metodoPago,
+              'tipo_usuario': ?tipoUsuario,
+              'payment_reference': ?paymentReference,
+              'cantidad_pasajeros': cantidadPasajeros,
             }),
           )
           .timeout(AppConfig.timeout);

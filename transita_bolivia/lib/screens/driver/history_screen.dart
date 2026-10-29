@@ -1,7 +1,12 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 
 class DriverHistoryScreen extends StatefulWidget {
   const DriverHistoryScreen({super.key});
@@ -13,11 +18,31 @@ class DriverHistoryScreen extends StatefulWidget {
 class DriverHistoryScreenState extends State<DriverHistoryScreen> {
   final DriverApiService _apiService = DriverApiService();
   List<Map<String, dynamic>> _history = [];
+  StreamSubscription<List<Map<String, dynamic>>>? _liveSub;
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    final authService = Provider.of<DriverAuthService>(context, listen: false);
+    if (AppConfig.useFirebase && authService.currentConductor != null) {
+      _liveSub = FirebaseService.instance
+          .dailyHistoryStream(authService.currentConductor!.id)
+          .listen((history) {
+            if (mounted) {
+              setState(() {
+                _history = history;
+              });
+            }
+          }, onError: (_) {});
+    } else {
+      _loadHistory();
+    }
+  }
+
+  @override
+  void dispose() {
+    _liveSub?.cancel();
+    super.dispose();
   }
 
   Future<void> reload() => _loadHistory();
@@ -39,7 +64,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Historial del Día'),
-        backgroundColor: const Color(0xFFE53935),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -47,10 +72,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE53935),
-              Color(0xFFF5F5F5),
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.2],
           ),
         ),
@@ -71,7 +93,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
               ),
               Expanded(
                 child: RefreshIndicator(
-                  color: const Color(0xFFE53935),
+                  color: AppColors.primary,
                   onRefresh: _loadHistory,
                   child: _history.isEmpty
                       ? LayoutBuilder(
@@ -124,7 +146,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
 
   Widget _buildHistoryItem(Map<String, dynamic> item) {
     final DateTime fecha = DateTime.parse(item['fecha']);
-    final int puntos = item['puntos'];
+    final num puntos = Money.read(item['puntos']);
     final String metodo = _metodoLabel(item['metodo_pago']);
     final String tipoUsuario = _tipoLabel(item['tipo_usuario']);
 
@@ -150,10 +172,7 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
               color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.directions_bus,
-              color: Colors.orange,
-            ),
+            child: const Icon(Icons.directions_bus, color: Colors.orange),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -168,21 +187,18 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
                   ),
                 ),
                 Text(
-                  '$metodo · $tipoUsuario',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  '$metodo · $tipoUsuario · ${item['cantidad_pasajeros'] ?? 1} pasaje(s)',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
           ),
           Text(
-            '-$puntos pts',
+            '+${Money.format(puntos)} pts',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.red,
+              color: Colors.green,
             ),
           ),
         ],
@@ -192,8 +208,6 @@ class DriverHistoryScreenState extends State<DriverHistoryScreen> {
 
   String _metodoLabel(dynamic metodo) {
     switch (metodo) {
-      case 'tarjeta_nfc':
-        return 'NFC';
       case 'qr':
         return 'QR';
       default:

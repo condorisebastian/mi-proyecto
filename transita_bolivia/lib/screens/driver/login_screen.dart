@@ -1,4 +1,8 @@
+import '../../widgets/brand_logo.dart';
+import '../../widgets/login_progress_indicator.dart';
+import '../../services/login_preferences.dart';
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
 import '../../services/driver_auth_service.dart';
 
@@ -11,8 +15,36 @@ class DriverLoginScreen extends StatefulWidget {
 
 class _DriverLoginScreenState extends State<DriverLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _licenciaController = TextEditingController(text: 'LIC-12345');
-  final _passwordController = TextEditingController(text: '123456');
+  final _ciController = TextEditingController(
+    text: LoginPreferences.defaultCi('conductor'),
+  );
+  final _pinController = TextEditingController();
+  bool _obscurePin = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreCi();
+  }
+
+  Future<void> _restoreCi() async {
+    try {
+      final ci = await LoginPreferences.readCi('conductor');
+      if (mounted &&
+          _ciController.text == LoginPreferences.defaultCi('conductor')) {
+        _ciController.text = ci;
+      }
+    } catch (_) {
+      // El carnet de ejemplo sigue disponible si falla la lectura local.
+    }
+  }
+
+  @override
+  void dispose() {
+    _ciController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +56,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE53935),
-              Color(0xFFC62828),
-            ],
+            colors: [AppColors.primary, AppColors.primaryDark],
           ),
         ),
         child: SafeArea(
@@ -37,14 +66,10 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.directions_bus,
-                    size: 80,
-                    color: Colors.white,
-                  ),
+                  const BrandLogo(),
                   const SizedBox(height: 20),
                   const Text(
-                    'Transporte Santa Cruz',
+                    'Transita Bolivia',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -54,10 +79,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     'Panel Conductor',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
                   const SizedBox(height: 40),
                   Container(
@@ -80,7 +102,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           const Icon(
                             Icons.person,
                             size: 60,
-                            color: Color(0xFFE53935),
+                            color: AppColors.primary,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -93,77 +115,93 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           ),
                           const SizedBox(height: 32),
                           TextFormField(
-                            controller: _licenciaController,
+                            controller: _ciController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 12,
                             decoration: InputDecoration(
-                              labelText: 'Nro. Licencia',
+                              labelText: 'Nro. de Carnet (CI)',
                               prefixIcon: const Icon(Icons.badge),
+                              counterText: '',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Ingrese su licencia';
-                              }
-                              return null;
-                            },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
-                            controller: _passwordController,
-                            obscureText: true,
+                            controller: _pinController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 4,
+                            obscureText: _obscurePin,
                             decoration: InputDecoration(
-                              labelText: 'Contraseña',
+                              labelText: 'PIN (4 dígitos)',
                               prefixIcon: const Icon(Icons.lock),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePin
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                tooltip: _obscurePin
+                                    ? 'Mostrar PIN'
+                                    : 'Ocultar PIN',
+                                onPressed: () =>
+                                    setState(() => _obscurePin = !_obscurePin),
+                              ),
+                              counterText: '',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Ingrese su contraseña';
+                              if (value == null || value.length != 4) {
+                                return 'Ingrese su PIN de 4 dígitos';
                               }
                               return null;
                             },
                           ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: authService.isLoading
-                                ? null
-                                : () async {
-                                    if (_formKey.currentState!.validate()) {
-                                      final success = await authService.login(
-                                        _licenciaController.text,
-                                        _passwordController.text,
-                                      );
-                                      if (success && context.mounted) {
-                                        Navigator.pushReplacementNamed(
-                                            context, '/driver/home');
-                                      } else if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Licencia o contraseña incorrectos'),
-                                            backgroundColor: Colors.red,
-                                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: authService.isLoading
+                                  ? null
+                                  : () async {
+                                      if (_formKey.currentState!.validate()) {
+                                        final success = await authService.login(
+                                          _pinController.text,
+                                          ci: _ciController.text.trim(),
                                         );
+                                        if (success && context.mounted) {
+                                          Navigator.pushReplacementNamed(
+                                            context,
+                                            '/driver/home',
+                                          );
+                                        } else if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                            ..hideCurrentSnackBar()
+                                            ..showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  authService.lastLoginError ??
+                                                      'Carnet o PIN incorrectos',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                        }
                                       }
-                                    }
-                                  },
+                                    },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE53935),
+                                backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: authService.isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white)
+                                  ? const LoginProgressIndicator()
                                   : const Text(
                                       'INICIAR SESIÓN',
                                       style: TextStyle(
@@ -176,11 +214,15 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                           const SizedBox(height: 12),
                           TextButton(
                             onPressed: () {
-                              Navigator.pushNamed(context, '/driver/register');
+                              Navigator.pushNamed(
+                                context,
+                                '/passenger/requirements',
+                                arguments: {'role': 'driver'},
+                              );
                             },
                             child: const Text(
                               '¿No tienes cuenta? Regístrate',
-                              style: TextStyle(color: Color(0xFFE53935)),
+                              style: TextStyle(color: AppColors.primary),
                             ),
                           ),
                         ],

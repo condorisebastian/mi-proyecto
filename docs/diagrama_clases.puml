@@ -1,0 +1,241 @@
+@startuml
+' ============================================================
+' Transita Bolivia - modelo de clases (3 niveles)
+' Segun documento_modelos_diagramas_clases.docx
+' ============================================================
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam shadowing false
+hide circle
+title Transita Bolivia - Diagrama de clases (dominio, conceptual BD y programacion)
+
+' ============================================================
+package "1. MODELO DE DOMINIO (negocio)" {
+  class "Usuario" as MUsuario
+  class "Pasajero" as MPasajero
+  class "Conductor" as MConductor
+  class "Tarjeta (QR)" as MTarjeta
+  class "Saldo" as MSaldo
+  class "Recarga" as MRecarga
+  class "Cobro (Viaje)" as MCobro
+  class "Vehiculo" as MVehiculo
+  class "Ruta" as MRuta
+  class "Tarifa por tipo" as MTarifa
+  class "Incidencia" as MIncidencia
+  class "Centro de atencion" as MCentro
+
+  MPasajero -|> MUsuario : es un (rol PASAJERO)
+  MConductor -|> MUsuario : es un (rol CONDUCTOR)
+  MPasajero "1" o-- "1" MTarjeta
+  MPasajero "1" o-- "1" MSaldo
+  MPasajero "1" *-- "0..*" MRecarga
+  MPasajero "1" *-- "0..*" MCobro
+  MConductor "1" *-- "0..*" MCobro
+  MConductor "1" o-- "0..*" MVehiculo
+  MVehiculo "1" --> "0..*" MRuta : transita por
+  MPasajero "1" ..> "1" MTarifa : define costo
+  MConductor "1" ..> "0..*" MCobro : cobra
+  MIncidencia "0..*" --> "1" MPasajero : reporta
+  MIncidencia "0..*" --> "1" MConductor : reporta
+  MCentro "1" *-- "0..*" MIncidencia : gestiona
+}
+
+' ============================================================
+package "2. MODELO CONCEPTUAL DE BD" {
+  entity "USUARIO" as EUsuario {
+    * nombre, apellido, correo, telefono
+    * rol (PASAJERO|CONDUCTOR|ADMIN)
+    * estado, fecha_registro
+  }
+  entity "PASAJERO" as EPasajero {
+    * ci, pin (unico)
+    * tipo (estudiante|civil|adulto_mayor|discapacitado)
+    * fecha_nacimiento, direccion, estado
+  }
+  entity "CONDUCTOR" as EConductor {
+    * ci, pin (unico)
+    * numero_licencia, fecha_vencimiento, estado
+  }
+  entity "VEHICULO" as EVehiculo {
+    * placa, modelo, marca, color
+    * capacidad, estado
+  }
+  entity "RUTA" as ERuta {
+    * nombre, numero, descripcion
+    * tarifa, estado
+  }
+  entity "TARJETA" as ETarjeta {
+    * codigo_qr (unico), fecha_emision, estado
+  }
+  entity "SALDO" as ESaldo {
+    * saldo_actual (no negativo), fecha_actualizacion
+  }
+  entity "RECARGA" as ERecarga {
+    * monto (>0), metodo_pago, fecha, estado
+  }
+  entity "COBRO" as ECobro {
+    * monto, metodo_pago, tipo_usuario
+    * fecha, hora, codigo_transaccion (unico), estado
+  }
+  entity "INCIDENCIA" as EIncidencia {
+    * canal, reportante_clave, nombre
+    * tipo, descripcion, prioridad, estado
+    * respuesta, notas (JSON), acciones (JSON)
+    * fecha_creacion, fecha_resolucion
+  }
+
+  EUsuario "1" ||--|| EPasajero
+  EUsuario "1" ||--|| EConductor
+  EPasajero "1" ||--|| ETarjeta
+  EPasajero "1" ||--|| ESaldo
+  EPasajero "1" ||--o{ ERecarga
+  EPasajero "1" ||--o{ ECobro
+  EConductor "1" ||--o{ ECobro
+  EVehiculo "1" ||--o{ ECobro : opcional
+  ERuta "1" ||--o{ ECobro : opcional
+  EConductor "1" ||--o{ EVehiculo
+  EIncidencia }o--|| EPasajero : reporta (canal pasajero)
+  EIncidencia }o--|| EConductor : reporta (canal conductor)
+}
+
+' ============================================================
+package "3. DIAGRAMA DE CLASES DE PROGRAMACION (Flutter)" {
+  class "User" as PUser {
+    - id: int
+    - nombre: String
+    - apellido: String
+    - ci: String
+    - email: String
+    - tipo: String
+    - puntos: int
+    - estado: String
+    + User({required ...})
+    + fromJson(map): User
+    + toJson(): Map
+    + tipoDisplay(): String
+    + costoViaje(): int
+  }
+  class "Conductor" as PConductor {
+    - id: int
+    - nombre: String
+    - apellido: String
+    - ci: String
+    - licencia: String
+    - telefono: String?
+    - estado: String
+    + Conductor({...})
+    + fromJson(map): Conductor
+    + toJson(): Map
+  }
+  class "Transaction" as PTransaction {
+    - id: int
+    - idUsuario: int?
+    - idConductor: int
+    - puntos: int
+    - tipo: String (cobro_viaje|recarga)
+    - metodoPago: String
+    - estado: String
+    - fecha: DateTime
+    + fromJson(map): Transaction
+    + toJson(): Map
+    + tipoDisplay: String
+    + metodoPagoDisplay: String
+  }
+  class "AuthService" as PAuth <<ChangeNotifier>> {
+    + currentUser: User?
+    + isLoggedIn: bool
+    + token: String?
+    + lastLoginError: String?
+    + login(pin, tipo, {ci}): Future<bool>
+    + register({nombre, apellido, ci, pin, tipo}): Future<bool>
+    + restoreSession(): Future<void>
+    + refreshUser(): Future<void>
+    + logout(): Future<void>
+    - _loginFirebase(...): Future<bool>
+    - _subscribeLive(userId): void
+    - _saveSession(): Future<void>
+  }
+  class "DriverAuthService" as PDriverAuth <<ChangeNotifier>> {
+    + login(pin, {ci}): Future<bool>
+    + register(...): Future<bool>
+    + logout(): Future<void>
+  }
+  class "AdminAuthService" as PAdminAuth <<ChangeNotifier>> {
+    + login(pin): Future<bool>
+  }
+  class "FirebaseService" as PFirebase <<singleton>> {
+    + loginPasajero/Conductor/Admin(pin)
+    + registerPasajero/Conductor(...)
+    + seedTestData(): Future<void>
+    + ensureAdminUser(): Future<void>
+    + fetchUserById(id): Future<User?>
+    + addPuntos(userId, delta): Future<void>
+    + recargar({userId, puntos, metodoPago}): Future<void>
+    + pagarViaje({userId, conductorId, puntos, metodoPago}): Future<OkMsg>
+    + registrarCobro({conductorId, tipoUsuario, puntos, metodoPago}): Future<OkMsg>
+    + getDailySummary(conductorId): Future<Map>
+    + getDailyHistory(conductorId): Future<List<Map>>
+    + userStream(id) / transactionHistoryStream(id)
+    + dailySummaryStream(id) / dailyHistoryStream(id)
+    + adminUsuarios/Conductores/TransaccionesStream()
+    + reportarIncidencia({...}): Future<OkMsg>
+    + incidenciasStream() / incidenciasDeUsuarioStream(clave)
+    + actualizarIncidencia(docId, cambios): Future<void>
+    + buscarClientes(q): Future<List<Map>>
+    + setUsuarioEstado/ConductorEstado(...): Future<OkMsg>
+    + cambiarTipoUsuario(id, tipo): Future<OkMsg>
+    + regenerarPinUsuario/Conductor(...): Future<String?>
+  }
+  class "ApiService" as PApi <<HTTP (fallback PHP)>> {
+    + tokenProvider: String Function()?
+  }
+  class "DriverApiService" as PDriverApi <<HTTP (fallback PHP)>>
+
+  PAuth o-- PUser : currentUser
+  PDriverAuth o-- PConductor
+  PAuth ..> PFirebase : usa (modo Firebase)
+  PAuth ..> PApi : usa (modo PHP)
+  PDriverAuth ..> PFirebase
+  PDriverAuth ..> PDriverApi
+  PAdminAuth ..> PFirebase
+}
+
+' ============================================================
+package "3b. DIAGRAMA DE CLASES DE PROGRAMACION (Backend PHP api/)" {
+  class "helpers" as PH {
+    + json_out(data, code): void
+    + json_input(): array
+    + require_fields(body, fields): void
+    + jwt_sign(payload, secret, ttl): string
+    + jwt_verify(token, secret): ?array
+    + bearer_payload(secret): array
+  }
+  class "db" as PDB {
+    + db(): PDO
+  }
+  class "handle_auth" as PH1 {
+    + handle_auth(method, seg): void
+  }
+  class "handle_users" as PH2 {
+    + handle_users(method, seg): void
+  }
+  class "handle_transactions" as PH3 {
+    + handle_transactions(method, seg): void
+  }
+  PH1 ..> PDB
+  PH2 ..> PDB
+  PH3 ..> PDB
+}
+
+' ============================================================
+note right of PFirebase
+  Recomendaciones (documento):
+  + Unificar "puntos" (Firestore/app) con "saldo"
+    (MySQL) en un solo concepto de dominio.
+  + Agregar clase de modelo "Incidencia" en Flutter
+    (hoy son Map<String, dynamic>).
+  + PHP procedural -> clases controladoras
+    (AuthController, TransactionController).
+end note
+
+@enduml

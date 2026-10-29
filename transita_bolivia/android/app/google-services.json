@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "555978887676",
+    "project_id": "transita-bolivia",
+    "storage_bucket": "transita-bolivia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555978887676:android:370bb8d99b5f486ce22279",
+        "android_client_info": {
+          "package_name": "com.transita.bolivia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPD3EtMQ4shcKC4vlzKOn1qr8ujHg2U1Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
