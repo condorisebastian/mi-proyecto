@@ -8,3 +8,6 @@
 @media(max-width:700px){.nav{height:auto}.brand-logo{width:155px}.hero{gap:16px}.destination-picture{height:420px}.destination-caption h2{font-size:36px}.carousel-controls{gap:6px}.carousel-controls button:last-child{padding:0 8px}.route-tools:has(label[hidden]){grid-template-columns:1fr}.destination-caption{left:22px;right:22px}footer .brand-logo{width:145px}}
 
 .destination-picture>.destination-photo-outgoing{position:absolute;inset:0;pointer-events:none;z-index:0}
+
+.nav{height:auto;min-height:120px}.nav nav{min-width:0;flex-wrap:wrap;justify-content:flex-end;gap:12px 22px}.nav nav a{white-space:nowrap}.recharge-steps{list-style:none;padding:0;margin:0 0 24px}.recharge-note{padding:16px 20px;border-left:3px solid var(--blue);border-radius:0 8px 8px 0;background:#eaf0fc;font-size:14px;color:#344c70;margin-bottom:24px}
+@media(max-width:700px){.nav nav{justify-content:flex-start;gap:10px 16px}}

@@ -4,12 +4,18 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Conoce Transita Bolivia: saldo recargable, pagos de pasajes con QR y el proyecto de tarjeta NFC para el transporte de Santa Cruz.">
   <meta name="theme-color" content="#123fba"><title>Transita Bolivia · Tu ciudad, más cerca</title>
-  <link rel="icon" type="image/png" href="assets/logo_transitabolivia.png"><link rel="stylesheet" href="styles.css"><script type="module" src="app.js"></script>
+  <link rel="icon" type="image/png" href="./assets/logo_transitabolivia.png"><link rel="stylesheet" href="styles.css"><script type="module" src="app.js"></script>
 </head>
 <body>
   <a class="skip" href="#contenido">Ir al contenido</a>
   <header class="nav"><a class="brand" href="#inicio" aria-label="Transita Bolivia, inicio"><img class="brand-logo" src="assets/logo_transitabolivia.png" width="220" height="120" alt="Transita Bolivia"></a>
-    <nav aria-label="Principal"><a href="#rutas">Provincias</a><a href="#como-funciona">Cómo funciona</a><a href="#tarjeta">Tarjeta NFC</a><a class="nav-button" href="#ayuda">Ayuda ↗</a></nav>
+    <nav aria-label="Principal">
+      <a href="#rutas">Provincias</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#tarjeta">Tarjeta NFC</a>
+      <a href="#ayuda">Ayuda</a>
+      <a class="nav-button" href="#recarga">Recargar saldo ↗</a>
+    </nav>
   </header>
   <main id="contenido">
     <section class="hero" id="inicio">
@@ -36,6 +42,16 @@
     </section>
     <section class="how-section section" id="como-funciona"><div class="section-heading"><div><p class="eyebrow">DEL SALDO AL DESTINO</p><h2>Así de fácil se mueve tu día.</h2></div></div>
       <div class="steps"><article><span class="step-number">01</span><h3>Recarga tu saldo</h3><p>Solicita una recarga en el chat de la app. El operador verifica el aporte y acredita tu saldo.</p></article><article><span class="step-number">02</span><h3>Revisa tu pasaje</h3><p>El conductor prepara el cobro. Comprueba el destino, la cantidad de pasajeros y el total.</p></article><article><span class="step-number">03</span><h3>Paga y sigue tu camino</h3><p>Escanea el QR y confirma desde tu app. Consulta el movimiento y el saldo restante.</p></article></div>
+    </section>
+    <section class="section recharge-section" id="recarga" aria-labelledby="recarga-title">
+      <div class="section-heading"><div><p class="eyebrow">PREPARA TU PRÓXIMO VIAJE</p><h2 id="recarga-title">Recarga tu saldo desde la app.</h2></div><p>Solicita la recarga y sigue su estado en el chat con el operador.</p></div>
+      <ol class="steps recharge-steps">
+        <li><span class="step-number" aria-hidden="true">01</span><h3>Abre el chat</h3><p>Entra a Transita Bolivia como pasajero y abre <strong>Chat → Solicitar recarga</strong>.</p></li>
+        <li><span class="step-number" aria-hidden="true">02</span><h3>Indica el monto</h3><p>Escribe el importe en bolivianos y la referencia de tu pago. Coordina los detalles con el operador desde el chat.</p></li>
+        <li><span class="step-number" aria-hidden="true">03</span><h3>Consulta la confirmación</h3><p>El operador verifica el aporte y confirma la solicitud. El saldo se acredita cuando la recarga queda aprobada.</p></li>
+      </ol>
+      <p class="recharge-note">Esta sección es una guía. La solicitud y la confirmación de la recarga se realizan dentro de la app.</p>
+      <a class="button secondary" href="#ayuda">Consultar ayuda <span aria-hidden="true">→</span></a>
     </section>
     <section class="card-section section" id="tarjeta"><div class="card-copy"><p class="eyebrow light">EL SIGUIENTE PASO</p><h2>Una tarjeta.<br>Tus recargas.<br>Tu camino.</h2><p>La tarjeta Transita está diseñada para funcionar con una terminal de cobro: acercas la tarjeta y el pasaje se descuenta del saldo recargado de tu cuenta.</p><span class="status-pill">NFC · En preparación</span><p class="small light-text">La operación real requiere una tarjeta física emitida, una terminal activada y autorización del servidor.</p></div>
       <div class="card-visual"><div class="transport-card"><div class="card-brand"><img src="assets/logo_transitabolivia.png" width="150" height="82" alt="Transita Bolivia"></div><span class="contactless" aria-hidden="true">)))</span><div class="card-chip"></div><p>TARJETA DE TRANSPORTE</p><strong>BOLIVIA</strong><span>SALDO RECARGABLE</span></div><p class="light-text">El mismo saldo de tu app. Sin cuenta bancaria.</p></div>
