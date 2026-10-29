@@ -14,6 +14,8 @@ import 'history_screen.dart';
 import '../soporte/support_screen.dart';
 import '../province_routes_screen.dart';
 import 'nfc_card_screen.dart';
+import '../accessibility_screen.dart';
+import '../../widgets/amount_speaker_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -107,27 +109,30 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hola, ${user.nombre} ${user.tipoDisplay}',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola, ${user.nombre} ${user.tipoDisplay}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'ID: #${user.id}  ·  CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
+                        const SizedBox(height: 4),
+                        Text(
+                          'ID: #${user.id}  ·  CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.white70,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const AccessibilityButton(color: Colors.white),
                   IconButton(
                     tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),
@@ -171,13 +176,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       '(= Bs ${Money.format(user.puntos)})',
                       style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
+                    AmountSpeakerButton(
+                      amount: user.puntos,
+                      label: 'Saldo disponible',
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                height: 60,
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() => _currentIndex = 1);
@@ -194,11 +202,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Icon(Icons.chat_bubble_outline, size: 24),
                       SizedBox(width: 12),
-                      Text(
-                        'CHAT DE RECARGAS',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      Flexible(
+                        child: Text(
+                          'CHAT DE RECARGAS',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -235,7 +246,6 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.push(

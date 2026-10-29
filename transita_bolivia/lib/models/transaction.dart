@@ -11,6 +11,9 @@ class Transaction {
   final DateTime fecha;
   final int cantidadPasajeros;
 
+  /// Metadato local de Firestore: aún no existe confirmación del servidor.
+  final bool hasPendingWrites;
+
   Transaction({
     required this.id,
     this.idUsuario,
@@ -21,6 +24,7 @@ class Transaction {
     required this.estado,
     required this.fecha,
     this.cantidadPasajeros = 1,
+    this.hasPendingWrites = false,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {

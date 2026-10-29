@@ -14,6 +14,7 @@ import 'summary_screen.dart';
 import '../soporte/support_screen.dart';
 import '../../models/financial_chat.dart';
 import '../chat/financial_chat_screen.dart';
+import '../accessibility_screen.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -239,33 +240,36 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hola, ${conductor.nombre}',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola, ${conductor.nombre}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'ID: #${conductor.id}  ·  Licencia: ${conductor.licencia}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
+                        Text(
+                          'ID: #${conductor.id}  ·  Licencia: ${conductor.licencia}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'CI: ${conductor.ci.isEmpty ? '—' : conductor.ci}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
+                        Text(
+                          'CI: ${conductor.ci.isEmpty ? '—' : conductor.ci}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const AccessibilityButton(color: Colors.white),
                   IconButton(
                     tooltip: 'Cerrar sesión',
                     icon: const Icon(Icons.logout, color: Colors.white),

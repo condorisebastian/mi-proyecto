@@ -4,10 +4,13 @@ import '../models/money.dart';
 import '../models/trip_qr.dart';
 import '../widgets/charge_qr_dialog.dart';
 import 'driver/pos_screen.dart';
+import '../services/app_preferences.dart';
+import 'accessibility_screen.dart';
 
 class ProvinceRoutesScreen extends StatefulWidget {
-  const ProvinceRoutesScreen({super.key, this.conductorId});
+  const ProvinceRoutesScreen({super.key, this.conductorId, this.preferences});
   final int? conductorId;
+  final AppPreferences? preferences;
   @override
   State<ProvinceRoutesScreen> createState() => _ProvinceRoutesScreenState();
 }
@@ -15,17 +18,65 @@ class ProvinceRoutesScreen extends StatefulWidget {
 class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
   String _query = '';
   int _quantity = 1;
+  bool _onlyFavorites = false;
+  final Set<String> _savingFavorites = {};
+  late final _preferences = widget.preferences ?? AppPreferences.instance;
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    _preferences.load();
+  }
+
+  Future<void> _toggleFavorite(String id) async {
+    setState(() => _savingFavorites.add(id));
+    try {
+      await _preferences.toggleFavorite(id);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo guardar el favorito. Inténtalo de nuevo.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingFavorites.remove(id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: _preferences,
+    builder: (context, _) => _buildContent(context),
+  );
+
+  Widget _buildContent(BuildContext context) {
     final routes = provinceRoutes
+        .where((r) => !_onlyFavorites || _preferences.isFavorite(r.id))
         .where(
           (r) => '${r.destination} ${r.province}'.toLowerCase().contains(
             _query.toLowerCase(),
           ),
         )
         .toList();
+    final order = {
+      for (var i = 0; i < provinceRoutes.length; i++) provinceRoutes[i].id: i,
+    };
+    routes.sort((a, b) {
+      final favoriteOrder =
+          (_preferences.isFavorite(b.id) ? 1 : 0) -
+          (_preferences.isFavorite(a.id) ? 1 : 0);
+      return favoriteOrder != 0
+          ? favoriteOrder
+          : order[a.id]!.compareTo(order[b.id]!);
+    });
     return Scaffold(
-      appBar: AppBar(title: const Text('Provincias')),
+      appBar: AppBar(
+        title: const Text('Provincias'),
+        actions: const [AccessibilityButton()],
+      ),
       body: Align(
         alignment: Alignment.topCenter,
         child: SizedBox(
@@ -49,6 +100,23 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
                   prefixIcon: Icon(Icons.search),
                 ),
                 onChanged: (value) => setState(() => _query = value),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Todos'),
+                    selected: !_onlyFavorites,
+                    onSelected: (_) => setState(() => _onlyFavorites = false),
+                  ),
+                  ChoiceChip(
+                    label: Text('Favoritos (${_preferences.favorites.length})'),
+                    selected: _onlyFavorites,
+                    onSelected: (_) => setState(() => _onlyFavorites = true),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               if (provinceRoutes.any((route) => route.canCharge))
@@ -77,9 +145,13 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
                 ),
               const SizedBox(height: 12),
               if (routes.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('No hay destinos con esa búsqueda.'),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    _onlyFavorites && _preferences.favorites.isEmpty
+                        ? 'Todavía no tienes favoritos. Toca la estrella de un destino para guardarlo.'
+                        : 'No hay destinos con esa búsqueda.',
+                  ),
                 ),
               for (final route in routes)
                 Card(
@@ -88,9 +160,26 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          route.destination,
-                          style: Theme.of(context).textTheme.titleLarge,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                route.destination,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                            ),
+                            IconButton(
+                              key: ValueKey('favorite-${route.id}'),
+                              tooltip:
+                                  '${_preferences.isFavorite(route.id) ? 'Quitar de favoritos' : 'Guardar favorito'}: ${route.destination}',
+                              isSelected: _preferences.isFavorite(route.id),
+                              icon: const Icon(Icons.star_border),
+                              selectedIcon: const Icon(Icons.star),
+                              onPressed: _savingFavorites.contains(route.id)
+                                  ? null
+                                  : () => _toggleFavorite(route.id),
+                            ),
+                          ],
                         ),
                         Text(route.province),
                         const SizedBox(height: 8),

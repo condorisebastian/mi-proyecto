@@ -267,6 +267,30 @@ Los PIN están en `database/transporte_db.sql` (backend PHP) y en Firestore
 
 ## Tests
 
+### Accesibilidad, favoritos y comprobantes
+
+Desde la selección de rol o el icono de accesibilidad del inicio de pasajero y
+conductor se puede activar texto grande, alto contraste y botones para escuchar
+importes. El texto grande respeta un tamaño superior elegido en Android. La
+voz se inicia al pulsar el botón; necesita un motor con voz española disponible
+en el teléfono. Los ajustes se guardan en el dispositivo.
+
+En **Provincias**, la estrella guarda o quita un destino; el filtro **Favoritos**
+muestra los destinos guardados, que aparecen primero al consultar todos.
+Los favoritos no habilitan tarifas pendientes ni modifican importes.
+
+En **Historial → Ver comprobante**, el pasajero puede compartir una imagen PNG
+o copiar los datos de una operación confirmada. El recibo incluye ID, fecha,
+importe, método y, para viajes, conductor y cantidad de pasajes; no incluye
+carnet, PIN ni saldo. Las escrituras pendientes de confirmación del servidor y
+las operaciones rechazadas no generan comprobantes compartibles. Después de
+pagar, **Ver comprobantes** abre ese historial.
+
+Las preferencias y los favoritos usan almacenamiento local; cambiar de cuenta
+en el mismo dispositivo conserva esos ajustes. Las imágenes se entregan al
+menú de compartir del sistema. Esta entrega no cambia las reglas financieras
+ni activa la terminal NFC.
+
 ```
 cd transita_bolivia && flutter analyze && flutter test
 ```

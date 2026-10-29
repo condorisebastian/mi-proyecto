@@ -7,6 +7,8 @@ import '../../services/api_service.dart';
 import '../../services/firebase_service.dart';
 import '../../config.dart';
 import '../../models/transaction.dart';
+import '../../models/payment_receipt.dart';
+import 'receipt_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -29,6 +31,7 @@ class HistoryScreenState extends State<HistoryScreen> {
   Future<void> reload() => _loadHistory();
 
   Future<void> _loadHistory() async {
+    if (AppConfig.useFirebase) return;
     final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
     if (user == null) return;
@@ -71,8 +74,10 @@ class HistoryScreenState extends State<HistoryScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     _buildStatCard(
                       'Saldo Actual',
@@ -196,6 +201,7 @@ class HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildTransactionCard(Transaction transaction) {
     final isPositive = transaction.tipo == 'recarga';
+    final receipt = PaymentReceipt.fromTransaction(transaction);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -211,53 +217,80 @@ class HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isPositive
-                  ? Colors.green.withValues(alpha: 0.1)
-                  : Colors.orange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isPositive ? Icons.add : Icons.remove,
-              color: isPositive ? Colors.green : Colors.orange,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.tipoDisplay,
-                  style: const TextStyle(
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isPositive
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isPositive ? Icons.add : Icons.remove,
+                  color: isPositive ? Colors.green : Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.tipoDisplay,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      transaction.metodoPagoDisplay,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: Text(
+                  '${isPositive ? '+' : '-'}${Money.format(transaction.puntos)} pts',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    color: isPositive ? Colors.green : Colors.red,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                Text(
-                  transaction.metodoPagoDisplay,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Text(
-            '${isPositive ? '+' : '-'}${Money.format(transaction.puntos)} pts',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: isPositive ? Colors.green : Colors.red,
+          if (receipt != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: const Text('Ver comprobante'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ReceiptScreen(receipt: receipt),
+                  ),
+                ),
+              ),
             ),
-          ),
+          if (transaction.hasPendingWrites)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('Esperando confirmación del servidor'),
+            ),
         ],
       ),
     );

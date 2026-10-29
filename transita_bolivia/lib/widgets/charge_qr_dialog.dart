@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/trip_qr.dart';
 import '../models/money.dart';
+import 'amount_speaker_button.dart';
 
 Future<void> showTripQr(
   BuildContext context,
@@ -38,6 +39,7 @@ Future<void> showTripQr(
             '${qr.cantidad} pasaje(s) · Bs ${Money.format(qr.puntos)}',
             textAlign: TextAlign.center,
           ),
+          AmountSpeakerButton(amount: qr.puntos, label: 'Total a cobrar'),
           const SizedBox(height: 12),
           const Text(
             'Espera la confirmación de pago antes de dar por cobrado el viaje.',

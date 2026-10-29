@@ -11,6 +11,7 @@ import 'services/firebase_service.dart' as fb;
 import 'config.dart';
 import 'theme.dart';
 import 'firebase_options.dart';
+import 'services/app_preferences.dart';
 import 'screens/passenger/role_selection_screen.dart';
 import 'screens/passenger/requirements_screen.dart';
 import 'screens/passenger/user_type_screen.dart';
@@ -52,11 +53,11 @@ Future<T> _boot<T>(Future<T> Function() fn, T fallback) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _boot(AppPreferences.instance.load, null);
 
   await _boot(
-    () => Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ),
+    () =>
+        Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
     null,
   );
   await _boot(_ensureFirebaseIdentity, null);
@@ -68,9 +69,9 @@ void main() async {
 
   final auth = AuthService();
   await auth.restoreSession().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () {},
-      );
+    const Duration(seconds: 3),
+    onTimeout: () {},
+  );
   ApiService.tokenProvider = () => auth.token;
 
   final driverAuth = DriverAuthService();
@@ -80,11 +81,13 @@ void main() async {
   final adminAuth = AdminAuthService();
   await adminAuth.restoreSession();
 
-  runApp(TransitaBoliviaApp(
-    auth: auth,
-    driverAuth: driverAuth,
-    adminAuth: adminAuth,
-  ));
+  runApp(
+    TransitaBoliviaApp(
+      auth: auth,
+      driverAuth: driverAuth,
+      adminAuth: adminAuth,
+    ),
+  );
 }
 
 class TransitaBoliviaApp extends StatelessWidget {
@@ -107,29 +110,49 @@ class TransitaBoliviaApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: driverAuth),
         ChangeNotifierProvider.value(value: adminAuth),
       ],
-      child: MaterialApp(
-        title: 'Transita Bolivia',
-        debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
-        initialRoute: auth.isLoggedIn
-            ? '/passenger/home'
-            : driverAuth.isLoggedIn
-                ? '/driver/home'
-                : '/',
-        routes: {
-          '/': (context) => const RoleSelectionScreen(),
-          '/passenger/requirements': (context) =>
-              const RequirementsScreen(),
-          '/passenger/type': (context) => const UserTypeScreen(),
-          '/passenger/login': (context) => const LoginScreen(),
-          '/passenger/register': (context) => const RegisterScreen(),
-          '/passenger/home': (context) => const HomeScreen(),
-          '/driver/login': (context) => const driver_login.DriverLoginScreen(),
-          '/driver/register': (context) => const driver_register.DriverRegisterScreen(),
-          '/driver/home': (context) => const driver_home.DriverHomeScreen(),
-          '/admin/login': (context) => const AdminLoginScreen(),
-          '/admin/home': (context) => const AdminHomeScreen(),
-        },
+      child: ListenableBuilder(
+        listenable: AppPreferences.instance,
+        builder: (context, _) => MaterialApp(
+          title: 'Transita Bolivia',
+          debugShowCheckedModeBanner: false,
+          theme: buildAppTheme(
+            highContrast: AppPreferences.instance.highContrast,
+          ),
+          highContrastTheme: buildAppTheme(highContrast: true),
+          builder: (context, child) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: AppPreferences.instance.largeText
+                    ? media.textScaler.clamp(minScaleFactor: 1.3)
+                    : media.textScaler,
+                highContrast:
+                    media.highContrast || AppPreferences.instance.highContrast,
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          initialRoute: auth.isLoggedIn
+              ? '/passenger/home'
+              : driverAuth.isLoggedIn
+              ? '/driver/home'
+              : '/',
+          routes: {
+            '/': (context) => const RoleSelectionScreen(),
+            '/passenger/requirements': (context) => const RequirementsScreen(),
+            '/passenger/type': (context) => const UserTypeScreen(),
+            '/passenger/login': (context) => const LoginScreen(),
+            '/passenger/register': (context) => const RegisterScreen(),
+            '/passenger/home': (context) => const HomeScreen(),
+            '/driver/login': (context) =>
+                const driver_login.DriverLoginScreen(),
+            '/driver/register': (context) =>
+                const driver_register.DriverRegisterScreen(),
+            '/driver/home': (context) => const driver_home.DriverHomeScreen(),
+            '/admin/login': (context) => const AdminLoginScreen(),
+            '/admin/home': (context) => const AdminHomeScreen(),
+          },
+        ),
       ),
     );
   }

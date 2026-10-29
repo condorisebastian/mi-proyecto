@@ -1,6 +1,7 @@
 import '../../widgets/brand_logo.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
+import '../accessibility_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -9,11 +10,14 @@ class RoleSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.primaryDark],
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              AppColors.primaryDark,
+            ],
           ),
         ),
         child: SafeArea(
@@ -64,6 +68,18 @@ class RoleSelectionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _buildRequirementsButton(context),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const AccessibilityScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.accessibility_new),
+                    label: const Text('Accesibilidad'),
+                    style: TextButton.styleFrom(foregroundColor: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -75,10 +91,9 @@ class RoleSelectionScreen extends StatelessWidget {
 
   Widget _buildRequirementsButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SizedBox(
         width: double.infinity,
-        height: 52,
         child: OutlinedButton.icon(
           onPressed: () {
             Navigator.pushNamed(context, '/passenger/requirements');
@@ -111,10 +126,9 @@ class RoleSelectionScreen extends StatelessWidget {
     required VoidCallback onPressed,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SizedBox(
         width: double.infinity,
-        height: 100,
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
@@ -124,12 +138,13 @@ class RoleSelectionScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             elevation: 4,
+            minimumSize: const Size.fromHeight(104),
+            padding: const EdgeInsets.all(16),
           ),
           child: Row(
             children: [
-              const SizedBox(width: 20),
-              Icon(icon, size: 50),
-              const SizedBox(width: 20),
+              Icon(icon, size: 40),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -137,7 +152,6 @@ class RoleSelectionScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -145,15 +159,12 @@ class RoleSelectionScreen extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
               ),
               const Icon(Icons.chevron_right),
-              const SizedBox(width: 10),
             ],
           ),
         ),

@@ -338,7 +338,14 @@ class FirebaseService {
         .where('id_usuario', isEqualTo: userId)
         .orderBy('fecha', descending: true)
         .get();
-    return snap.docs.map((d) => _transactionFromMap(d.data())).toList();
+    return snap.docs
+        .map(
+          (d) => _transactionFromMap(
+            d.data(),
+            hasPendingWrites: d.metadata.hasPendingWrites,
+          ),
+        )
+        .toList();
   }
 
   /// Registra una recarga de puntos y actualiza el saldo del usuario.
@@ -680,9 +687,16 @@ class FirebaseService {
         .collection(_transaccionesCollection)
         .where('id_usuario', isEqualTo: userId)
         .orderBy('fecha', descending: true)
-        .snapshots()
+        .snapshots(includeMetadataChanges: true)
         .map(
-          (qs) => qs.docs.map((d) => _transactionFromMap(d.data())).toList(),
+          (qs) => qs.docs
+              .map(
+                (d) => _transactionFromMap(
+                  d.data(),
+                  hasPendingWrites: d.metadata.hasPendingWrites,
+                ),
+              )
+              .toList(),
         );
   }
 
@@ -1100,7 +1114,10 @@ class FirebaseService {
     );
   }
 
-  app_tx.Transaction _transactionFromMap(Map<String, dynamic> m) {
+  app_tx.Transaction _transactionFromMap(
+    Map<String, dynamic> m, {
+    bool hasPendingWrites = false,
+  }) {
     return app_tx.Transaction(
       id: (m['id'] as num).toInt(),
       idUsuario: (m['id_usuario'] as num?)?.toInt(),
@@ -1115,6 +1132,7 @@ class FirebaseService {
           ? (m['fecha_cliente'] as Timestamp).toDate()
           : DateTime.now(),
       cantidadPasajeros: (m['cantidad_pasajeros'] as num?)?.toInt() ?? 1,
+      hasPendingWrites: hasPendingWrites,
     );
   }
 
