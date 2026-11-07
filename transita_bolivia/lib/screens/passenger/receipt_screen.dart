@@ -4,7 +4,28 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/payment_receipt.dart';
+import '../../models/transaction.dart';
 import '../../widgets/amount_speaker_button.dart';
+
+void openTransactionReceipt(BuildContext context, Transaction transaction) {
+  final receipt = PaymentReceipt.fromTransaction(transaction);
+  if (receipt == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          transaction.hasPendingWrites || transaction.estado == 'pendiente'
+              ? 'El comprobante estará disponible cuando se confirme el movimiento.'
+              : 'Este movimiento no tiene un comprobante confirmado.',
+        ),
+      ),
+    );
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute<void>(builder: (_) => ReceiptScreen(receipt: receipt)),
+  );
+}
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key, required this.receipt});

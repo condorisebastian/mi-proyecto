@@ -293,11 +293,25 @@ ni activa la terminal NFC.
 
 ### Navegación del pasajero
 
-La barra inferior reúne **Inicio**, **Recargas**, **QR/NFC**, **Movimientos** y
-**Perfil**, con un botón central destacado para pagar. Recargas conserva el
-chat y la solicitud atendida por el operador; Movimientos conserva pagos,
-recargas y comprobantes. QR/NFC permite escanear el QR del conductor y muestra
-el estado no habilitado de NFC, sin simular cobros con tarjeta.
+La barra inferior reúne **Inicio**, **Pagar QR**, **Tarjeta NFC** y **Perfil**,
+con accesos de pago separados. QR permite escanear el código del conductor y
+Tarjeta NFC muestra su estado no habilitado, sin simular cobros con tarjeta.
+
+**Tu billetera** muestra el icono de puntos y el saldo. El ojo oculta tanto
+los importes como el botón de lectura de voz; la preferencia se conserva en el
+dispositivo, sin guardar el saldo. **Ver movimientos** abre el historial,
+respetando el saldo oculto. Tocar un movimiento o un viaje reciente abre su
+comprobante registrado; los pendientes y rechazados no se presentan como
+pagos confirmados.
+
+**Descubre más** muestra las ilustraciones originales de `img_transitabolivia`,
+copiadas a los assets de la app. **Recárgate puntos** abre el chat habitual;
+**Recarga puntos a otras personas** prepara un mensaje con el ID del beneficiario,
+monto y referencia para el operador. No envía el mensaje automáticamente ni
+crea una solicitud para la cuenta equivocada: la acreditación a otra persona
+requiere verificación del operador. Los borradores se conservan al volver al chat.
+Se retiraron el botón independiente Recargar saldo y las pestañas Recargas y
+Movimientos.
 
 Inicio muestra un saludo compacto, el saldo y los últimos viajes. El icono de
 call center en la cabecera abre Ayuda y soporte. ID, carnet y cierre de sesión

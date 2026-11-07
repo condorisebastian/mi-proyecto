@@ -14,12 +14,18 @@ class FinancialChatScreen extends StatefulWidget {
     this.adminId,
     this.adminName = '',
     this.service,
+    this.rechargeForAnother = false,
+    this.initialDraft = '',
+    this.onDraftChanged,
   });
   final ChatIdentity owner;
   final bool admin;
   final int? adminId;
   final String adminName;
   final FinancialChatService? service;
+  final bool rechargeForAnother;
+  final String initialDraft;
+  final ValueChanged<String>? onDraftChanged;
   @override
   State<FinancialChatScreen> createState() => _FinancialChatScreenState();
 }
@@ -38,6 +44,8 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
   @override
   void initState() {
     super.initState();
+    _message.text = widget.initialDraft;
+    _message.addListener(() => widget.onDraftChanged?.call(_message.text));
     _service = widget.service ?? FinancialChatService.instance;
     if (!AppConfig.useFirebase && widget.service == null) {
       _ready = Future.value();
@@ -92,7 +100,7 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
   }
 
   Future<void> _request() async {
-    if (_busy) return;
+    if (_busy || widget.rechargeForAnother) return;
     final amount = TextEditingController();
     final detail = TextEditingController();
     final form = GlobalKey<FormState>();
@@ -266,6 +274,8 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
               ? widget.owner.nombre
               : widget.owner.isDriver
               ? 'Chat · Retiros'
+              : widget.rechargeForAnother
+              ? 'Recarga a otra persona'
               : 'Chat · Recargas',
         ),
       ),
@@ -307,7 +317,11 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
                             child: SingleChildScrollView(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
-                                children: [_header(), _requestList()],
+                                children: [
+                                  _header(),
+                                  if (!widget.rechargeForAnother)
+                                    _requestList(),
+                                ],
                               ),
                             ),
                           ),
@@ -390,6 +404,8 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
               child: Text(
                 widget.owner.isDriver
                     ? 'Retiros de tu recaudación diaria'
+                    : widget.rechargeForAnother
+                    ? 'Recarga para otra persona con atención del operador'
                     : 'Recarga con atención del operador',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -425,7 +441,14 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
               );
             },
           ),
-        if (!widget.admin)
+        if (widget.rechargeForAnother)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'Indica el ID del beneficiario, el monto y la referencia de pago. El operador verifica y confirma la recarga; no se descuenta saldo de tu billetera.',
+            ),
+          ),
+        if (!widget.admin && !widget.rechargeForAnother)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(

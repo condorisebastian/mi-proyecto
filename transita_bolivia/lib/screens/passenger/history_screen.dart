@@ -12,9 +12,14 @@ import '../../models/user.dart';
 import 'receipt_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key, this.firebaseService});
+  const HistoryScreen({
+    super.key,
+    this.firebaseService,
+    this.balanceHidden = false,
+  });
 
   final FirebaseService? firebaseService;
+  final bool balanceHidden;
 
   @override
   State<HistoryScreen> createState() => HistoryScreenState();
@@ -115,7 +120,9 @@ class HistoryScreenState extends State<HistoryScreen> {
               children: [
                 _buildStatCard(
                   'Saldo Actual',
-                  '${Money.format(user?.puntos ?? 0)} pts',
+                  widget.balanceHidden
+                      ? '••••'
+                      : '${Money.format(user?.puntos ?? 0)} pts',
                   Icons.account_balance_wallet,
                   AppColors.primary,
                 ),
@@ -218,81 +225,87 @@ class HistoryScreenState extends State<HistoryScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isPositive
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        key: ValueKey('movement-${transaction.id}'),
+        onTap: () => openTransactionReceipt(context, transaction),
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isPositive
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isPositive ? Icons.add : Icons.remove,
+                    color: isPositive ? Colors.green : Colors.orange,
+                  ),
                 ),
-                child: Icon(
-                  isPositive ? Icons.add : Icons.remove,
-                  color: isPositive ? Colors.green : Colors.orange,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      transaction.tipoDisplay,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transaction.tipoDisplay,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    Text(
-                      transaction.metodoPagoDisplay,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: Text(
-                  '${isPositive ? '+' : '-'}${Money.format(transaction.puntos)} pts',
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isPositive ? Colors.green : Colors.red,
+                      const SizedBox(height: 4),
+                      Text(
+                        '${transaction.fecha.day}/${transaction.fecha.month}/${transaction.fecha.year} ${transaction.fecha.hour}:${transaction.fecha.minute.toString().padLeft(2, '0')}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        transaction.metodoPagoDisplay,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-          if (receipt != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                icon: const Icon(Icons.receipt_long_outlined),
-                label: const Text('Ver comprobante'),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => ReceiptScreen(receipt: receipt),
+                Flexible(
+                  child: Text(
+                    '${isPositive ? '+' : '-'}${Money.format(transaction.puntos)} pts',
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isPositive ? Colors.green : Colors.red,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            if (receipt != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.receipt_long_outlined),
+                  label: const Text('Ver comprobante'),
+                  onPressed: () => openTransactionReceipt(context, transaction),
+                ),
               ),
-            ),
-          if (transaction.hasPendingWrites)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('Esperando confirmación del servidor'),
-            ),
-        ],
+            if (transaction.hasPendingWrites)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('Esperando confirmación del servidor'),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Navegación del pasajero con el pago como acción central destacada.
+/// Navegación del pasajero con accesos separados a QR y tarjeta NFC.
 class PassengerNavigationBar extends StatelessWidget {
   const PassengerNavigationBar({
     super.key,
@@ -11,18 +11,11 @@ class PassengerNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelected;
 
-  static const _labels = [
-    'Inicio',
-    'Recargas',
-    'QR/NFC',
-    'Movimientos',
-    'Perfil',
-  ];
+  static const _labels = ['Inicio', 'Pagar QR', 'Tarjeta NFC', 'Perfil'];
   static const _icons = [
     Icons.home_outlined,
-    Icons.add_card,
     Icons.qr_code_scanner,
-    Icons.receipt_long_outlined,
+    Icons.credit_card,
     Icons.person_outline,
   ];
 
@@ -38,10 +31,11 @@ class PassengerNavigationBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: List.generate(_labels.length, (index) {
             final selected = currentIndex == index;
-            final central = index == 2;
+            final central = index == 1 || index == 2;
             final color = selected ? scheme.primary : scheme.onSurfaceVariant;
             return Expanded(
               child: Semantics(
+                button: true,
                 selected: selected,
                 child: InkWell(
                   key: ValueKey('passenger-tab-$index'),
@@ -76,15 +70,16 @@ class PassengerNavigationBar extends StatelessWidget {
                                           color: scheme.onPrimary,
                                           size: 30,
                                         ),
-                                        Positioned(
-                                          right: 3,
-                                          bottom: 3,
-                                          child: Icon(
-                                            Icons.contactless,
-                                            color: scheme.onPrimary,
-                                            size: 14,
+                                        if (index == 2)
+                                          Positioned(
+                                            right: 3,
+                                            bottom: 3,
+                                            child: Icon(
+                                              Icons.contactless,
+                                              color: scheme.onPrimary,
+                                              size: 14,
+                                            ),
                                           ),
-                                        ),
                                       ],
                                     ),
                                   )

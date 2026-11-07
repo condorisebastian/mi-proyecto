@@ -10,23 +10,28 @@ import '../../models/transaction.dart';
 import '../../models/financial_chat.dart';
 import '../../models/user.dart';
 import '../../services/financial_chat_service.dart';
+import '../../services/app_preferences.dart';
 import '../chat/financial_chat_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
 import '../soporte/support_screen.dart';
 import 'profile_screen.dart';
+import 'receipt_screen.dart';
 import '../../widgets/passenger_navigation_bar.dart';
-import '../../widgets/amount_speaker_button.dart';
+import '../../widgets/passenger_wallet_card.dart';
+import '../../widgets/discover_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     this.firebaseService,
     this.financialChatService,
+    this.preferences,
   });
 
   final FirebaseService? firebaseService;
   final FinancialChatService? financialChatService;
+  final AppPreferences? preferences;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -38,12 +43,42 @@ class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
   int? _recentUserId;
   Stream<List<Transaction>>? _recentTrips;
+  bool? _balanceHidden;
+  final Map<bool, String> _chatDrafts = {};
+
+  AppPreferences get _preferences =>
+      widget.preferences ?? AppPreferences.instance;
 
   FirebaseService get _firebase =>
       widget.firebaseService ?? FirebaseService.instance;
 
-  final GlobalKey<HistoryScreenState> _historyKey =
-      GlobalKey<HistoryScreenState>();
+  @override
+  void initState() {
+    super.initState();
+    _loadBalanceVisibility();
+  }
+
+  Future<void> _loadBalanceVisibility() async {
+    await _preferences.load();
+    if (mounted) setState(() => _balanceHidden = _preferences.balanceHidden);
+  }
+
+  Future<void> _toggleBalanceVisibility() async {
+    final hidden = !(_balanceHidden ?? true);
+    setState(() => _balanceHidden = hidden);
+    try {
+      await _preferences.setBalanceHidden(hidden);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'El cambio se aplicó, pero no se pudo guardar para la próxima vez.',
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,25 +103,14 @@ class _HomeScreenState extends State<HomeScreen> {
             <Widget>[
               _buildHomeTab(user),
               if (_visitedTabs.contains(1))
-                FinancialChatScreen(
-                  owner: ChatIdentity(
-                    canal: 'pasajero',
-                    id: user.id,
-                    nombre: '${user.nombre} ${user.apellido}',
-                  ),
-                  service: widget.financialChatService,
-                )
-              else
-                const SizedBox.shrink(),
-              if (_visitedTabs.contains(2))
                 const PayTripScreen()
               else
                 const SizedBox.shrink(),
-              if (_visitedTabs.contains(3))
-                HistoryScreen(key: _historyKey, firebaseService: _firebase)
+              if (_visitedTabs.contains(2))
+                PayTripScreen(nfc: true, onPayWithQr: () => _selectTab(1))
               else
                 const SizedBox.shrink(),
-              if (_visitedTabs.contains(4))
+              if (_visitedTabs.contains(3))
                 PassengerProfileScreen(
                   user: user,
                   onLogout: () => _confirmLogout(context, authService),
@@ -128,9 +152,47 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     if (index == 0) {
       authService.refreshUser();
-    } else if (index == 3) {
-      _historyKey.currentState?.reload();
     }
+  }
+
+  Future<void> _openHistory() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => HistoryScreen(
+          firebaseService: _firebase,
+          balanceHidden: _balanceHidden ?? true,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    final user = context.read<AuthService>().currentUser;
+    if (user != null && !AppConfig.useFirebase) {
+      setState(() => _loadRecentTrips(user.id));
+    }
+  }
+
+  void _openRechargeChat(User user, {bool forAnotherPerson = false}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => FinancialChatScreen(
+          owner: ChatIdentity(
+            canal: 'pasajero',
+            id: user.id,
+            nombre: '${user.nombre} ${user.apellido}',
+          ),
+          service: widget.financialChatService,
+          rechargeForAnother: forAnotherPerson,
+          initialDraft:
+              _chatDrafts[forAnotherPerson] ??
+              (forAnotherPerson
+                  ? 'Quiero recargar puntos a otra persona.\nID del beneficiario: \nMonto en Bs: \nReferencia de pago: '
+                  : ''),
+          onDraftChanged: (value) => _chatDrafts[forAnotherPerson] = value,
+        ),
+      ),
+    );
   }
 
   void _openSupport(User user) {
@@ -184,78 +246,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'TUS PUNTOS',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      Money.format(user.puntos),
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    Text(
-                      '(= Bs ${Money.format(user.puntos)})',
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    AmountSpeakerButton(
-                      amount: user.puntos,
-                      label: 'Saldo disponible',
-                    ),
-                  ],
-                ),
+              PassengerWalletCard(
+                points: user.puntos,
+                balanceHidden: _balanceHidden ?? true,
+                onToggleVisibility: _balanceHidden == null
+                    ? null
+                    : _toggleBalanceVisibility,
+                onHistory: _openHistory,
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _selectTab(1),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_card, size: 24),
-                      SizedBox(width: 12),
-                      Flexible(
-                        child: Text(
-                          'RECARGAR SALDO',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              DiscoverSection(
+                onRecharge: () => _openRechargeChat(user),
+                onRechargeAnother: () =>
+                    _openRechargeChat(user, forAnotherPerson: true),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const Text(
                 'Últimos viajes',
                 style: TextStyle(
@@ -303,6 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Column(
                     children: recentTrips.map((trip) {
                       return Container(
+                        key: ValueKey('recent-trip-${trip.id}'),
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -316,48 +322,52 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          onTap: () => openTransactionReceipt(context, trip),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.directions_bus,
+                                  color: Colors.orange,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.directions_bus,
-                                color: Colors.orange,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${trip.fecha.day}/${trip.fecha.month}/${trip.fecha.year}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${trip.fecha.day}/${trip.fecha.month}/${trip.fecha.year}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    trip.metodoPagoDisplay,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
+                                    Text(
+                                      trip.metodoPagoDisplay,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              '-${Money.format(trip.puntos)} pts',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
+                              Text(
+                                '-${Money.format(trip.puntos)} pts',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     }).toList(),

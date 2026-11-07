@@ -10,7 +10,10 @@ import '../../widgets/amount_speaker_button.dart';
 import 'history_screen.dart';
 
 class PayTripScreen extends StatefulWidget {
-  const PayTripScreen({super.key});
+  const PayTripScreen({super.key, this.nfc = false, this.onPayWithQr});
+
+  final bool nfc;
+  final VoidCallback? onPayWithQr;
 
   @override
   State<PayTripScreen> createState() => _PayTripScreenState();
@@ -19,7 +22,6 @@ class PayTripScreen extends StatefulWidget {
 class _PayTripScreenState extends State<PayTripScreen> {
   final ApiService _apiService = ApiService();
   bool _isProcessing = false;
-  bool _showNfc = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR / NFC'),
+        title: Text(widget.nfc ? 'Tarjeta NFC' : 'Pagar con QR'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -46,32 +48,7 @@ class _PayTripScreenState extends State<PayTripScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(
-                      value: false,
-                      icon: Icon(Icons.qr_code_scanner),
-                      label: Text('QR'),
-                    ),
-                    ButtonSegment(
-                      value: true,
-                      icon: Icon(Icons.contactless),
-                      label: Text('NFC'),
-                    ),
-                  ],
-                  selected: {_showNfc},
-                  onSelectionChanged: _isProcessing
-                      ? null
-                      : (selection) =>
-                            setState(() => _showNfc = selection.single),
-                  style: SegmentedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    selectedBackgroundColor: AppColors.primarySurface,
-                    selectedForegroundColor: AppColors.primaryDark,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                if (_showNfc)
+                if (widget.nfc)
                   _buildNfcInfo()
                 else
                   Container(
@@ -221,7 +198,14 @@ class _PayTripScreenState extends State<PayTripScreen> {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => setState(() => _showNfc = false),
+              onPressed:
+                  widget.onPayWithQr ??
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PayTripScreen(),
+                    ),
+                  ),
               icon: const Icon(Icons.qr_code_scanner),
               label: const Text('PAGAR CON QR'),
             ),

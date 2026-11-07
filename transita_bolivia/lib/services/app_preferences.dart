@@ -13,10 +13,12 @@ class AppPreferences extends ChangeNotifier {
   bool _largeText = false;
   bool _highContrast = false;
   bool _readAmounts = false;
+  bool _balanceHidden = false;
   Set<String> _favorites = {};
   bool get largeText => _largeText;
   bool get highContrast => _highContrast;
   bool get readAmounts => _readAmounts;
+  bool get balanceHidden => _balanceHidden;
   Set<String> get favorites => Set.unmodifiable(_favorites);
   bool isFavorite(String id) => _favorites.contains(id);
 
@@ -31,6 +33,7 @@ class AppPreferences extends ChangeNotifier {
       _largeText = storage.getBool('a11y.large_text') ?? false;
       _highContrast = storage.getBool('a11y.high_contrast') ?? false;
       _readAmounts = storage.getBool('a11y.read_amounts') ?? false;
+      _balanceHidden = storage.getBool('wallet.balance_hidden') ?? false;
       final known = provinceRoutes.map((route) => route.id).toSet();
       _favorites = (storage.getStringList('routes.favorites.v1') ?? [])
           .where(known.contains)
@@ -82,6 +85,12 @@ class AppPreferences extends ChangeNotifier {
       throw StateError('No se pudo guardar la preferencia');
     }
     _readAmounts = value;
+  });
+  Future<void> setBalanceHidden(bool value) => _write((storage) async {
+    if (!await storage.setBool('wallet.balance_hidden', value)) {
+      throw StateError('No se pudo guardar la preferencia');
+    }
+    _balanceHidden = value;
   });
   Future<void> toggleFavorite(String id) => _write((storage) async {
     if (!provinceRoutes.any((route) => route.id == id)) {

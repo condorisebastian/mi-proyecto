@@ -3,14 +3,19 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transita_bolivia/models/user.dart';
 import 'package:transita_bolivia/screens/passenger/home_screen.dart';
+import 'package:transita_bolivia/screens/passenger/receipt_screen.dart';
+import 'package:transita_bolivia/services/app_preferences.dart';
 import 'package:transita_bolivia/screens/soporte/support_screen.dart';
 import 'package:transita_bolivia/services/auth_service.dart';
 import 'package:transita_bolivia/services/financial_chat_service.dart';
 import 'package:transita_bolivia/services/firebase_service.dart';
 import 'package:transita_bolivia/theme.dart';
 import 'package:transita_bolivia/widgets/passenger_navigation_bar.dart';
+import 'package:transita_bolivia/widgets/passenger_wallet_card.dart';
+import 'package:transita_bolivia/widgets/amount_speaker_button.dart';
 
 class PassengerAuth extends AuthService {
   User? user = User(
@@ -44,7 +49,10 @@ Future<void> openPassenger(
   FakeFirebaseFirestore db,
   PassengerAuth auth, {
   double textScale = 1,
+  AppPreferences? preferences,
 }) async {
+  final settings = preferences ?? AppPreferences();
+  await settings.load();
   await tester.pumpWidget(
     ChangeNotifierProvider<AuthService>.value(
       value: auth,
@@ -62,6 +70,7 @@ Future<void> openPassenger(
           '/passenger': (_) => HomeScreen(
             firebaseService: FirebaseService.forTesting(db),
             financialChatService: FinancialChatService(firestore: db),
+            preferences: settings,
           ),
         },
       ),
@@ -80,21 +89,16 @@ void main() {
   late PassengerAuth auth;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     db = FakeFirebaseFirestore();
     auth = PassengerAuth();
   });
 
   testWidgets(
-    'Inicio es compacto, reserva la identidad para Perfil y destaca QR/NFC',
+    'Inicio muestra billetera y Descubre más, con QR y NFC separados en la barra',
     (tester) async {
       await openPassenger(tester, db, auth);
-      for (final label in [
-        'Inicio',
-        'Recargas',
-        'QR/NFC',
-        'Movimientos',
-        'Perfil',
-      ]) {
+      for (final label in ['Inicio', 'Pagar QR', 'Tarjeta NFC', 'Perfil']) {
         expect(find.text(label), findsOneWidget);
       }
       for (final removed in [
@@ -102,10 +106,16 @@ void main() {
         'Mi tarjeta NFC',
         'Cerrar sesión',
         '9876543',
+        'Recargas',
+        'Movimientos',
+        'RECARGAR SALDO',
+        'TUS PUNTOS',
       ]) {
         expect(find.text(removed), findsNothing);
       }
       expect(find.textContaining('ID:'), findsNothing);
+      expect(find.text('Tu billetera'), findsOneWidget);
+      expect(find.text('Descubre más'), findsOneWidget);
       expect(find.byIcon(Icons.accessibility_new), findsNothing);
       expect(find.byTooltip('Contactar al call center'), findsOneWidget);
       final greeting = tester.widget<Text>(
@@ -126,23 +136,27 @@ void main() {
         ),
       );
       expect(qrIcon.size, greaterThan(homeIcon.size!));
-      // El chat no se abre ni crea su documento antes de entrar a Recargas.
+      // Mostrar las ilustraciones no crea solicitudes ni abre el chat.
       expect((await db.collection('chats').get()).docs, isEmpty);
       expect(tester.takeException(), isNull);
     },
   );
 
   testWidgets(
-    'Recargas abre el chat y conserva un borrador al cambiar de sección',
+    'la imagen Recárgate puntos abre el chat y conserva el borrador al volver',
     (tester) async {
       await openPassenger(tester, db, auth);
-      await tester.tap(find.text('RECARGAR SALDO'));
+      await tester.ensureVisible(find.byKey(const ValueKey('discover-self')));
+      await tester.tap(find.byKey(const ValueKey('discover-self')));
       await tester.pumpAndSettle();
       expect(find.text('Chat · Recargas'), findsOneWidget);
       expect(find.text('SOLICITAR RECARGA'), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'Consultar una recarga');
-      await selectTab(tester, 0);
-      await selectTab(tester, 1);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('discover-self')));
+      await tester.tap(find.byKey(const ValueKey('discover-self')));
+      await tester.pumpAndSettle();
       expect(find.text('Consultar una recarga'), findsOneWidget);
       expect(
         (await db.collection('solicitudes_financieras').get()).docs,
@@ -152,30 +166,159 @@ void main() {
     },
   );
 
-  testWidgets('QR/NFC permite volver al escáner y no simula un pago NFC', (
+  testWidgets(
+    'ocultar saldo quita importes y lectura de voz y conserva la preferencia',
+    (tester) async {
+      final settings = AppPreferences();
+      await openPassenger(tester, db, auth, preferences: settings);
+      final wallet = find.byType(PassengerWalletCard);
+      expect(
+        find.descendant(of: wallet, matching: find.text('42.50')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Ocultar saldo'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: wallet, matching: find.textContaining('42.50')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: wallet, matching: find.byType(AmountSpeakerButton)),
+        findsNothing,
+      );
+      expect(settings.balanceHidden, isTrue);
+      final restored = AppPreferences();
+      await restored.load();
+      expect(restored.balanceHidden, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await openPassenger(tester, db, auth, preferences: restored);
+      expect(find.byTooltip('Mostrar saldo'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(PassengerWalletCard),
+          matching: find.textContaining('42.50'),
+        ),
+        findsNothing,
+      );
+      await tester.tap(find.text('Ver movimientos'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('42.50'), findsNothing);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Mostrar saldo'));
+      await tester.pumpAndSettle();
+      expect(restored.balanceHidden, isFalse);
+      expect(
+        find.descendant(
+          of: find.byType(PassengerWalletCard),
+          matching: find.text('42.50'),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'recargar a otra persona prepara un mensaje sin crear una recarga para el dueño',
+    (tester) async {
+      await openPassenger(tester, db, auth);
+      final carousel = find.byKey(const ValueKey('discover-carousel'));
+      await tester.ensureVisible(carousel);
+      await tester.drag(carousel, const Offset(-500, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('discover-another')));
+      await tester.pumpAndSettle();
+      expect(find.text('Recarga a otra persona'), findsOneWidget);
+      final input = tester.widget<TextField>(find.byType(TextField));
+      expect(input.controller!.text, contains('ID del beneficiario:'));
+      expect(find.text('SOLICITAR RECARGA'), findsNothing);
+      expect(
+        (await db.collection('solicitudes_financieras').get()).docs,
+        isEmpty,
+      );
+      expect((await db.collection('transacciones').get()).docs, isEmpty);
+      expect(auth.currentUser!.puntos, 42.50);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('un movimiento pendiente no genera un comprobante confirmado', (
     tester,
   ) async {
+    await db.collection('transacciones').doc('pending').set({
+      'id': 11,
+      'id_usuario': 42,
+      'id_conductor': 7,
+      'tipo': 'cobro_viaje',
+      'puntos': 1,
+      'metodo_pago': 'qr',
+      'estado': 'pendiente',
+      'fecha': Timestamp.fromDate(DateTime(2026, 11, 7)),
+    });
     await openPassenger(tester, db, auth);
-    await selectTab(tester, 2);
-    expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
-    await tester.tap(find.text('NFC'));
+    await tester.tap(find.text('Ver movimientos'));
     await tester.pumpAndSettle();
-    expect(find.text('Pago con NFC'), findsOneWidget);
-    expect(find.textContaining('aún no está habilitado'), findsOneWidget);
-    expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsNothing);
-    await selectTab(tester, 0);
-    await selectTab(tester, 2);
-    expect(find.text('Pago con NFC'), findsOneWidget);
-    await tester.tap(find.text('PAGAR CON QR'));
+    final movement = find.byKey(const ValueKey('movement-11'));
+    await tester.ensureVisible(movement);
+    await tester.tap(movement);
     await tester.pumpAndSettle();
-    expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
-    expect(auth.currentUser!.puntos, 42.50);
-    expect((await db.collection('transacciones').get()).docs, isEmpty);
+    expect(find.byType(ReceiptScreen), findsNothing);
+    expect(
+      find.textContaining('cuando se confirme el movimiento'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
   testWidgets(
-    'Movimientos muestra viajes y recargas solo del pasajero actual',
+    'tocar un viaje reciente también abre el comprobante registrado',
+    (tester) async {
+      await db.collection('transacciones').doc('trip').set({
+        'id': 12,
+        'id_usuario': 42,
+        'id_conductor': 7,
+        'tipo': 'cobro_viaje',
+        'puntos': 1,
+        'metodo_pago': 'qr',
+        'estado': 'exitoso',
+        'fecha': Timestamp.fromDate(DateTime(2026, 11, 7)),
+      });
+      await openPassenger(tester, db, auth);
+      final trip = find.byKey(const ValueKey('recent-trip-12'));
+      await tester.ensureVisible(trip);
+      await tester.tap(trip);
+      await tester.pumpAndSettle();
+      final receipt = tester.widget<ReceiptScreen>(find.byType(ReceiptScreen));
+      expect(receipt.receipt.reference, '12');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'QR y tarjeta NFC son accesos distintos y NFC no simula un cobro',
+    (tester) async {
+      await openPassenger(tester, db, auth);
+      await selectTab(tester, 1);
+      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
+      await selectTab(tester, 2);
+      expect(find.text('Pago con NFC'), findsOneWidget);
+      expect(find.textContaining('aún no está habilitado'), findsOneWidget);
+      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsNothing);
+      await selectTab(tester, 0);
+      await selectTab(tester, 2);
+      expect(find.text('Pago con NFC'), findsOneWidget);
+      await tester.tap(find.text('PAGAR CON QR'));
+      await tester.pumpAndSettle();
+      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
+      expect(auth.currentUser!.puntos, 42.50);
+      expect((await db.collection('transacciones').get()).docs, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'la billetera abre el historial propio y tocar una recarga abre su comprobante',
     (tester) async {
       for (final entry in [
         (1, 42, 'cobro_viaje'),
@@ -194,11 +337,19 @@ void main() {
         });
       }
       await openPassenger(tester, db, auth);
-      await selectTab(tester, 3);
+      await tester.tap(find.text('Ver movimientos'));
+      await tester.pumpAndSettle();
       expect(find.text('Viaje'), findsOneWidget);
       expect(find.text('Recarga'), findsOneWidget);
       expect(find.textContaining('999'), findsNothing);
       expect(find.text('Historial'), findsNothing);
+      final movement = find.byKey(const ValueKey('movement-2'));
+      await tester.ensureVisible(movement);
+      await tester.tap(movement);
+      await tester.pumpAndSettle();
+      final receipt = tester.widget<ReceiptScreen>(find.byType(ReceiptScreen));
+      expect(receipt.receipt.reference, '2');
+      expect(receipt.receipt.amount, 'Bs 3.50');
       expect(tester.takeException(), isNull);
     },
   );
@@ -207,7 +358,7 @@ void main() {
     tester,
   ) async {
     await openPassenger(tester, db, auth);
-    await selectTab(tester, 4);
+    await selectTab(tester, 3);
     expect(find.text('ID de usuario'), findsOneWidget);
     expect(find.text('#42'), findsOneWidget);
     expect(find.text('Carnet de identidad (CI)'), findsOneWidget);
@@ -241,23 +392,26 @@ void main() {
     },
   );
 
-  testWidgets('las cinco secciones caben en 320 por 568 con texto ampliado', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(320, 568);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await openPassenger(tester, db, auth, textScale: 1.8);
-    for (final index in [1, 2, 3, 4, 0]) {
-      await selectTab(tester, index);
-      expect(tester.takeException(), isNull, reason: 'Sección $index');
-    }
-    await selectTab(tester, 1);
-    tester.view.viewInsets = const FakeViewPadding(bottom: 260);
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Enviar mensaje'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpAndSettle();
-  });
+  testWidgets(
+    'billetera, imágenes y pagos caben en 320 por 568 con texto ampliado',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await openPassenger(tester, db, auth, textScale: 1.8);
+      for (final index in [1, 2, 3, 0]) {
+        await selectTab(tester, index);
+        expect(tester.takeException(), isNull, reason: 'Sección $index');
+      }
+      await tester.ensureVisible(find.byKey(const ValueKey('discover-self')));
+      await tester.tap(find.byKey(const ValueKey('discover-self')));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Enviar mensaje'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
 }
