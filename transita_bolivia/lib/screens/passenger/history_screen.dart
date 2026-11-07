@@ -8,10 +8,13 @@ import '../../services/firebase_service.dart';
 import '../../config.dart';
 import '../../models/transaction.dart';
 import '../../models/payment_receipt.dart';
+import '../../models/user.dart';
 import 'receipt_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({super.key, this.firebaseService});
+
+  final FirebaseService? firebaseService;
 
   @override
   State<HistoryScreen> createState() => HistoryScreenState();
@@ -55,7 +58,7 @@ class HistoryScreenState extends State<HistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: const Text('Movimientos'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -69,95 +72,93 @@ class HistoryScreenState extends State<HistoryScreen> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildStatCard(
-                      'Saldo Actual',
-                      '${Money.format(user?.puntos ?? 0)} pts',
-                      Icons.account_balance_wallet,
-                      AppColors.primary,
-                    ),
-                    _buildStatCard(
-                      'Tipo',
-                      user?.tipoDisplay ?? '',
-                      Icons.person,
-                      AppColors.success,
-                    ),
-                  ],
+          child: AppConfig.useFirebase && user != null
+              ? StreamBuilder<List<Transaction>>(
+                  stream: (widget.firebaseService ?? FirebaseService.instance)
+                      .transactionHistoryStream(user.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const Center(
+                        child: Text('No pudimos cargar tus movimientos.'),
+                      );
+                    }
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        !snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return _buildHistoryBody(snapshot.data ?? [], user);
+                  },
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadHistory,
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildHistoryBody(_transactions, user),
                 ),
-              ),
-              Expanded(
-                child: AppConfig.useFirebase && user != null
-                    ? StreamBuilder<List<Transaction>>(
-                        stream: FirebaseService.instance
-                            .transactionHistoryStream(user.id),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                                  ConnectionState.waiting &&
-                              !snapshot.hasData) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                          return _buildHistoryBody(snapshot.data ?? []);
-                        },
-                      )
-                    : RefreshIndicator(
-                        color: AppColors.primary,
-                        onRefresh: _loadHistory,
-                        child: _loading
-                            ? const Center(child: CircularProgressIndicator())
-                            : _buildHistoryBody(_transactions),
-                      ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildHistoryBody(List<Transaction> transactions) {
-    if (transactions.isEmpty) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              height: constraints.maxHeight,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.history, size: 80, color: Colors.grey[300]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No hay transacciones',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[500]),
-                    ),
-                  ],
+  Widget _buildHistoryBody(List<Transaction> transactions, User? user) {
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildStatCard(
+                  'Saldo Actual',
+                  '${Money.format(user?.puntos ?? 0)} pts',
+                  Icons.account_balance_wallet,
+                  AppColors.primary,
                 ),
+                _buildStatCard(
+                  'Tipo',
+                  user?.tipoDisplay ?? '',
+                  Icons.person,
+                  AppColors.success,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (transactions.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No hay transacciones',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, color: Colors.grey[500]),
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      );
-    }
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20),
-      itemCount: transactions.length,
-      itemBuilder: (context, index) {
-        return _buildTransactionCard(transactions[index]);
-      },
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            sliver: SliverList.builder(
+              itemCount: transactions.length,
+              itemBuilder: (context, index) =>
+                  _buildTransactionCard(transactions[index]),
+            ),
+          ),
+      ],
     );
   }
 

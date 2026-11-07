@@ -269,17 +269,17 @@ Los PIN están en `database/transporte_db.sql` (backend PHP) y en Firestore
 
 ### Accesibilidad, favoritos y comprobantes
 
-Desde la selección de rol o el icono de accesibilidad del inicio de pasajero y
+Desde la selección de rol o el icono de accesibilidad del inicio de
 conductor se puede activar texto grande, alto contraste y botones para escuchar
 importes. El texto grande respeta un tamaño superior elegido en Android. La
 voz se inicia al pulsar el botón; necesita un motor con voz española disponible
 en el teléfono. Los ajustes se guardan en el dispositivo.
 
-En **Provincias**, la estrella guarda o quita un destino; el filtro **Favoritos**
+En **Provincias** del conductor, la estrella guarda o quita un destino; el filtro **Favoritos**
 muestra los destinos guardados, que aparecen primero al consultar todos.
 Los favoritos no habilitan tarifas pendientes ni modifican importes.
 
-En **Historial → Ver comprobante**, el pasajero puede compartir una imagen PNG
+En **Movimientos → Ver comprobante**, el pasajero puede compartir una imagen PNG
 o copiar los datos de una operación confirmada. El recibo incluye ID, fecha,
 importe, método y, para viajes, conductor y cantidad de pasajes; no incluye
 carnet, PIN ni saldo. Las escrituras pendientes de confirmación del servidor y
@@ -290,6 +290,20 @@ Las preferencias y los favoritos usan almacenamiento local; cambiar de cuenta
 en el mismo dispositivo conserva esos ajustes. Las imágenes se entregan al
 menú de compartir del sistema. Esta entrega no cambia las reglas financieras
 ni activa la terminal NFC.
+
+### Navegación del pasajero
+
+La barra inferior reúne **Inicio**, **Recargas**, **QR/NFC**, **Movimientos** y
+**Perfil**, con un botón central destacado para pagar. Recargas conserva el
+chat y la solicitud atendida por el operador; Movimientos conserva pagos,
+recargas y comprobantes. QR/NFC permite escanear el QR del conductor y muestra
+el estado no habilitado de NFC, sin simular cobros con tarjeta.
+
+Inicio muestra un saludo compacto, el saldo y los últimos viajes. El icono de
+call center en la cabecera abre Ayuda y soporte. ID, carnet y cierre de sesión
+están en Perfil; se retiraron de Inicio los accesos a Provincias, Mi tarjeta
+NFC y accesibilidad. Las secciones se cargan al abrirlas y conservan su estado
+al cambiar de pestaña.
 
 ```
 cd transita_bolivia && flutter analyze && flutter test

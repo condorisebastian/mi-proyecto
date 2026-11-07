@@ -33,18 +33,22 @@ class SupportScreen extends StatefulWidget {
     required this.canal,
     required this.id,
     required this.nombre,
+    this.firebaseService,
   });
 
   /// 'pasajero' | 'conductor'
   final String canal;
   final int id;
   final String nombre;
+  final FirebaseService? firebaseService;
 
   @override
   State<SupportScreen> createState() => _SupportScreenState();
 }
 
 class _SupportScreenState extends State<SupportScreen> {
+  FirebaseService get _firebase =>
+      widget.firebaseService ?? FirebaseService.instance;
   final _descController = TextEditingController();
   String _tipo = 'saldo';
   bool _enviando = false;
@@ -65,7 +69,7 @@ class _SupportScreenState extends State<SupportScreen> {
     }
     setState(() => _enviando = true);
     final result = AppConfig.useFirebase
-        ? await FirebaseService.instance.reportarIncidencia(
+        ? await _firebase.reportarIncidencia(
             canal: widget.canal,
             reportanteClave: _clave,
             nombre: widget.nombre,
@@ -183,7 +187,7 @@ class _SupportScreenState extends State<SupportScreen> {
       );
     }
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: FirebaseService.instance.incidenciasDeUsuarioStream(_clave),
+      stream: _firebase.incidenciasDeUsuarioStream(_clave),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

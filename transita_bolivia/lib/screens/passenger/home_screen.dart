@@ -8,17 +8,25 @@ import '../../services/firebase_service.dart';
 import '../../config.dart';
 import '../../models/transaction.dart';
 import '../../models/financial_chat.dart';
+import '../../models/user.dart';
+import '../../services/financial_chat_service.dart';
 import '../chat/financial_chat_screen.dart';
 import 'pay_trip_screen.dart';
 import 'history_screen.dart';
 import '../soporte/support_screen.dart';
-import '../province_routes_screen.dart';
-import 'nfc_card_screen.dart';
-import '../accessibility_screen.dart';
+import 'profile_screen.dart';
+import '../../widgets/passenger_navigation_bar.dart';
 import '../../widgets/amount_speaker_button.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.firebaseService,
+    this.financialChatService,
+  });
+
+  final FirebaseService? firebaseService;
+  final FinancialChatService? financialChatService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -26,7 +34,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final Set<int> _visitedTabs = {0};
   final ApiService _apiService = ApiService();
+  int? _recentUserId;
+  Stream<List<Transaction>>? _recentTrips;
+
+  FirebaseService get _firebase =>
+      widget.firebaseService ?? FirebaseService.instance;
 
   final GlobalKey<HistoryScreenState> _historyKey =
       GlobalKey<HistoryScreenState>();
@@ -40,57 +54,100 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (_recentUserId != user.id) {
+      _recentUserId = user.id;
+      _loadRecentTrips(user.id);
+    }
+
     return Scaffold(
+      // Cada sección con Scaffold ajusta su propio contenido al teclado.
+      resizeToAvoidBottomInset: false,
       body: IndexedStack(
         index: _currentIndex,
-        children: [
-          _buildHomeTab(user, authService),
-          FinancialChatScreen(
-            owner: ChatIdentity(
-              canal: 'pasajero',
-              id: user.id,
-              nombre: '${user.nombre} ${user.apellido}',
-            ),
-          ),
-          const PayTripScreen(),
-          HistoryScreen(key: _historyKey),
-        ],
+        children:
+            <Widget>[
+              _buildHomeTab(user),
+              if (_visitedTabs.contains(1))
+                FinancialChatScreen(
+                  owner: ChatIdentity(
+                    canal: 'pasajero',
+                    id: user.id,
+                    nombre: '${user.nombre} ${user.apellido}',
+                  ),
+                  service: widget.financialChatService,
+                )
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(2))
+                const PayTripScreen()
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(3))
+                HistoryScreen(key: _historyKey, firebaseService: _firebase)
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(4))
+                PassengerProfileScreen(
+                  user: user,
+                  onLogout: () => _confirmLogout(context, authService),
+                )
+              else
+                const SizedBox.shrink(),
+            ].indexed.map((tab) {
+              return MediaQuery.removeViewInsets(
+                context: context,
+                removeBottom: tab.$1 != _currentIndex,
+                child: tab.$2,
+              );
+            }).toList(),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          if (index == 0) {
-            authService.refreshUser();
-          } else if (index == 3) {
-            _historyKey.currentState?.reload();
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'Pagar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
-          ),
-        ],
+      bottomNavigationBar: MediaQuery.viewInsetsOf(context).bottom > 0
+          ? null
+          : PassengerNavigationBar(
+              currentIndex: _currentIndex,
+              onSelected: _selectTab,
+            ),
+    );
+  }
+
+  void _loadRecentTrips(int userId) {
+    _recentTrips = AppConfig.useFirebase
+        ? _firebase.transactionHistoryStream(userId)
+        : Stream.fromFuture(_apiService.getTransactionHistory(userId));
+  }
+
+  void _selectTab(int index) {
+    final authService = context.read<AuthService>();
+    setState(() {
+      _currentIndex = index;
+      _visitedTabs.add(index);
+      if (index == 0 && !AppConfig.useFirebase) {
+        final user = authService.currentUser;
+        if (user != null) _loadRecentTrips(user.id);
+      }
+    });
+    if (index == 0) {
+      authService.refreshUser();
+    } else if (index == 3) {
+      _historyKey.currentState?.reload();
+    }
+  }
+
+  void _openSupport(User user) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => SupportScreen(
+          canal: 'pasajero',
+          id: user.id,
+          nombre: '${user.nombre} ${user.apellido}',
+          firebaseService: _firebase,
+        ),
       ),
     );
   }
 
-  Widget _buildHomeTab(dynamic user, AuthService authService) {
+  Widget _buildHomeTab(User user) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -110,35 +167,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hola, ${user.nombre} ${user.tipoDisplay}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'ID: #${user.id}  ·  CI: ${user.ci.toString().isEmpty ? '—' : user.ci}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Hola, ${user.nombre} ${user.tipoDisplay}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  const AccessibilityButton(color: Colors.white),
                   IconButton(
-                    tooltip: 'Cerrar sesión',
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    onPressed: () {
-                      _confirmLogout(context, authService);
-                    },
+                    tooltip: 'Contactar al call center',
+                    icon: const Icon(Icons.support_agent, color: Colors.white),
+                    onPressed: () => _openSupport(user),
                   ),
                 ],
               ),
@@ -187,9 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    setState(() => _currentIndex = 1);
-                  },
+                  onPressed: () => _selectTab(1),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -200,11 +239,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.chat_bubble_outline, size: 24),
+                      Icon(Icons.add_card, size: 24),
                       SizedBox(width: 12),
                       Flexible(
                         child: Text(
-                          'CHAT DE RECARGAS',
+                          'RECARGAR SALDO',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 18,
@@ -213,65 +252,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const ProvinceRoutesScreen(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.route),
-                    label: const Text('Provincias'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const NfcCardScreen(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.contactless),
-                    label: const Text('Mi tarjeta NFC'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SupportScreen(
-                          canal: 'pasajero',
-                          id: user.id,
-                          nombre: '${user.nombre} ${user.apellido}',
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.support_agent),
-                  label: const Text(
-                    'AYUDA / SOPORTE',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryDark,
-                    side: BorderSide(
-                      color: AppColors.primaryDark.withValues(alpha: 0.5),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                   ),
                 ),
               ),
@@ -286,14 +266,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 10),
               StreamBuilder<List<Transaction>>(
-                stream: AppConfig.useFirebase
-                    ? FirebaseService.instance.transactionHistoryStream(user.id)
-                    : Stream.fromFuture(
-                        _apiService.getTransactionHistory(user.id),
-                      ),
+                stream: _recentTrips,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Text(
+                      'No pudimos cargar tus viajes. Inténtalo de nuevo más tarde.',
+                    );
                   }
 
                   final transactions = snapshot.data ?? [];

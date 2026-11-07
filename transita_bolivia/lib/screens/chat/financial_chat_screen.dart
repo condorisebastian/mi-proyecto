@@ -258,6 +258,7 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -295,51 +296,61 @@ class _FinancialChatScreenState extends State<FinancialChatScreen> {
                 }
                 return SafeArea(
                   top: false,
-                  child: Column(
-                    children: [
-                      if (MediaQuery.viewInsetsOf(context).bottom == 0)
-                        _header(),
-                      if (MediaQuery.viewInsetsOf(context).bottom == 0)
-                        _requestList(),
-                      Expanded(child: _messageList()),
-                      const Divider(height: 1),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _message,
-                                minLines: 1,
-                                maxLines: 4,
-                                maxLength: 1000,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                decoration: const InputDecoration(
-                                  hintText: 'Escribe un mensaje...',
-                                  counterText: '',
-                                  border: OutlineInputBorder(),
-                                ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => Column(
+                      children: [
+                        if (!keyboardVisible)
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: constraints.maxHeight * 0.4,
+                            ),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [_header(), _requestList()],
                               ),
                             ),
-                            IconButton(
-                              tooltip: 'Enviar mensaje',
-                              onPressed: _busy ? null : _send,
-                              icon: _busy
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.send_rounded),
-                            ),
-                          ],
+                          ),
+                        Expanded(child: _messageList()),
+                        const Divider(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _message,
+                                  minLines: 1,
+                                  maxLines: 4,
+                                  maxLength: 1000,
+                                  textCapitalization:
+                                      TextCapitalization.sentences,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Escribe un mensaje...',
+                                    counterText: '',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Enviar mensaje',
+                                onPressed: _busy ? null : _send,
+                                icon: _busy
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.send_rounded),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
