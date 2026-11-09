@@ -7,14 +7,17 @@ class AmountSpeakerButton extends StatelessWidget {
     super.key,
     required this.amount,
     this.label = 'Importe',
+    this.color,
   });
   final num amount;
   final String label;
+  final Color? color;
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: AppPreferences.instance,
     builder: (context, _) => AppPreferences.instance.readAmounts
         ? IconButton(
+            color: color,
             tooltip: 'Escuchar ${label.toLowerCase()}',
             icon: const Icon(Icons.volume_up_outlined),
             onPressed: () async {

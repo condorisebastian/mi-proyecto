@@ -53,7 +53,9 @@ class PassengerNavigationBar extends StatelessWidget {
                                     width: 56,
                                     height: 56,
                                     decoration: BoxDecoration(
-                                      color: scheme.primary,
+                                      color: selected
+                                          ? scheme.primary
+                                          : scheme.primaryContainer,
                                       borderRadius: BorderRadius.circular(18),
                                       border: selected
                                           ? Border.all(
@@ -67,7 +69,9 @@ class PassengerNavigationBar extends StatelessWidget {
                                       children: [
                                         Icon(
                                           _icons[index],
-                                          color: scheme.onPrimary,
+                                          color: selected
+                                              ? scheme.onPrimary
+                                              : scheme.primary,
                                           size: 30,
                                         ),
                                         if (index == 2)
@@ -76,14 +80,33 @@ class PassengerNavigationBar extends StatelessWidget {
                                             bottom: 3,
                                             child: Icon(
                                               Icons.contactless,
-                                              color: scheme.onPrimary,
+                                              color: selected
+                                                  ? scheme.onPrimary
+                                                  : scheme.primary,
                                               size: 14,
                                             ),
                                           ),
                                       ],
                                     ),
                                   )
-                                : Icon(_icons[index], color: color, size: 24),
+                                : AnimatedContainer(
+                                    duration: const Duration(milliseconds: 220),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selected
+                                          ? scheme.primaryContainer
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Icon(
+                                      _icons[index],
+                                      color: color,
+                                      size: 24,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 4),

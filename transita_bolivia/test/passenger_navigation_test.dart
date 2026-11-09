@@ -60,9 +60,10 @@ Future<void> openPassenger(
         theme: buildAppTheme(),
         initialRoute: '/passenger',
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            disableAnimations: true,
+          ),
           child: child!,
         ),
         routes: {
@@ -225,7 +226,7 @@ void main() {
       await openPassenger(tester, db, auth);
       final carousel = find.byKey(const ValueKey('discover-carousel'));
       await tester.ensureVisible(carousel);
-      await tester.drag(carousel, const Offset(-500, 0));
+      await tester.drag(carousel, const Offset(-600, 0));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('discover-another')));
       await tester.pumpAndSettle();

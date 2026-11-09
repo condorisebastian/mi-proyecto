@@ -15,6 +15,7 @@ import '../soporte/support_screen.dart';
 import '../../models/financial_chat.dart';
 import '../chat/financial_chat_screen.dart';
 import '../accessibility_screen.dart';
+import '../../widgets/city_selector_button.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -259,6 +260,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen>
                             color: Colors.white70,
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        const CitySelectorButton(color: Colors.white),
                         Text(
                           'CI: ${conductor.ci.isEmpty ? '—' : conductor.ci}',
                           style: const TextStyle(

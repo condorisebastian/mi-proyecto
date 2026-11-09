@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/province_routes.dart';
+import '../data/cities.dart';
 
 /// Preferencias del dispositivo; no almacena identidad, PIN ni saldo.
 class AppPreferences extends ChangeNotifier {
@@ -14,11 +15,13 @@ class AppPreferences extends ChangeNotifier {
   bool _highContrast = false;
   bool _readAmounts = false;
   bool _balanceHidden = false;
+  String? _city;
   Set<String> _favorites = {};
   bool get largeText => _largeText;
   bool get highContrast => _highContrast;
   bool get readAmounts => _readAmounts;
   bool get balanceHidden => _balanceHidden;
+  String? get city => _city;
   Set<String> get favorites => Set.unmodifiable(_favorites);
   bool isFavorite(String id) => _favorites.contains(id);
 
@@ -34,6 +37,7 @@ class AppPreferences extends ChangeNotifier {
       _highContrast = storage.getBool('a11y.high_contrast') ?? false;
       _readAmounts = storage.getBool('a11y.read_amounts') ?? false;
       _balanceHidden = storage.getBool('wallet.balance_hidden') ?? false;
+      _city = normalizeCity(storage.getString('travel.city') ?? '');
       final known = provinceRoutes.map((route) => route.id).toSet();
       _favorites = (storage.getStringList('routes.favorites.v1') ?? [])
           .where(known.contains)
@@ -92,6 +96,19 @@ class AppPreferences extends ChangeNotifier {
     }
     _balanceHidden = value;
   });
+  Future<void> setCity(String value) {
+    final city = normalizeCity(value);
+    if (city == null) {
+      throw ArgumentError('Introduce una ciudad de 2 a 60 caracteres.');
+    }
+    return _write((storage) async {
+      if (!await storage.setString('travel.city', city)) {
+        throw StateError('No se pudo guardar la ciudad');
+      }
+      _city = city;
+    });
+  }
+
   Future<void> toggleFavorite(String id) => _write((storage) async {
     if (!provinceRoutes.any((route) => route.id == id)) {
       throw ArgumentError('Destino desconocido');

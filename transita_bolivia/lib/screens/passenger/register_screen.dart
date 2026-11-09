@@ -45,10 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary,
-              AppColors.background,
-            ],
+            colors: [AppColors.primary, AppColors.background],
             stops: [0.0, 0.3],
           ),
         ),
@@ -153,9 +150,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             labelText: 'PIN (4 dígitos)',
                             prefixIcon: const Icon(Icons.lock),
                             suffixIcon: IconButton(
-                              icon: Icon(_obscurePin
-                                  ? Icons.visibility_off
-                                  : Icons.visibility),
+                              icon: Icon(
+                                _obscurePin
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
                               tooltip: _obscurePin
                                   ? 'Mostrar PIN'
                                   : 'Ocultar PIN',
@@ -184,14 +183,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             labelText: 'Confirmar PIN',
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
-                              icon: Icon(_obscureConfirmPin
-                                  ? Icons.visibility_off
-                                  : Icons.visibility),
+                              icon: Icon(
+                                _obscureConfirmPin
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
                               tooltip: _obscureConfirmPin
                                   ? 'Mostrar PIN'
                                   : 'Ocultar PIN',
                               onPressed: () => setState(
-                                  () => _obscureConfirmPin = !_obscureConfirmPin),
+                                () => _obscureConfirmPin = !_obscureConfirmPin,
+                              ),
                             ),
                             counterText: '',
                             border: OutlineInputBorder(
@@ -214,26 +216,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ? null
                                 : () async {
                                     if (_formKey.currentState!.validate()) {
-                                      final success =
-                                          await authService.register(
-                                        nombre: _nombreController.text,
-                                        apellido: _apellidoController.text,
-                                        ci: _ciController.text.trim(),
-                                        pin: _pinController.text,
-                                        tipo: _tipo,
-                                      );
+                                      final success = await authService
+                                          .register(
+                                            nombre: _nombreController.text,
+                                            apellido: _apellidoController.text,
+                                            ci: _ciController.text.trim(),
+                                            pin: _pinController.text,
+                                            tipo: _tipo,
+                                          );
                                       if (success && context.mounted) {
                                         Navigator.pushNamedAndRemoveUntil(
                                           context,
                                           '/passenger/home',
                                           (route) => false,
+                                          arguments: const {'selectCity': true},
                                         );
                                       } else if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
                                             content: Text(
-                                                'No se pudo registrar. El PIN podría estar en uso.'),
+                                              'No se pudo registrar. El PIN podría estar en uso.',
+                                            ),
                                             backgroundColor: Colors.red,
                                           ),
                                         );
@@ -249,7 +254,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             child: authService.isLoading
                                 ? const CircularProgressIndicator(
-                                    color: Colors.white)
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     'REGISTRARSE',
                                     style: TextStyle(

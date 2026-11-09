@@ -35,7 +35,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
+    - assets/images/logo.png
+    - assets/images/logo_icon.png
+    - assets/images/logo_transitabolivia.png
+    - assets/images/descubre_recarga.png
+    - assets/images/descubre_recarga_otros.png
+    - assets/images/descubre_saldo.png
+    - assets/images/descubre_pago_tarjeta.png
 
 flutter_launcher_icons:
   android: true

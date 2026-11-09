@@ -20,6 +20,7 @@ import 'receipt_screen.dart';
 import '../../widgets/passenger_navigation_bar.dart';
 import '../../widgets/passenger_wallet_card.dart';
 import '../../widgets/discover_section.dart';
+import '../../widgets/city_selector_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Stream<List<Transaction>>? _recentTrips;
   bool? _balanceHidden;
   final Map<bool, String> _chatDrafts = {};
+  final _walletKey = GlobalKey();
 
   AppPreferences get _preferences =>
       widget.preferences ?? AppPreferences.instance;
@@ -121,7 +123,10 @@ class _HomeScreenState extends State<HomeScreen> {
               return MediaQuery.removeViewInsets(
                 context: context,
                 removeBottom: tab.$1 != _currentIndex,
-                child: tab.$2,
+                child: TickerMode(
+                  enabled: tab.$1 == _currentIndex,
+                  child: tab.$2,
+                ),
               );
             }).toList(),
       ),
@@ -215,8 +220,8 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [AppColors.primary, AppColors.background],
-          stops: [0.0, 0.3],
+          colors: [AppColors.primaryDark, AppColors.background],
+          stops: [0.0, 0.45],
         ),
       ),
       child: SafeArea(
@@ -229,24 +234,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      'Hola, ${user.nombre} ${user.tipoDisplay}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hola, ${user.nombre} ${user.tipoDisplay}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        CitySelectorButton(
+                          preferences: _preferences,
+                          color: Colors.white,
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
                     tooltip: 'Contactar al call center',
                     icon: const Icon(Icons.support_agent, color: Colors.white),
                     onPressed: () => _openSupport(user),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.12),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
               PassengerWalletCard(
+                key: _walletKey,
                 points: user.puntos,
                 balanceHidden: _balanceHidden ?? true,
                 onToggleVisibility: _balanceHidden == null
@@ -259,14 +278,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 onRecharge: () => _openRechargeChat(user),
                 onRechargeAnother: () =>
                     _openRechargeChat(user, forAnotherPerson: true),
+                onCheckBalance: () {
+                  final target = _walletKey.currentContext;
+                  if (target != null) {
+                    Scrollable.ensureVisible(
+                      target,
+                      duration: const Duration(milliseconds: 500),
+                      alignment: 0.15,
+                    );
+                  }
+                },
+                onPayWithCard: () => _selectTab(2),
               ),
               const SizedBox(height: 24),
               const Text(
                 'Últimos viajes',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 10),

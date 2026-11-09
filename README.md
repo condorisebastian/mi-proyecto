@@ -305,7 +305,14 @@ comprobante registrado; los pendientes y rechazados no se presentan como
 pagos confirmados.
 
 **Descubre más** muestra las ilustraciones originales de `img_transitabolivia`,
-copiadas a los assets de la app. **Recárgate puntos** abre el chat habitual;
+copiadas a los assets de la app: Recárgate puntos, Recarga puntos a otras personas,
+Consulta tu saldo y Paga con tu tarjeta. El carrusel avanza cada tres segundos
+con una transición de 600 ms, permite pausar/reanudar y elegir una imagen por
+sus indicadores. Se detiene al salir de Inicio, abrir otra pantalla, arrastrar
+las imágenes o enviar la app al segundo plano; respeta movimiento reducido.
+Las dos imágenes nuevas llevan a la billetera (sin revelar el saldo oculto)
+y a la sección NFC, cuyo cobro todavía no está habilitado.
+**Recárgate puntos** abre el chat habitual;
 **Recarga puntos a otras personas** prepara un mensaje con el ID del beneficiario,
 monto y referencia para el operador. No envía el mensaje automáticamente ni
 crea una solicitud para la cuenta equivocada: la acreditación a otra persona
@@ -318,6 +325,19 @@ call center en la cabecera abre Ayuda y soporte. ID, carnet y cierre de sesión
 están en Perfil; se retiraron de Inicio los accesos a Provincias, Mi tarjeta
 NFC y accesibilidad. Las secciones se cargan al abrirlas y conservan su estado
 al cambiar de pestaña.
+
+### Ciudad al entrar
+
+Tras iniciar sesión como pasajero o conductor se pide confirmar la ciudad.
+La última elección aparece precargada; también se admite escribir otro
+municipio. Una sesión restaurada reutiliza la ciudad guardada o la solicita
+si falta. La cabecera de Inicio permite cambiarla después.
+
+La ciudad se guarda localmente en `travel.city`, sin GPS ni permisos de
+ubicación. Sirve de contexto para la interfaz: no modifica tarifas ni afirma
+que existan rutas verificadas en la ciudad seleccionada. El tema mantiene
+contraste alto y texto ampliado, con una billetera de mayor contraste,
+superficies claras y estados de navegación más visibles.
 
 ```
 cd transita_bolivia && flutter analyze && flutter test

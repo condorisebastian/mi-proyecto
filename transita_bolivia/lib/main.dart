@@ -12,6 +12,7 @@ import 'config.dart';
 import 'theme.dart';
 import 'firebase_options.dart';
 import 'services/app_preferences.dart';
+import 'widgets/city_gate.dart';
 import 'screens/passenger/role_selection_screen.dart';
 import 'screens/passenger/requirements_screen.dart';
 import 'screens/passenger/user_type_screen.dart';
@@ -143,12 +144,24 @@ class TransitaBoliviaApp extends StatelessWidget {
             '/passenger/type': (context) => const UserTypeScreen(),
             '/passenger/login': (context) => const LoginScreen(),
             '/passenger/register': (context) => const RegisterScreen(),
-            '/passenger/home': (context) => const HomeScreen(),
+            '/passenger/home': (context) {
+              final args = ModalRoute.of(context)?.settings.arguments;
+              return CityGate(
+                confirmOnEntry: args is Map && args['selectCity'] == true,
+                child: const HomeScreen(),
+              );
+            },
             '/driver/login': (context) =>
                 const driver_login.DriverLoginScreen(),
             '/driver/register': (context) =>
                 const driver_register.DriverRegisterScreen(),
-            '/driver/home': (context) => const driver_home.DriverHomeScreen(),
+            '/driver/home': (context) {
+              final args = ModalRoute.of(context)?.settings.arguments;
+              return CityGate(
+                confirmOnEntry: args is Map && args['selectCity'] == true,
+                child: const driver_home.DriverHomeScreen(),
+              );
+            },
             '/admin/login': (context) => const AdminLoginScreen(),
             '/admin/home': (context) => const AdminHomeScreen(),
           },

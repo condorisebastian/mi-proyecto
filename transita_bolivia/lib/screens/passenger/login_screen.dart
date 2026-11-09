@@ -182,9 +182,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ci: _ciController.text.trim(),
                                       );
                                       if (success && context.mounted) {
+                                        FocusScope.of(context).unfocus();
                                         Navigator.pushReplacementNamed(
                                           context,
                                           '/passenger/home',
+                                          arguments: const {'selectCity': true},
                                         );
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)
