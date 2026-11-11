@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../models/payment_receipt.dart';
 import '../../models/transaction.dart';
 import '../../widgets/amount_speaker_button.dart';
+import '../../widgets/brand_logo.dart';
 
 void openTransactionReceipt(BuildContext context, Transaction transaction) {
   final receipt = PaymentReceipt.fromTransaction(transaction);
@@ -68,6 +69,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     setState(() => _sharing = true);
     ui.Image? image;
     try {
+      await precacheImage(const AssetImage(BrandLogo.assetPath), context);
+      if (!mounted) return;
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return;
       final boundary =
@@ -121,11 +124,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Icon(
-                          Icons.directions_bus,
-                          size: 40,
-                          color: Colors.black,
-                        ),
+                        const Center(child: BrandLogo(width: 72)),
                         const SizedBox(height: 12),
                         const Text(
                           'TRANSITA BOLIVIA',

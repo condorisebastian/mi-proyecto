@@ -4,14 +4,15 @@ class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, this.width = 220});
 
   final double width;
+  static const assetPath = 'assets/images/logo_app.png';
 
   @override
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(16),
     child: Image.asset(
-      'assets/images/logo_transitabolivia.png',
+      assetPath,
       width: width,
-      height: width * 559 / 1024,
+      height: width,
       fit: BoxFit.contain,
       semanticLabel: 'Transita Bolivia',
     ),

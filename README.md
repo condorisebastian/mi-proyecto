@@ -11,12 +11,19 @@ Todos los municipios muestran «Tarifa por verificar», incluidos La Guardia y
 El Torno. No se generan cobros provinciales hasta verificar sus importes.
 No se presentan precios históricos del Decreto 494 como tarifas actuales.
 
-El original es `logo_transitabolivia.png`. La versión sin fondo es
-`logo_transitabolivia_transparente.png` y se usa en la app y la web; la variante
-cuadrada `transita_bolivia/assets/images/logo_icon.png` evita deformar los iconos.
-Se generaron con la herramienta integrada `image_gen`: «Quitar únicamente el
-fondo y preservar símbolo, colores, texto y proporciones»; para el icono,
-«centrar el mismo logo en un lienzo cuadrado transparente sin estirar ni recortar».
+La app usa el nuevo logotipo `img_transitabolivia/logo_app.png`, copiado sin
+modificaciones a `transita_bolivia/assets/images/logo_app.png`. El componente
+compartido de marca lo presenta en formato cuadrado; Android e iOS generan
+sus iconos desde ese mismo archivo con `dart run ../tools/regenerate_app_icons.dart`
+(desde `transita_bolivia/`). Android utiliza fondo oscuro e icono adaptativo
+con margen de seguridad. Las ilustraciones de Descubre más son independientes
+del logotipo. El comando conserva los booleanos de Xcode que el generador
+0.14.4 puede alterar. Los comprobantes también usan el nuevo logotipo y
+esperan su carga antes de exportar una imagen.
+
+La web utiliza `logo_transitabolivia_transparente.png`, derivado del original
+`logo_transitabolivia.png` con la herramienta integrada `image_gen` para quitar
+únicamente el fondo y preservar símbolo, colores, texto y proporciones.
 La portada recorre automáticamente las 15 provincias cada tres segundos, con
 fundido de 650 ms y precarga de la siguiente fotografía para evitar parpadeos,
 pausa manual y respeto por la preferencia de movimiento reducido. Incluye
