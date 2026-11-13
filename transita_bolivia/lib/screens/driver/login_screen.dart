@@ -178,9 +178,6 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                                           Navigator.pushReplacementNamed(
                                             context,
                                             '/driver/home',
-                                            arguments: const {
-                                              'selectCity': true,
-                                            },
                                           );
                                         } else if (context.mounted) {
                                           ScaffoldMessenger.of(context)

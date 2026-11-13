@@ -20,7 +20,6 @@ import 'receipt_screen.dart';
 import '../../widgets/passenger_navigation_bar.dart';
 import '../../widgets/passenger_wallet_card.dart';
 import '../../widgets/discover_section.dart';
-import '../../widgets/city_selector_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -234,23 +233,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hola, ${user.nombre} ${user.tipoDisplay}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        CitySelectorButton(
-                          preferences: _preferences,
-                          color: Colors.white,
-                        ),
-                      ],
+                    child: Text(
+                      'Hola, ${user.nombre} ${user.tipoDisplay}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   IconButton(

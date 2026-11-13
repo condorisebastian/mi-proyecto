@@ -11,14 +11,14 @@ Todos los municipios muestran «Tarifa por verificar», incluidos La Guardia y
 El Torno. No se generan cobros provinciales hasta verificar sus importes.
 No se presentan precios históricos del Decreto 494 como tarifas actuales.
 
-La app usa el nuevo logotipo `img_transitabolivia/logo_app.png`, copiado sin
-modificaciones a `transita_bolivia/assets/images/logo_app.png`. El componente
+La app usa la moneda azul `img_transitabolivia/Minimal blue Bs coin icon.png`,
+copiada sin modificaciones a `transita_bolivia/assets/images/logo_bs.png`. El componente
 compartido de marca lo presenta en formato cuadrado; Android e iOS generan
 sus iconos desde ese mismo archivo con `dart run ../tools/regenerate_app_icons.dart`
-(desde `transita_bolivia/`). Android utiliza fondo oscuro e icono adaptativo
+(desde `transita_bolivia/`). Android utiliza fondo celeste e icono adaptativo
 con margen de seguridad. Las ilustraciones de Descubre más son independientes
 del logotipo. El comando conserva los booleanos de Xcode que el generador
-0.14.4 puede alterar. Los comprobantes también usan el nuevo logotipo y
+0.14.4 puede alterar. La billetera y los comprobantes también usan la moneda y
 esperan su carga antes de exportar una imagen.
 
 La web utiliza `logo_transitabolivia_transparente.png`, derivado del original
@@ -276,11 +276,12 @@ Los PIN están en `database/transporte_db.sql` (backend PHP) y en Firestore
 
 ### Accesibilidad, favoritos y comprobantes
 
-Desde la selección de rol o el icono de accesibilidad del inicio de
-conductor se puede activar texto grande, alto contraste y botones para escuchar
+Desde el icono de accesibilidad del inicio de conductor se puede activar
+texto grande, alto contraste y botones para escuchar
 importes. El texto grande respeta un tamaño superior elegido en Android. La
 voz se inicia al pulsar el botón; necesita un motor con voz española disponible
-en el teléfono. Los ajustes se guardan en el dispositivo.
+en el teléfono. Los ajustes se guardan en el dispositivo. La selección inicial
+de pasajero o conductor ya no muestra el botón de accesibilidad.
 
 En **Provincias** del conductor, la estrella guarda o quita un destino; el filtro **Favoritos**
 muestra los destinos guardados, que aparecen primero al consultar todos.
@@ -315,7 +316,8 @@ pagos confirmados.
 copiadas a los assets de la app: Recárgate puntos, Recarga puntos a otras personas,
 Consulta tu saldo y Paga con tu tarjeta. El carrusel avanza cada tres segundos
 con una transición de 600 ms, permite pausar/reanudar y elegir una imagen por
-sus indicadores. Se detiene al salir de Inicio, abrir otra pantalla, arrastrar
+sus indicadores. Cada ilustración tiene una franja con icono, acción en español
+y flecha; toda la tarjeta abre la misma acción. Se detiene al salir de Inicio, abrir otra pantalla, arrastrar
 las imágenes o enviar la app al segundo plano; respeta movimiento reducido.
 Las dos imágenes nuevas llevan a la billetera (sin revelar el saldo oculto)
 y a la sección NFC, cuyo cobro todavía no está habilitado.
@@ -333,18 +335,14 @@ están en Perfil; se retiraron de Inicio los accesos a Provincias, Mi tarjeta
 NFC y accesibilidad. Las secciones se cargan al abrirlas y conservan su estado
 al cambiar de pestaña.
 
-### Ciudad al entrar
+### Acceso directo
 
-Tras iniciar sesión como pasajero o conductor se pide confirmar la ciudad.
-La última elección aparece precargada; también se admite escribir otro
-municipio. Una sesión restaurada reutiliza la ciudad guardada o la solicita
-si falta. La cabecera de Inicio permite cambiarla después.
-
-La ciudad se guarda localmente en `travel.city`, sin GPS ni permisos de
-ubicación. Sirve de contexto para la interfaz: no modifica tarifas ni afirma
-que existan rutas verificadas en la ciudad seleccionada. El tema mantiene
-contraste alto y texto ampliado, con una billetera de mayor contraste,
-superficies claras y estados de navegación más visibles.
+Tras iniciar sesión o registrarse se abre Inicio directamente, tanto para
+pasajeros como para conductores. No se pregunta ciudad ni departamento,
+tampoco se muestra un selector en la cabecera. Se retiraron el formulario,
+la pantalla intermedia y la preferencia de ciudad del código activo; las
+elecciones guardadas por versiones anteriores no se consultan. El tema
+mantiene el texto ampliado del sistema, contraste alto y superficies claras.
 
 ```
 cd transita_bolivia && flutter analyze && flutter test

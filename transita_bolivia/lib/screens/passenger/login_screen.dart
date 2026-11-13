@@ -186,7 +186,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                         Navigator.pushReplacementNamed(
                                           context,
                                           '/passenger/home',
-                                          arguments: const {'selectCity': true},
                                         );
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(context)

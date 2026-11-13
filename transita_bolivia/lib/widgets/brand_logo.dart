@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, this.width = 220});
+  const BrandLogo({super.key, this.width = 180});
 
   final double width;
-  static const assetPath = 'assets/images/logo_app.png';
+  static const assetPath = 'assets/images/logo_bs.png';
 
   @override
   Widget build(BuildContext context) => ClipRRect(

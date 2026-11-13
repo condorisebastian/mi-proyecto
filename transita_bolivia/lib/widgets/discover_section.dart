@@ -33,6 +33,18 @@ class _DiscoverSectionState extends State<DiscoverSection>
     'descubre_saldo.png',
     'descubre_pago_tarjeta.png',
   ];
+  static const _actionLabels = [
+    'Abrir recargas',
+    'Recargar a otra persona',
+    'Ir a mi billetera',
+    'Consultar tarjeta NFC',
+  ];
+  static const _icons = [
+    Icons.add_circle_outline_rounded,
+    Icons.person_add_alt_1_rounded,
+    Icons.account_balance_wallet_outlined,
+    Icons.contactless_outlined,
+  ];
   static const _keys = [
     'discover-self',
     'discover-another',
@@ -168,8 +180,10 @@ class _DiscoverSectionState extends State<DiscoverSection>
         LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth * 0.94 - 12;
+            final footerHeight =
+                72 * MediaQuery.textScalerOf(context).scale(14) / 14;
             return SizedBox(
-              height: width / 1.5,
+              height: width / 1.5 + footerHeight,
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (notification.depth != 0) return false;
@@ -199,15 +213,56 @@ class _DiscoverSectionState extends State<DiscoverSection>
                         label: _labels[index],
                         child: Material(
                           borderRadius: BorderRadius.circular(16),
+                          color: scheme.surface,
                           clipBehavior: Clip.antiAlias,
-                          child: Ink.image(
-                            image: AssetImage(
-                              'assets/images/${_assets[index]}',
-                            ),
-                            fit: BoxFit.contain,
-                            child: InkWell(
-                              key: ValueKey(_keys[index]),
-                              onTap: actions[index],
+                          child: InkWell(
+                            key: ValueKey(_keys[index]),
+                            onTap: actions[index],
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Ink.image(
+                                    image: AssetImage(
+                                      'assets/images/${_assets[index]}',
+                                    ),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: footerHeight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          _icons[index],
+                                          color: scheme.primary,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            _actionLabels[index],
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: scheme.onSurface,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Icon(
+                                          Icons.arrow_forward_rounded,
+                                          size: 20,
+                                          color: scheme.primary,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

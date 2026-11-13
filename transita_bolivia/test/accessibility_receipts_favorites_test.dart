@@ -236,7 +236,8 @@ void main() {
         greaterThanOrEqualTo(18),
       );
       expect(Theme.of(titleContext).colorScheme.primary, AppColors.primaryDark);
-      await tester.ensureVisible(find.text('Accesibilidad'));
+      expect(find.text('Accesibilidad'), findsNothing);
+      await tester.ensureVisible(find.text('Requisitos para el registro'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     },

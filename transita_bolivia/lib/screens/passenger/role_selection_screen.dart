@@ -1,7 +1,6 @@
 import '../../widgets/brand_logo.dart';
 import 'package:flutter/material.dart';
 import '../../theme.dart';
-import '../accessibility_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -68,18 +67,6 @@ class RoleSelectionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _buildRequirementsButton(context),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const AccessibilityScreen(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.accessibility_new),
-                    label: const Text('Accesibilidad'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.white),
-                  ),
                 ],
               ),
             ),

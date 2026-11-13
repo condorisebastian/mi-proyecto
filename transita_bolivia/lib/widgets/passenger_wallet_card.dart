@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/money.dart';
 import '../theme.dart';
 import 'amount_speaker_button.dart';
+import 'brand_logo.dart';
 
 class PassengerWalletCard extends StatelessWidget {
   const PassengerWalletCard({
@@ -68,11 +69,7 @@ class PassengerWalletCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(
-                      Icons.stars_rounded,
-                      size: 28,
-                      color: highContrast ? Colors.white : AppColors.teal,
-                    ),
+                    child: const BrandLogo(width: 36),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

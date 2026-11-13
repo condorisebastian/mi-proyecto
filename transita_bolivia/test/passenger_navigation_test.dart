@@ -111,10 +111,12 @@ void main() {
         'Movimientos',
         'RECARGAR SALDO',
         'TUS PUNTOS',
+        'Elige tu ciudad',
       ]) {
         expect(find.text(removed), findsNothing);
       }
       expect(find.textContaining('ID:'), findsNothing);
+      expect(find.byKey(const ValueKey('change-city')), findsNothing);
       expect(find.text('Tu billetera'), findsOneWidget);
       expect(find.text('Descubre más'), findsOneWidget);
       expect(find.byIcon(Icons.accessibility_new), findsNothing);

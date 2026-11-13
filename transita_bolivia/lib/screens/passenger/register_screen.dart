@@ -229,7 +229,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           context,
                                           '/passenger/home',
                                           (route) => false,
-                                          arguments: const {'selectCity': true},
                                         );
                                       } else if (context.mounted) {
                                         ScaffoldMessenger.of(
