@@ -261,7 +261,7 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
     final now = DateTime.now();
     try {
       await Share.share(
-        'Transita Bolivia — Resumen del ${now.day}/${now.month}/${now.year}\n'
+        'Mi Pasaje — Resumen del ${now.day}/${now.month}/${now.year}\n'
         'Conductor: ${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}\n'
         'Viajes: ${_summary['total_pasajeros'] ?? 0}\n'
         'Recaudación: ${Money.format(_summary['total_puntos'] ?? 0)} puntos\n'

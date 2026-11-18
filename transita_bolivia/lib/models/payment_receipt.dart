@@ -39,6 +39,6 @@ class PaymentReceipt {
     'Total': amount,
   };
   String get text =>
-      'TRANSITA BOLIVIA\nComprobante de $title\n'
+      'MI PASAJE\nComprobante de $title\n'
       '${details.entries.map((e) => '${e.key}: ${e.value}').join('\n')}';
 }

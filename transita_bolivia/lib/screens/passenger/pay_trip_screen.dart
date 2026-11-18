@@ -8,12 +8,20 @@ import '../../services/api_service.dart';
 import '../../models/trip_qr.dart';
 import '../../widgets/amount_speaker_button.dart';
 import 'history_screen.dart';
+import '../../widgets/passenger_nfc_panel.dart';
+import '../soporte/support_screen.dart';
 
 class PayTripScreen extends StatefulWidget {
-  const PayTripScreen({super.key, this.nfc = false, this.onPayWithQr});
+  const PayTripScreen({
+    super.key,
+    this.nfc = false,
+    this.onPayWithQr,
+    this.onSupport,
+  });
 
   final bool nfc;
   final VoidCallback? onPayWithQr;
+  final VoidCallback? onSupport;
 
   @override
   State<PayTripScreen> createState() => _PayTripScreenState();
@@ -177,41 +185,28 @@ class _PayTripScreenState extends State<PayTripScreen> {
   }
 
   Widget _buildNfcInfo() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(Icons.contactless, size: 64, color: AppColors.primary),
-            const SizedBox(height: 20),
-            const Text(
-              'Pago con NFC',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'El pago con NFC aún no está habilitado. Puedes pagar tu pasaje '
-              'escaneando el QR del conductor.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed:
-                  widget.onPayWithQr ??
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const PayTripScreen(),
+    final user = context.read<AuthService>().currentUser;
+    return PassengerNfcPanel(
+      onPayWithQr:
+          widget.onPayWithQr ??
+          () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => const PayTripScreen()),
+          ),
+      onSupport:
+          widget.onSupport ??
+          (user == null
+              ? null
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => SupportScreen(
+                      canal: 'pasajero',
+                      id: user.id,
+                      nombre: '${user.nombre} ${user.apellido}',
                     ),
                   ),
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('PAGAR CON QR'),
-            ),
-          ],
-        ),
-      ),
+                )),
     );
   }
 

@@ -9,7 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import io.flutter.plugin.common.MethodChannel
 
-/** Lee tarjetas Transita con SDM. El UID nunca autoriza un cobro por sí solo. */
+/** Lee tarjetas Mi Pasaje con SDM. El UID nunca autoriza un cobro por sí solo. */
 class NfcTerminal(private val activity: Activity, channel: MethodChannel) {
     private val adapter = NfcAdapter.getDefaultAdapter(activity)
     private val handler = Handler(Looper.getMainLooper())
@@ -60,7 +60,7 @@ class NfcTerminal(private val activity: Activity, channel: MethodChannel) {
                     content = String(record.payload, Charsets.UTF_8)
                 }
         } catch (_: Exception) {
-            failure = "No se pudo leer una tarjeta Transita compatible. Vuelve a acercarla o utiliza QR."
+            failure = "No se pudo leer una tarjeta Mi Pasaje compatible. Vuelve a acercarla o utiliza QR."
         }
         handler.post {
             if (pending === request) finish(content, if (failure == null) null else "TAG_ERROR", failure)

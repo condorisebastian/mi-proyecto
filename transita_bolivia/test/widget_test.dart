@@ -84,14 +84,10 @@ void main() {
     await adminAuth.restoreSession();
 
     await tester.pumpWidget(
-      TransitaBoliviaApp(
-        auth: auth,
-        driverAuth: driverAuth,
-        adminAuth: adminAuth,
-      ),
+      MiPasajeApp(auth: auth, driverAuth: driverAuth, adminAuth: adminAuth),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Transita Bolivia'), findsOneWidget);
+    expect(find.text('Mi Pasaje'), findsOneWidget);
     expect(find.text('Administración'), findsNothing);
     expect(find.byIcon(Icons.admin_panel_settings), findsNothing);
   });

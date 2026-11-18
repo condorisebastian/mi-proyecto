@@ -222,7 +222,7 @@ void main() {
       await tester.pumpWidget(
         MediaQuery(
           data: const MediaQueryData(textScaler: TextScaler.linear(1.8)),
-          child: TransitaBoliviaApp(
+          child: MiPasajeApp(
             auth: AuthService(),
             driverAuth: DriverAuthService(),
             adminAuth: AdminAuthService(),
@@ -230,7 +230,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final titleContext = tester.element(find.text('Transita Bolivia'));
+      final titleContext = tester.element(find.text('Mi Pasaje'));
       expect(
         MediaQuery.textScalerOf(titleContext).scale(10),
         greaterThanOrEqualTo(18),

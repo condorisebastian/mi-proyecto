@@ -81,9 +81,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       await Share.shareXFiles(
         [XFile.fromData(data.buffer.asUint8List(), mimeType: 'image/png')],
         fileNameOverrides: [
-          'comprobante-transita-${widget.receipt.reference}.png',
+          'comprobante-mi-pasaje-${widget.receipt.reference}.png',
         ],
-        subject: 'Comprobante Transita Bolivia',
+        subject: 'Comprobante Mi Pasaje',
         text: widget.receipt.text,
         sharePositionOrigin: shareOrigin,
       );
@@ -127,7 +127,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         const Center(child: BrandLogo(width: 72)),
                         const SizedBox(height: 12),
                         const Text(
-                          'TRANSITA BOLIVIA',
+                          'MI PASAJE',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,

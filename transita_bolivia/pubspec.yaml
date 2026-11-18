@@ -1,5 +1,5 @@
 name: transita_bolivia
-description: "Transita Bolivia - App unificada de transporte para pasajeros y conductores"
+description: "Mi Pasaje - App unificada de transporte para pasajeros y conductores"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -31,11 +31,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  image: ^4.9.2
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/logo_bs.png
+    - assets/images/logo_app.jpg
+    - assets/images/icono_saldo.jpg
     - assets/images/descubre_recarga.png
     - assets/images/descubre_recarga_otros.png
     - assets/images/descubre_saldo.png
@@ -44,9 +46,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo_bs.png"
-  adaptive_icon_background: "#A3E4F5"
-  adaptive_icon_foreground: "assets/images/logo_bs.png"
+  image_path: "assets/branding/launcher_icon.png"
+  adaptive_icon_background: "#5CB8D4"
+  adaptive_icon_foreground: "assets/branding/launcher_icon.png"
   adaptive_icon_foreground_inset: 16
   remove_alpha_ios: true
-  background_color_ios: "#A3E4F5"
+  background_color_ios: "#5CB8D4"

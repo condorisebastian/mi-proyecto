@@ -31,7 +31,7 @@ class _PosScreenState extends State<PosScreen> {
   final _nfc = NfcService();
   final _service = PosService();
   bool _busy = false;
-  String _status = 'Prepara el importe y acerca la tarjeta Transita.';
+  String _status = 'Prepara el importe y acerca la tarjeta Mi Pasaje.';
   bool _approved = false;
   String? _reference;
   CardProof? _pendingCard;
@@ -123,7 +123,7 @@ class _PosScreenState extends State<PosScreen> {
       _approved = false;
       _status = _uncertain
           ? 'Consultando la misma operación…'
-          : 'Acerca la tarjeta Transita al lector.';
+          : 'Acerca la tarjeta Mi Pasaje al lector.';
     });
     try {
       if (!_uncertain) {
@@ -138,7 +138,7 @@ class _PosScreenState extends State<PosScreen> {
         final card = CardProof.tryParse(await _nfc.readCard());
         if (card == null) {
           throw StateError(
-            'Tarjeta no compatible. Solicita una tarjeta Transita activada.',
+            'Tarjeta no compatible. Solicita una tarjeta Mi Pasaje activada.',
           );
         }
         _pendingCard = card;
@@ -215,7 +215,7 @@ class _PosScreenState extends State<PosScreen> {
             const Icon(Icons.contactless, size: 72),
             const SizedBox(height: 20),
             const Text(
-              'Tarjeta Transita',
+              'Tarjeta Mi Pasaje',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
             ),

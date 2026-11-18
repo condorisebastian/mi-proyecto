@@ -29,7 +29,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   const BrandLogo(),
                   const SizedBox(height: 20),
                   const Text(
-                    'Transita Bolivia',
+                    'Mi Pasaje',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -38,7 +38,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    '¿Cómo vas a usar Transita Bolivia?',
+                    '¿Cómo vas a usar Mi Pasaje?',
                     style: TextStyle(fontSize: 18, color: Colors.white70),
                   ),
                   const SizedBox(height: 40),

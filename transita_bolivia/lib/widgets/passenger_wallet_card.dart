@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/money.dart';
 import '../theme.dart';
 import 'amount_speaker_button.dart';
-import 'brand_logo.dart';
 
 class PassengerWalletCard extends StatelessWidget {
   const PassengerWalletCard({
@@ -69,7 +68,16 @@ class PassengerWalletCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const BrandLogo(width: 36),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/images/icono_saldo.jpg',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
+                        semanticLabel: 'Puntos de tu billetera',
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

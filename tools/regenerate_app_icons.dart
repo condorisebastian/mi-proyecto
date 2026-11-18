@@ -23,6 +23,17 @@ Future<void> main() async {
 
   var result = 1;
   try {
+    final preparation = await Process.start(
+      Platform.resolvedExecutable,
+      ['run', 'tool/prepare_app_icon.dart'],
+      workingDirectory: app.path,
+      mode: ProcessStartMode.inheritStdio,
+    );
+    final preparationExit = await preparation.exitCode;
+    if (preparationExit != 0) {
+      exitCode = preparationExit;
+      return;
+    }
     final generator = await Process.start(
       Platform.resolvedExecutable,
       ['run', 'flutter_launcher_icons'],

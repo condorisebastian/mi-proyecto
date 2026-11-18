@@ -50,7 +50,7 @@ class PosService {
   }) async {
     if (!enabled) {
       throw StateError(
-        'Terminal pendiente de activación. Contacta al responsable de Transita Bolivia.',
+        'Terminal pendiente de activación. Contacta al responsable de Mi Pasaje.',
       );
     }
     final auth = FirebaseAuth.instance.currentUser;

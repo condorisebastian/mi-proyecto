@@ -69,7 +69,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
                   const BrandLogo(),
                   const SizedBox(height: 20),
                   const Text(
-                    'Transita Bolivia',
+                    'Mi Pasaje',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

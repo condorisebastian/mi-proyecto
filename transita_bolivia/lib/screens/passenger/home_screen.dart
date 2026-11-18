@@ -108,7 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
               else
                 const SizedBox.shrink(),
               if (_visitedTabs.contains(2))
-                PayTripScreen(nfc: true, onPayWithQr: () => _selectTab(1))
+                PayTripScreen(
+                  nfc: true,
+                  onPayWithQr: () => _selectTab(1),
+                  onSupport: () => _openSupport(user),
+                )
               else
                 const SizedBox.shrink(),
               if (_visitedTabs.contains(3))

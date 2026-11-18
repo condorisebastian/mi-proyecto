@@ -1,6 +1,6 @@
-# Sistema de Cobro de Transporte
+# Mi Pasaje - Sistema de Cobro de Transporte
 
-Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con una app Flutter unificada y un backend PHP + MySQL/MariaDB servido por XAMPP.
+Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con la app Flutter Mi Pasaje y un backend PHP + MySQL/MariaDB servido por XAMPP.
 
 ## Web, Provincias y terminal POS
 
@@ -11,15 +11,20 @@ Todos los municipios muestran «Tarifa por verificar», incluidos La Guardia y
 El Torno. No se generan cobros provinciales hasta verificar sus importes.
 No se presentan precios históricos del Decreto 494 como tarifas actuales.
 
-La app usa la moneda azul `img_transitabolivia/Minimal blue Bs coin icon.png`,
-copiada sin modificaciones a `transita_bolivia/assets/images/logo_bs.png`. El componente
-compartido de marca lo presenta en formato cuadrado; Android e iOS generan
-sus iconos desde ese mismo archivo con `dart run ../tools/regenerate_app_icons.dart`
-(desde `transita_bolivia/`). Android utiliza fondo celeste e icono adaptativo
-con margen de seguridad. Las ilustraciones de Descubre más son independientes
-del logotipo. El comando conserva los booleanos de Xcode que el generador
-0.14.4 puede alterar. La billetera y los comprobantes también usan la moneda y
-esperan su carga antes de exportar una imagen.
+La app se llama **Mi Pasaje** en Android, iOS, accesos y comprobantes. Usa
+`img_transitabolivia/logo_app.jpg`, copiado sin modificar a
+`transita_bolivia/assets/images/logo_app.jpg`. La billetera usa de forma
+independiente `icono_saldo.jpg`. Se retiró la moneda azul anterior de la app.
+
+Para regenerar los iconos, ejecutar `dart run ../tools/regenerate_app_icons.dart`
+desde `transita_bolivia/`. El comando prepara un recorte cuadrado centrado del
+logo horizontal (sin estirar la ilustración), genera los iconos Android/iOS y
+conserva los booleanos de Xcode que el generador 0.14.4 puede alterar. El logo
+original sigue intacto. Los comprobantes esperan cargarlo antes de exportar.
+
+El identificador instalado `com.transita.bolivia`, el paquete Dart
+`transita_bolivia` y la configuración de Firebase se conservan para actualizar
+las instalaciones existentes y mantener sus datos y conexiones.
 
 La web utiliza `logo_transitabolivia_transparente.png`, derivado del original
 `logo_transitabolivia.png` con la herramienta integrada `image_gen` para quitar
@@ -304,6 +309,12 @@ ni activa la terminal NFC.
 La barra inferior reúne **Inicio**, **Pagar QR**, **Tarjeta NFC** y **Perfil**,
 con accesos de pago separados. QR permite escanear el código del conductor y
 Tarjeta NFC muestra su estado no habilitado, sin simular cobros con tarjeta.
+
+**Tarjeta NFC** presenta una tarjeta Mi Pasaje identificada como vista previa
+sin activar, explica cómo funcionará la recarga y el acercamiento a la
+terminal, y ofrece pagar con QR o pedir ayuda sobre emisión, vinculación o
+pérdida. No muestra saldo, carnet ni números de tarjeta inventados. El acceso
+de ayuda utiliza la identidad de la sesión y no emite ni vincula una tarjeta.
 
 **Tu billetera** muestra el icono de puntos y el saldo. El ojo oculta tanto
 los importes como el botón de lectura de voz; la preferencia se conserva en el

@@ -26,7 +26,7 @@ class UserTypeScreen extends StatelessWidget {
                   const BrandLogo(),
                   const SizedBox(height: 20),
                   const Text(
-                    'Transita Bolivia',
+                    'Mi Pasaje',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,

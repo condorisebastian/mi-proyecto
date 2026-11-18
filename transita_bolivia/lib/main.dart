@@ -81,17 +81,11 @@ void main() async {
   final adminAuth = AdminAuthService();
   await adminAuth.restoreSession();
 
-  runApp(
-    TransitaBoliviaApp(
-      auth: auth,
-      driverAuth: driverAuth,
-      adminAuth: adminAuth,
-    ),
-  );
+  runApp(MiPasajeApp(auth: auth, driverAuth: driverAuth, adminAuth: adminAuth));
 }
 
-class TransitaBoliviaApp extends StatelessWidget {
-  const TransitaBoliviaApp({
+class MiPasajeApp extends StatelessWidget {
+  const MiPasajeApp({
     super.key,
     required this.auth,
     required this.driverAuth,
@@ -113,7 +107,7 @@ class TransitaBoliviaApp extends StatelessWidget {
       child: ListenableBuilder(
         listenable: AppPreferences.instance,
         builder: (context, _) => MaterialApp(
-          title: 'Transita Bolivia',
+          title: 'Mi Pasaje',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(
             highContrast: AppPreferences.instance.highContrast,

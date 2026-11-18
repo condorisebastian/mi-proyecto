@@ -50,7 +50,7 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           const Text(
-            'Ajusta Transita a tu forma de usar el teléfono. Las preferencias se guardan en este dispositivo.',
+            'Ajusta Mi Pasaje a tu forma de usar el teléfono. Las preferencias se guardan en este dispositivo.',
           ),
           const SizedBox(height: 20),
           SwitchListTile(

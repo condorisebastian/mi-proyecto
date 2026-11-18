@@ -306,11 +306,17 @@ void main() {
       expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
       await selectTab(tester, 2);
       expect(find.text('Pago con NFC'), findsOneWidget);
+      expect(find.byKey(const ValueKey('nfc-card-preview')), findsOneWidget);
+      expect(find.text('VISTA PREVIA · SIN ACTIVAR'), findsOneWidget);
       expect(find.textContaining('aún no está habilitado'), findsOneWidget);
+      expect(find.textContaining('42.50'), findsNothing);
+      expect(find.textContaining('9876543'), findsNothing);
       expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsNothing);
       await selectTab(tester, 0);
       await selectTab(tester, 2);
       expect(find.text('Pago con NFC'), findsOneWidget);
+      await tester.ensureVisible(find.text('PAGAR CON QR'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('PAGAR CON QR'));
       await tester.pumpAndSettle();
       expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
@@ -391,6 +397,19 @@ void main() {
       expect(support.canal, 'pasajero');
       expect(support.id, 42);
       expect(support.nombre, 'Sebastian Prueba');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await selectTab(tester, 2);
+      await tester.ensureVisible(find.byKey(const ValueKey('nfc-support')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('nfc-support')));
+      await tester.pumpAndSettle();
+      final nfcSupport = tester.widget<SupportScreen>(
+        find.byType(SupportScreen),
+      );
+      expect(nfcSupport.canal, 'pasajero');
+      expect(nfcSupport.id, 42);
+      expect(nfcSupport.nombre, 'Sebastian Prueba');
       expect(tester.takeException(), isNull);
     },
   );
