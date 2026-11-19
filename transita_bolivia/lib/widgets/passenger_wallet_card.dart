@@ -62,21 +62,16 @@ class PassengerWalletCard extends StatelessWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Container(
+                  Padding(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        'assets/images/icono_saldo.jpg',
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.contain,
-                        semanticLabel: 'Puntos de tu billetera',
-                      ),
+                    child: Image.asset(
+                      'assets/images/icono_saldo.png',
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.contain,
+                      color: Colors.white,
+                      colorBlendMode: BlendMode.srcIn,
+                      semanticLabel: 'Puntos de tu billetera',
                     ),
                   ),
                   const SizedBox(width: 12),

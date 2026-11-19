@@ -14,7 +14,12 @@ No se presentan precios históricos del Decreto 494 como tarifas actuales.
 La app se llama **Mi Pasaje** en Android, iOS, accesos y comprobantes. Usa
 `img_transitabolivia/logo_app.jpg`, copiado sin modificar a
 `transita_bolivia/assets/images/logo_app.jpg`. La billetera usa de forma
-independiente `icono_saldo.jpg`. Se retiró la moneda azul anterior de la app.
+independiente `assets/images/icono_saldo.png`, con transparencia real. El símbolo
+de barras y moneda Bs se preparó con la herramienta integrada de imágenes;
+la app lo representa en blanco, sin recuadro detrás. El JPG original se
+conserva en `img_transitabolivia` y el prompt del recurso final está en
+`img_transitabolivia/icono_saldo_sin_fondo.prompt.txt`. Se retiró la moneda azul
+anterior de la app.
 
 Para regenerar los iconos, ejecutar `dart run ../tools/regenerate_app_icons.dart`
 desde `transita_bolivia/`. El comando prepara un recorte cuadrado centrado del

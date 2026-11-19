@@ -37,7 +37,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo_app.jpg
-    - assets/images/icono_saldo.jpg
+    - assets/images/icono_saldo.png
     - assets/images/descubre_recarga.png
     - assets/images/descubre_recarga_otros.png
     - assets/images/descubre_saldo.png
