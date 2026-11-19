@@ -12,7 +12,8 @@ import '../../models/user.dart';
 import '../../services/financial_chat_service.dart';
 import '../../services/app_preferences.dart';
 import '../chat/financial_chat_screen.dart';
-import 'pay_trip_screen.dart';
+import 'payment_hub_screen.dart';
+import 'student_card_screen.dart';
 import 'history_screen.dart';
 import '../soporte/support_screen.dart';
 import 'profile_screen.dart';
@@ -46,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool? _balanceHidden;
   final Map<bool, String> _chatDrafts = {};
   final _walletKey = GlobalKey();
+  final _paymentKey = GlobalKey<PaymentHubScreenState>();
 
   AppPreferences get _preferences =>
       widget.preferences ?? AppPreferences.instance;
@@ -104,13 +106,12 @@ class _HomeScreenState extends State<HomeScreen> {
             <Widget>[
               _buildHomeTab(user),
               if (_visitedTabs.contains(1))
-                const PayTripScreen()
+                const StudentCardScreen()
               else
                 const SizedBox.shrink(),
               if (_visitedTabs.contains(2))
-                PayTripScreen(
-                  nfc: true,
-                  onPayWithQr: () => _selectTab(1),
+                PaymentHubScreen(
+                  key: _paymentKey,
                   onSupport: () => _openSupport(user),
                 )
               else
@@ -119,6 +120,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 PassengerProfileScreen(
                   user: user,
                   onLogout: () => _confirmLogout(context, authService),
+                  onSupport: (type, description) => _openSupport(
+                    user,
+                    initialType: type,
+                    initialDescription: description,
+                  ),
                 )
               else
                 const SizedBox.shrink(),
@@ -203,7 +209,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openSupport(User user) {
+  void _openSupport(
+    User user, {
+    String initialType = 'saldo',
+    String initialDescription = '',
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute<void>(
@@ -212,6 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
           id: user.id,
           nombre: '${user.nombre} ${user.apellido}',
           firebaseService: _firebase,
+          initialType: initialType,
+          initialDescription: initialDescription,
         ),
       ),
     );
@@ -281,7 +293,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
                 },
-                onPayWithCard: () => _selectTab(2),
+                onPayWithCard: () {
+                  _selectTab(2);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _paymentKey.currentState?.selectCard();
+                  });
+                },
               ),
               const SizedBox(height: 24),
               const Text(

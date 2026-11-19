@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Navegación del pasajero con accesos separados a QR y tarjeta NFC.
+/// Un único acceso principal a pagos y una sección independiente de carnet.
 class PassengerNavigationBar extends StatelessWidget {
   const PassengerNavigationBar({
     super.key,
@@ -11,11 +11,11 @@ class PassengerNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelected;
 
-  static const _labels = ['Inicio', 'Pagar QR', 'Tarjeta NFC', 'Perfil'];
+  static const _labels = ['Inicio', 'Mi carnet', 'Pagar', 'Perfil'];
   static const _icons = [
     Icons.home_outlined,
+    Icons.badge_outlined,
     Icons.qr_code_scanner,
-    Icons.credit_card,
     Icons.person_outline,
   ];
 
@@ -31,8 +31,10 @@ class PassengerNavigationBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: List.generate(_labels.length, (index) {
             final selected = currentIndex == index;
-            final central = index == 1 || index == 2;
-            final color = selected ? scheme.primary : scheme.onSurfaceVariant;
+            final central = index == 2;
+            final color = selected || central
+                ? scheme.primary
+                : scheme.onSurfaceVariant;
             return Expanded(
               child: Semantics(
                 button: true,
@@ -53,9 +55,7 @@ class PassengerNavigationBar extends StatelessWidget {
                                     width: 56,
                                     height: 56,
                                     decoration: BoxDecoration(
-                                      color: selected
-                                          ? scheme.primary
-                                          : scheme.primaryContainer,
+                                      color: scheme.primary,
                                       borderRadius: BorderRadius.circular(18),
                                       border: selected
                                           ? Border.all(
@@ -69,9 +69,7 @@ class PassengerNavigationBar extends StatelessWidget {
                                       children: [
                                         Icon(
                                           _icons[index],
-                                          color: selected
-                                              ? scheme.onPrimary
-                                              : scheme.primary,
+                                          color: scheme.onPrimary,
                                           size: 30,
                                         ),
                                         if (index == 2)
@@ -80,9 +78,7 @@ class PassengerNavigationBar extends StatelessWidget {
                                             bottom: 3,
                                             child: Icon(
                                               Icons.contactless,
-                                              color: selected
-                                                  ? scheme.onPrimary
-                                                  : scheme.primary,
+                                              color: scheme.onPrimary,
                                               size: 14,
                                             ),
                                           ),

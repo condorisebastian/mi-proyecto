@@ -12,8 +12,8 @@ El Torno. No se generan cobros provinciales hasta verificar sus importes.
 No se presentan precios históricos del Decreto 494 como tarifas actuales.
 
 La app se llama **Mi Pasaje** en Android, iOS, accesos y comprobantes. Usa
-`img_transitabolivia/logo_app.jpg`, copiado sin modificar a
-`transita_bolivia/assets/images/logo_app.jpg`. La billetera usa de forma
+`img_transitabolivia/logo_app_new.png`, copiado sin modificar a
+`transita_bolivia/assets/images/logo_app_new.png`. La billetera usa de forma
 independiente `assets/images/icono_saldo.png`, con transparencia real. El símbolo
 de barras y moneda Bs se preparó con la herramienta integrada de imágenes;
 la app lo representa en blanco, sin recuadro detrás. El JPG original se
@@ -311,9 +311,35 @@ ni activa la terminal NFC.
 
 ### Navegación del pasajero
 
-La barra inferior reúne **Inicio**, **Pagar QR**, **Tarjeta NFC** y **Perfil**,
-con accesos de pago separados. QR permite escanear el código del conductor y
-Tarjeta NFC muestra su estado no habilitado, sin simular cobros con tarjeta.
+La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar** y **Perfil**.
+Pagar es el único botón principal y permite elegir **Con QR** o **Con tarjeta**.
+QR conserva el escaneo y la confirmación del importe; tarjeta muestra su
+estado NFC no habilitado, sin simular cobros.
+
+**Mi carnet** presenta `carnetstudiantefrontal.png` completo, con ampliación al
+tocar y recomendaciones para mostrar un carnet emitido y validado al conductor.
+La imagen se identifica como muestra con datos ficticios: no se vincula a la
+identidad de quien inicia sesión ni acredita descuentos, vigencia o emisión.
+
+**Perfil** incluye Mis datos, Puntos de atención, Establecer montos límites,
+Biometría digital, Cambiar mi clave, Versión de la app, Términos y condiciones,
+Política de privacidad y Cerrar sesión. ID y CI están dentro de Mis datos.
+Atención consulta el canal existente; no se inventan sedes ni horarios.
+El cambio de clave prepara una incidencia de tipo PIN para el operador,
+sin enviarla automáticamente ni pedir claves dentro del mensaje.
+
+Los límites se guardan en centavos por cuenta, modo de backend y teléfono.
+Antes de pagar por QR se valida el máximo por operación y, si está activada,
+la confirmación biométrica nativa. Cancelar o fallar la verificación impide
+continuar con el descuento; un cambio de cuenta invalida el intento pendiente.
+Son controles adicionales del cliente, no límites centrales del servidor.
+
+La biometría utiliza BiometricPrompt en Android 9+ y LocalAuthentication en
+iOS, sin dependencias nuevas ni acceso a plantillas biométricas. El diálogo
+debe confirmarse para activar o desactivar la preferencia. Android cancela
+la solicitud al pasar al segundo plano. La versión se consulta al paquete
+instalado, no se fija a mano. La integración iOS requiere validación con Xcode.
+Los textos de condiciones y privacidad describen el alcance de demostración.
 
 **Tarjeta NFC** presenta una tarjeta Mi Pasaje identificada como vista previa
 sin activar, explica cómo funcionará la recarga y el acercamiento a la

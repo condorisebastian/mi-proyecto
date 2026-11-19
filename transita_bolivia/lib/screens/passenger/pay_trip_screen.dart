@@ -10,6 +10,7 @@ import '../../widgets/amount_speaker_button.dart';
 import 'history_screen.dart';
 import '../../widgets/passenger_nfc_panel.dart';
 import '../soporte/support_screen.dart';
+import '../../services/payment_preferences.dart';
 
 class PayTripScreen extends StatefulWidget {
   const PayTripScreen({
@@ -17,11 +18,13 @@ class PayTripScreen extends StatefulWidget {
     this.nfc = false,
     this.onPayWithQr,
     this.onSupport,
+    this.embedded = false,
   });
 
   final bool nfc;
   final VoidCallback? onPayWithQr;
   final VoidCallback? onSupport;
+  final bool embedded;
 
   @override
   State<PayTripScreen> createState() => _PayTripScreenState();
@@ -37,11 +40,13 @@ class _PayTripScreenState extends State<PayTripScreen> {
     final user = authService.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.nfc ? 'Tarjeta NFC' : 'Pagar con QR'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: Text(widget.nfc ? 'Tarjeta NFC' : 'Pagar con QR'),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -386,6 +391,24 @@ class _PayTripScreenState extends State<PayTripScreen> {
               setState(() {
                 _isProcessing = true;
               });
+
+              final permission = await PaymentAuthorization(
+                PaymentPreferences(user.id),
+              ).authorize(puntos);
+              if (!mounted) return;
+              if (!permission.ok || authService.currentUser?.id != user.id) {
+                setState(() => _isProcessing = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      permission.ok
+                          ? 'La sesión cambió. Vuelve a iniciar el pago.'
+                          : permission.message,
+                    ),
+                  ),
+                );
+                return;
+              }
 
               final result = await _apiService.payTrip(
                 user.id,

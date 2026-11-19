@@ -34,6 +34,8 @@ class SupportScreen extends StatefulWidget {
     required this.id,
     required this.nombre,
     this.firebaseService,
+    this.initialType = 'saldo',
+    this.initialDescription = '',
   });
 
   /// 'pasajero' | 'conductor'
@@ -41,6 +43,8 @@ class SupportScreen extends StatefulWidget {
   final int id;
   final String nombre;
   final FirebaseService? firebaseService;
+  final String initialType;
+  final String initialDescription;
 
   @override
   State<SupportScreen> createState() => _SupportScreenState();
@@ -49,9 +53,18 @@ class SupportScreen extends StatefulWidget {
 class _SupportScreenState extends State<SupportScreen> {
   FirebaseService get _firebase =>
       widget.firebaseService ?? FirebaseService.instance;
-  final _descController = TextEditingController();
-  String _tipo = 'saldo';
+  late final TextEditingController _descController;
+  late String _tipo;
   bool _enviando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _descController = TextEditingController(text: widget.initialDescription);
+    _tipo = _tiposInc.containsKey(widget.initialType)
+        ? widget.initialType
+        : 'saldo';
+  }
 
   String get _clave =>
       widget.canal == 'conductor' ? 'c-${widget.id}' : 'p-${widget.id}';

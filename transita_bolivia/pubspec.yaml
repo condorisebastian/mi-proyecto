@@ -36,7 +36,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/logo_app.jpg
+    - assets/images/logo_app_new.png
+    - assets/images/carnetstudiantefrontal.png
     - assets/images/icono_saldo.png
     - assets/images/descubre_recarga.png
     - assets/images/descubre_recarga_otros.png
@@ -47,8 +48,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/branding/launcher_icon.png"
-  adaptive_icon_background: "#5CB8D4"
+  adaptive_icon_background: "#1E88E5"
   adaptive_icon_foreground: "assets/branding/launcher_icon.png"
   adaptive_icon_foreground_inset: 16
   remove_alpha_ios: true
-  background_color_ios: "#5CB8D4"
+  background_color_ios: "#1E88E5"

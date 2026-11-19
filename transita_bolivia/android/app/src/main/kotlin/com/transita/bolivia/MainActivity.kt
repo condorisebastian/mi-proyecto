@@ -14,6 +14,7 @@ class MainActivity : FlutterActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var tone: ToneGenerator? = null
     private var nfc: NfcTerminal? = null
+    private var deviceSecurity: DeviceSecurity? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +23,8 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        deviceSecurity = DeviceSecurity(this, MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.transita.bolivia/device_security"))
         nfc = NfcTerminal(this, MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.transita.bolivia/nfc"))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
@@ -50,10 +53,16 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        deviceSecurity?.cancel()
         nfc?.cancel()
         handler.removeCallbacksAndMessages(null)
         tone?.release()
         tone = null
         super.onDestroy()
+    }
+
+    override fun onStop() {
+        deviceSecurity?.cancel()
+        super.onStop()
     }
 }

@@ -96,10 +96,10 @@ void main() {
   });
 
   testWidgets(
-    'Inicio muestra billetera y Descubre más, con QR y NFC separados en la barra',
+    'Inicio muestra billetera y Descubre más, con Pagar principal y Mi carnet en la barra',
     (tester) async {
       await openPassenger(tester, db, auth);
-      for (final label in ['Inicio', 'Pagar QR', 'Tarjeta NFC', 'Perfil']) {
+      for (final label in ['Inicio', 'Mi carnet', 'Pagar', 'Perfil']) {
         expect(find.text(label), findsOneWidget);
       }
       for (final removed in [
@@ -302,9 +302,10 @@ void main() {
     'QR y tarjeta NFC son accesos distintos y NFC no simula un cobro',
     (tester) async {
       await openPassenger(tester, db, auth);
-      await selectTab(tester, 1);
-      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
       await selectTab(tester, 2);
+      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('pay-method-card')));
+      await tester.pumpAndSettle();
       expect(find.text('Pago con NFC'), findsOneWidget);
       expect(find.byKey(const ValueKey('nfc-card-preview')), findsOneWidget);
       expect(find.text('VISTA PREVIA · SIN ACTIVAR'), findsOneWidget);
@@ -368,10 +369,19 @@ void main() {
   ) async {
     await openPassenger(tester, db, auth);
     await selectTab(tester, 3);
+    await tester.tap(find.text('Mis datos'));
+    await tester.pumpAndSettle();
     expect(find.text('ID de usuario'), findsOneWidget);
     expect(find.text('#42'), findsOneWidget);
     expect(find.text('Carnet de identidad (CI)'), findsOneWidget);
     expect(find.text('9876543'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('profile-logout')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Cerrar sesión'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('CANCELAR'));
@@ -400,6 +410,8 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       await selectTab(tester, 2);
+      await tester.tap(find.byKey(const ValueKey('pay-method-card')));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const ValueKey('nfc-support')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('nfc-support')));
