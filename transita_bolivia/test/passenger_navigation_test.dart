@@ -99,7 +99,7 @@ void main() {
     'Inicio muestra billetera y Descubre más, con Pagar principal y Mi carnet en la barra',
     (tester) async {
       await openPassenger(tester, db, auth);
-      for (final label in ['Inicio', 'Mi carnet', 'Pagar', 'Perfil']) {
+      for (final label in ['Inicio', 'Mi carnet', 'Pagar', 'Rutas', 'Perfil']) {
         expect(find.text(label), findsOneWidget);
       }
       for (final removed in [
@@ -139,11 +139,68 @@ void main() {
         ),
       );
       expect(qrIcon.size, greaterThan(homeIcon.size!));
+      expect(
+        tester.getCenter(find.byKey(const ValueKey('passenger-tab-2'))).dx,
+        closeTo(tester.getCenter(navigation).dx, 0.01),
+      );
       // Mostrar las ilustraciones no crea solicitudes ni abre el chat.
       expect((await db.collection('chats').get()).docs, isEmpty);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'los iconos de billetera forman una columna y el ojo sigue a la derecha del saldo',
+    (tester) async {
+      await openPassenger(tester, db, auth);
+      final title = tester.getCenter(
+        find.byKey(const ValueKey('wallet-title-icon')),
+      );
+      final points = tester.getCenter(
+        find.byKey(const ValueKey('wallet-points-icon')),
+      );
+      final history = tester.getCenter(
+        find.byKey(const ValueKey('wallet-history-icon')),
+      );
+      final eye = tester.getCenter(
+        find.byKey(const ValueKey('wallet-eye-icon')),
+      );
+      expect(title.dx, closeTo(points.dx, 0.01));
+      expect(history.dx, closeTo(points.dx, 0.01));
+      expect(eye.dy, closeTo(points.dy, 0.01));
+      expect(eye.dx, greaterThan(tester.getRect(find.text('42.50')).right));
+      await tester.tap(find.byTooltip('Ocultar saldo'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getCenter(find.byKey(const ValueKey('wallet-eye-icon'))),
+        eye,
+      );
+      expect(find.byTooltip('Mostrar saldo'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('Rutas permite buscar destinos sin iniciar un cobro', (
+    tester,
+  ) async {
+    await openPassenger(tester, db, auth);
+    await selectTab(tester, 3);
+    await tester.enterText(find.byType(TextField), 'Cotoca');
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(Card, 'Cotoca'), findsOneWidget);
+    expect(find.text('La Guardia'), findsNothing);
+    expect(find.text('Tarifa por verificar'), findsOneWidget);
+    expect(find.text('MOSTRAR QR'), findsNothing);
+    expect(find.text('COBRAR CON TARJETA'), findsNothing);
+    expect((await db.collection('transacciones').get()).docs, isEmpty);
+    await selectTab(tester, 0);
+    await selectTab(tester, 3);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Cotoca',
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'la imagen Recárgate puntos abre el chat y conserva el borrador al volver',
@@ -368,7 +425,7 @@ void main() {
     tester,
   ) async {
     await openPassenger(tester, db, auth);
-    await selectTab(tester, 3);
+    await selectTab(tester, 4);
     await tester.tap(find.text('Mis datos'));
     await tester.pumpAndSettle();
     expect(find.text('ID de usuario'), findsOneWidget);
@@ -433,7 +490,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await openPassenger(tester, db, auth, textScale: 1.8);
-      for (final index in [1, 2, 3, 0]) {
+      for (final index in [1, 2, 3, 4, 0]) {
         await selectTab(tester, index);
         expect(tester.takeException(), isNull, reason: 'Sección $index');
       }

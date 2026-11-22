@@ -37,7 +37,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo_app_new.png
-    - assets/images/carnetstudiantefrontal.png
+    - assets/images/student_card_updated.png
     - assets/images/icono_saldo.png
     - assets/images/descubre_recarga.png
     - assets/images/descubre_recarga_otros.png

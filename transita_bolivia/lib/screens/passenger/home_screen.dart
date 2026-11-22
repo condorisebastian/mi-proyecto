@@ -14,6 +14,7 @@ import '../../services/app_preferences.dart';
 import '../chat/financial_chat_screen.dart';
 import 'payment_hub_screen.dart';
 import 'student_card_screen.dart';
+import '../province_routes_screen.dart';
 import 'history_screen.dart';
 import '../soporte/support_screen.dart';
 import 'profile_screen.dart';
@@ -117,6 +118,10 @@ class _HomeScreenState extends State<HomeScreen> {
               else
                 const SizedBox.shrink(),
               if (_visitedTabs.contains(3))
+                ProvinceRoutesScreen(title: 'Rutas', preferences: _preferences)
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(4))
                 PassengerProfileScreen(
                   user: user,
                   onLogout: () => _confirmLogout(context, authService),

@@ -130,8 +130,18 @@ void main() {
   );
 
   testWidgets(
-    'Mi carnet conserva la marca de muestra y permite ampliar la imagen',
+    'Mi carnet abre el nuevo diseño horizontal y restaura la pantalla al cerrar',
     (tester) async {
+      final calls = <MethodCall>[];
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        calls.add(call);
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
       await fixture.openPassenger(
         tester,
         FakeFirebaseFirestore(),
@@ -139,17 +149,62 @@ void main() {
       );
       await fixture.selectTab(tester, 1);
       expect(find.text('Muestra · Datos ficticios'), findsOneWidget);
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('student-card-image')),
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('student-card-fullscreen-button')),
+        150,
+        scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('student-card-image')));
+      await tester.tap(
+        find.byKey(const ValueKey('student-card-fullscreen-button')),
+      );
       await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('student-card-fullscreen')),
+        findsOneWidget,
+      );
       expect(find.byType(InteractiveViewer), findsOneWidget);
       final image = tester.widget<Image>(find.byType(Image));
       expect(
         (image.image as AssetImage).assetName,
         StudentCardScreen.assetPath,
+      );
+      expect(image.fit, BoxFit.contain);
+      expect(
+        calls
+            .where((c) => c.method == 'SystemChrome.setPreferredOrientations')
+            .last
+            .arguments,
+        ['DeviceOrientation.landscapeLeft', 'DeviceOrientation.landscapeRight'],
+      );
+      expect(
+        calls
+            .where((c) => c.method == 'SystemChrome.setEnabledSystemUIMode')
+            .last
+            .arguments,
+        'SystemUiMode.immersiveSticky',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('student-card-fullscreen-close')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('student-card-fullscreen')),
+        findsNothing,
+      );
+      expect(
+        calls
+            .where((c) => c.method == 'SystemChrome.setPreferredOrientations')
+            .last
+            .arguments,
+        isEmpty,
+      );
+      expect(
+        calls
+            .where((c) => c.method == 'SystemChrome.setEnabledSystemUIMode')
+            .last
+            .arguments,
+        'SystemUiMode.edgeToEdge',
       );
       expect(tester.takeException(), isNull);
     },
@@ -160,7 +215,7 @@ void main() {
     (tester) async {
       final db = FakeFirebaseFirestore();
       await fixture.openPassenger(tester, db, fixture.PassengerAuth());
-      await fixture.selectTab(tester, 3);
+      await fixture.selectTab(tester, 4);
       for (final label in [
         'Mis datos',
         'Puntos de atención',
@@ -206,7 +261,7 @@ void main() {
         FakeFirebaseFirestore(),
         fixture.PassengerAuth(),
       );
-      await fixture.selectTab(tester, 3);
+      await fixture.selectTab(tester, 4);
       await tester.ensureVisible(find.text('Establecer montos límites'));
       await tester.tap(find.text('Establecer montos límites'));
       await tester.pumpAndSettle();

@@ -11,11 +11,12 @@ class PassengerNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelected;
 
-  static const _labels = ['Inicio', 'Mi carnet', 'Pagar', 'Perfil'];
+  static const _labels = ['Inicio', 'Mi carnet', 'Pagar', 'Rutas', 'Perfil'];
   static const _icons = [
     Icons.home_outlined,
     Icons.badge_outlined,
     Icons.qr_code_scanner,
+    Icons.alt_route_rounded,
     Icons.person_outline,
   ];
 

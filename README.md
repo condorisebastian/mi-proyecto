@@ -311,15 +311,25 @@ ni activa la terminal NFC.
 
 ### Navegación del pasajero
 
-La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar** y **Perfil**.
-Pagar es el único botón principal y permite elegir **Con QR** o **Con tarjeta**.
+La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar**, **Rutas** y **Perfil**.
+Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Con tarjeta**.
 QR conserva el escaneo y la confirmación del importe; tarjeta muestra su
 estado NFC no habilitado, sin simular cobros.
 
-**Mi carnet** presenta `carnetstudiantefrontal.png` completo, con ampliación al
-tocar y recomendaciones para mostrar un carnet emitido y validado al conductor.
+**Mi carnet** presenta `student_card_updated.png`, copia de la imagen proporcionada
+`Mi Pasaje student card update.png`. El botón **Pantalla completa** y la imagen
+abren un visor horizontal, sin recortar, con zoom mediante dos dedos. Cerrar o
+volver restaura la orientación automática y las barras del sistema.
 La imagen se identifica como muestra con datos ficticios: no se vincula a la
 identidad de quien inicia sesión ni acredita descuentos, vigencia o emisión.
+
+**Rutas** permite buscar destinos del catálogo desde Santa Cruz de la Sierra y
+guardar favoritos. Las tarifas continúan como **Tarifa por verificar** y el
+pasajero no inicia cobros desde esta sección.
+
+En **Tu billetera**, los iconos de título, puntos y movimientos comparten una
+columna izquierda. El ojo permanece a la derecha del saldo y conserva la
+preferencia para ocultarlo.
 
 **Perfil** incluye Mis datos, Puntos de atención, Establecer montos límites,
 Biometría digital, Cambiar mi clave, Versión de la app, Términos y condiciones,

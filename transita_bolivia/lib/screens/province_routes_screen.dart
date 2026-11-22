@@ -8,9 +8,15 @@ import '../services/app_preferences.dart';
 import 'accessibility_screen.dart';
 
 class ProvinceRoutesScreen extends StatefulWidget {
-  const ProvinceRoutesScreen({super.key, this.conductorId, this.preferences});
+  const ProvinceRoutesScreen({
+    super.key,
+    this.conductorId,
+    this.preferences,
+    this.title = 'Provincias',
+  });
   final int? conductorId;
   final AppPreferences? preferences;
+  final String title;
   @override
   State<ProvinceRoutesScreen> createState() => _ProvinceRoutesScreenState();
 }
@@ -74,7 +80,7 @@ class _ProvinceRoutesScreenState extends State<ProvinceRoutesScreen> {
     });
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Provincias'),
+        title: Text(widget.title),
         actions: const [AccessibilityButton()],
       ),
       body: Align(

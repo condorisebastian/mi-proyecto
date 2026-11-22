@@ -1,8 +1,21 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class StudentCardScreen extends StatelessWidget {
   const StudentCardScreen({super.key});
-  static const assetPath = 'assets/images/carnetstudiantefrontal.png';
+  static const assetPath = 'assets/images/student_card_updated.png';
+  static const aspectRatio = 1578 / 996;
+  static const imageLabel = 'Carnet estudiantil de muestra con datos ficticios';
+
+  static void openFullscreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => const StudentCardFullscreenScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -34,43 +47,27 @@ class StudentCardScreen extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 key: const ValueKey('student-card-image'),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(title: const Text('Carnet de muestra')),
-                      body: InteractiveViewer(
-                        minScale: 1,
-                        maxScale: 4,
-                        child: Center(
-                          child: AspectRatio(
-                            aspectRatio: 1.586,
-                            child: Image.asset(
-                              assetPath,
-                              fit: BoxFit.contain,
-                              semanticLabel:
-                                  'Carnet estudiantil de muestra con datos ficticios',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                onTap: () => openFullscreen(context),
                 child: AspectRatio(
-                  aspectRatio: 1.586,
+                  aspectRatio: aspectRatio,
                   child: Image.asset(
                     assetPath,
                     fit: BoxFit.contain,
-                    semanticLabel:
-                        'Carnet estudiantil de muestra con datos ficticios',
+                    semanticLabel: imageLabel,
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              key: const ValueKey('student-card-fullscreen-button'),
+              onPressed: () => openFullscreen(context),
+              icon: const Icon(Icons.fullscreen_rounded),
+              label: const Text('Pantalla completa'),
+            ),
             const SizedBox(height: 8),
             const Text(
-              'Toca la imagen para ampliarla.',
+              'Abre el carnet en horizontal. Puedes ampliar la imagen con dos dedos y volver con el botón de cerrar.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -104,6 +101,91 @@ class StudentCardScreen extends StatelessWidget {
           ],
         ),
       ),
+    ),
+  );
+}
+
+class StudentCardFullscreenScreen extends StatefulWidget {
+  const StudentCardFullscreenScreen({super.key});
+  @override
+  State<StudentCardFullscreenScreen> createState() =>
+      _StudentCardFullscreenScreenState();
+}
+
+class _StudentCardFullscreenScreenState
+    extends State<StudentCardFullscreenScreen> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_enterFullscreen());
+  }
+
+  Future<void> _enterFullscreen() async {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    if (!mounted) {
+      await _restoreDisplay();
+      return;
+    }
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (!mounted) {
+      await _restoreDisplay();
+    }
+  }
+
+  Future<void> _restoreDisplay() async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await SystemChrome.setPreferredOrientations([]);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_restoreDisplay());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    key: const ValueKey('student-card-fullscreen'),
+    backgroundColor: Colors.black,
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        LayoutBuilder(
+          builder: (context, size) => RotatedBox(
+            quarterTurns: size.maxWidth >= size.maxHeight ? 0 : 1,
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 4,
+              child: SizedBox.expand(
+                child: Image.asset(
+                  StudentCardScreen.assetPath,
+                  fit: BoxFit.contain,
+                  semanticLabel: StudentCardScreen.imageLabel,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: SafeArea(
+            child: IconButton.filled(
+              key: const ValueKey('student-card-fullscreen-close'),
+              tooltip: 'Salir de pantalla completa',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black54,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 }
