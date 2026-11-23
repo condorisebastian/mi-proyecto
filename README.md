@@ -317,6 +317,10 @@ ni activa la terminal NFC.
 
 La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar**, **Rutas** y **Perfil**.
 Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Con tarjeta**.
+Su icono utiliza `icono_pagar.png`, preparado con `image_gen` desde la imagen
+proporcionada. La versión `img_transitabolivia/icono_pagar_centrado.png` tiene
+lienzo cuadrado, márgenes equilibrados y transparencia; se representa en blanco
+sobre el botón azul. El original y el prompt se conservan en esa carpeta.
 QR conserva el escaneo y la confirmación del importe; tarjeta muestra su
 estado NFC no habilitado, sin simular cobros.
 

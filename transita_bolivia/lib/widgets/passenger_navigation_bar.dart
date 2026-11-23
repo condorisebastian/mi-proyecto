@@ -10,6 +10,7 @@ class PassengerNavigationBar extends StatelessWidget {
 
   final int currentIndex;
   final ValueChanged<int> onSelected;
+  static const payIconAsset = 'assets/images/icono_pagar.png';
 
   static const _labels = ['Inicio', 'Mi carnet', 'Pagar', 'Rutas', 'Perfil'];
   static const _icons = [
@@ -65,25 +66,19 @@ class PassengerNavigationBar extends StatelessWidget {
                                             )
                                           : null,
                                     ),
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Icon(
-                                          _icons[index],
-                                          color: scheme.onPrimary,
-                                          size: 30,
+                                    child: Center(
+                                      child: Image.asset(
+                                        payIconAsset,
+                                        key: const ValueKey(
+                                          'passenger-pay-icon',
                                         ),
-                                        if (index == 2)
-                                          Positioned(
-                                            right: 3,
-                                            bottom: 3,
-                                            child: Icon(
-                                              Icons.contactless,
-                                              color: scheme.onPrimary,
-                                              size: 14,
-                                            ),
-                                          ),
-                                      ],
+                                        width: 52,
+                                        height: 52,
+                                        fit: BoxFit.contain,
+                                        color: scheme.onPrimary,
+                                        colorBlendMode: BlendMode.srcIn,
+                                        excludeFromSemantics: true,
+                                      ),
                                     ),
                                   )
                                 : AnimatedContainer(

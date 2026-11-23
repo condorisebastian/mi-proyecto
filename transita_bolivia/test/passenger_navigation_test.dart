@@ -126,10 +126,10 @@ void main() {
       );
       expect(greeting.style!.fontSize, lessThan(20));
       final navigation = find.byType(PassengerNavigationBar);
-      final qrIcon = tester.widget<Icon>(
+      final payIcon = tester.widget<Image>(
         find.descendant(
           of: navigation,
-          matching: find.byIcon(Icons.qr_code_scanner),
+          matching: find.byKey(const ValueKey('passenger-pay-icon')),
         ),
       );
       final homeIcon = tester.widget<Icon>(
@@ -138,7 +138,11 @@ void main() {
           matching: find.byIcon(Icons.home_outlined),
         ),
       );
-      expect(qrIcon.size, greaterThan(homeIcon.size!));
+      expect(
+        (payIcon.image as AssetImage).assetName,
+        PassengerNavigationBar.payIconAsset,
+      );
+      expect(payIcon.width, greaterThan(homeIcon.size!));
       expect(
         tester.getCenter(find.byKey(const ValueKey('passenger-tab-2'))).dx,
         closeTo(tester.getCenter(navigation).dx, 0.01),
