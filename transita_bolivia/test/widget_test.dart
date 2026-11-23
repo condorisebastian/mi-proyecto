@@ -120,7 +120,7 @@ void main() {
       await tester.pump();
       FlutterError.onError = oldOnError;
       expect(tester.takeException(), isNull);
-      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
+      expect(find.text('Escanear QR'), findsOneWidget);
       final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNotNull);
     },

@@ -316,13 +316,19 @@ ni activa la terminal NFC.
 ### Navegación del pasajero
 
 La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar**, **Rutas** y **Perfil**.
-Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Con tarjeta**.
+Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Tarjeta NFC**.
 Su icono utiliza `icono_pagar.png`, preparado con `image_gen` desde la imagen
 proporcionada. La versión `img_transitabolivia/icono_pagar_centrado.png` tiene
 lienzo cuadrado, márgenes equilibrados y transparencia; se representa en blanco
 sobre el botón azul. El original y el prompt se conservan en esa carpeta.
 QR conserva el escaneo y la confirmación del importe; tarjeta muestra su
 estado NFC no habilitado, sin simular cobros.
+
+La vista QR destaca **Escanear QR**, con saldo disponible y tarifa individual
+separados del importe definitivo que llega del conductor. Explica el pago
+grupal y conserva la revisión antes de confirmar. Ambas formas de pago tienen
+contenido desplazable, ancho limitado en tabletas y ayuda accesible desde la
+cabecera. La guía de NFC se despliega bajo su tarjeta de vista previa.
 
 **Mi carnet** presenta `student_card_updated.png`, copia de la imagen proporcionada
 `Mi Pasaje student card update.png`. El botón **Pantalla completa** y la imagen

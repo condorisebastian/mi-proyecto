@@ -9,6 +9,7 @@ import '../../models/trip_qr.dart';
 import '../../widgets/amount_speaker_button.dart';
 import 'history_screen.dart';
 import '../../widgets/passenger_nfc_panel.dart';
+import '../../widgets/passenger_qr_panel.dart';
 import '../soporte/support_screen.dart';
 import '../../services/payment_preferences.dart';
 
@@ -47,141 +48,20 @@ class _PayTripScreenState extends State<PayTripScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.background],
-            stops: [0.0, 0.3],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                if (widget.nfc)
-                  _buildNfcInfo()
-                else
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: widget.nfc
+                  ? _buildNfcInfo()
+                  : PassengerQrPanel(
+                      user: user,
+                      isProcessing: _isProcessing,
+                      onScan: _showQRScanner,
                     ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          user?.tipo == 'estudiante'
-                              ? Icons.school
-                              : user?.tipo == 'civil'
-                              ? Icons.person
-                              : user?.tipo == 'adulto_mayor'
-                              ? Icons.elderly
-                              : Icons.accessible,
-                          size: 60,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Pagar Viaje',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Costo: ${Money.format(user?.costoViaje ?? 1)} punto(s)',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 12,
-                            runSpacing: 8,
-                            children: [
-                              const Text(
-                                'Tu saldo:',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              Text(
-                                '${Money.format(user?.puntos ?? 0)} puntos',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        const Text(
-                          'Escanea el QR que muestra el conductor',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isProcessing ? null : _showQRScanner,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              minimumSize: const Size(0, 60),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 16,
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.qr_code_scanner, size: 24),
-                                SizedBox(width: 10),
-                                Flexible(
-                                  child: Text(
-                                    'ESCANEAR QR DEL CONDUCTOR',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
             ),
           ),
         ),

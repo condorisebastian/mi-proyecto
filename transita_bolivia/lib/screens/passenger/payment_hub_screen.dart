@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'pay_trip_screen.dart';
 
 class PaymentHubScreen extends StatefulWidget {
@@ -15,19 +16,40 @@ class PaymentHubScreenState extends State<PaymentHubScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Pagar')),
+    appBar: AppBar(
+      title: const Text('Pagar'),
+      actions: [
+        if (widget.onSupport != null)
+          IconButton(
+            tooltip: 'Ayuda con el pago',
+            onPressed: widget.onSupport,
+            icon: const Icon(Icons.support_agent_rounded),
+          ),
+      ],
+    ),
     body: Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Row(
-            children: [
-              Expanded(child: _method('Con QR', Icons.qr_code_scanner, false)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _method('Con tarjeta', Icons.contactless_outlined, true),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _method('Con QR', Icons.qr_code_scanner, false),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _method(
+                      'Tarjeta NFC',
+                      Icons.contactless_outlined,
+                      true,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         Expanded(
@@ -52,8 +74,23 @@ class PaymentHubScreenState extends State<PaymentHubScreen> {
       label: Text(label, textAlign: TextAlign.center),
       style: OutlinedButton.styleFrom(
         backgroundColor: _card == card
-            ? Theme.of(context).colorScheme.primaryContainer
-            : null,
+            ? AppColors.primaryDark
+            : Theme.of(context).colorScheme.surface,
+        foregroundColor: _card == card
+            ? Colors.white
+            : Theme.of(context).colorScheme.onSurface,
+        side: BorderSide(
+          color: _card == card
+              ? AppColors.primaryDark
+              : Theme.of(context).colorScheme.outlineVariant,
+          width: _card == card ? 2 : 1,
+        ),
+        minimumSize: const Size(0, 56),
+        textStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       ),
     ),

@@ -364,24 +364,24 @@ void main() {
     (tester) async {
       await openPassenger(tester, db, auth);
       await selectTab(tester, 2);
-      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
+      expect(find.text('Escanear QR'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('pay-method-card')));
       await tester.pumpAndSettle();
       expect(find.text('Pago con NFC'), findsOneWidget);
       expect(find.byKey(const ValueKey('nfc-card-preview')), findsOneWidget);
-      expect(find.text('VISTA PREVIA · SIN ACTIVAR'), findsOneWidget);
+      expect(find.text('Vista previa · Sin activar'), findsOneWidget);
       expect(find.textContaining('aún no está habilitado'), findsOneWidget);
       expect(find.textContaining('42.50'), findsNothing);
       expect(find.textContaining('9876543'), findsNothing);
-      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsNothing);
+      expect(find.text('Escanear QR'), findsNothing);
       await selectTab(tester, 0);
       await selectTab(tester, 2);
       expect(find.text('Pago con NFC'), findsOneWidget);
-      await tester.ensureVisible(find.text('PAGAR CON QR'));
+      await tester.ensureVisible(find.text('Pagar con QR'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('PAGAR CON QR'));
+      await tester.tap(find.text('Pagar con QR'));
       await tester.pumpAndSettle();
-      expect(find.text('ESCANEAR QR DEL CONDUCTOR'), findsOneWidget);
+      expect(find.text('Escanear QR'), findsOneWidget);
       expect(auth.currentUser!.puntos, 42.50);
       expect((await db.collection('transacciones').get()).docs, isEmpty);
       expect(tester.takeException(), isNull);
@@ -498,6 +498,16 @@ void main() {
         await selectTab(tester, index);
         expect(tester.takeException(), isNull, reason: 'Sección $index');
       }
+      await selectTab(tester, 2);
+      await tester.tap(find.byKey(const ValueKey('pay-method-card')));
+      await tester.pumpAndSettle();
+      final cardGuide = find.text('Cómo funcionará tu tarjeta');
+      await tester.ensureVisible(cardGuide);
+      await tester.tap(cardGuide);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('3. Acerca tu tarjeta'));
+      expect(tester.takeException(), isNull, reason: 'Guía NFC ampliada');
+      await selectTab(tester, 0);
       await tester.ensureVisible(find.byKey(const ValueKey('discover-self')));
       await tester.tap(find.byKey(const ValueKey('discover-self')));
       await tester.pumpAndSettle();

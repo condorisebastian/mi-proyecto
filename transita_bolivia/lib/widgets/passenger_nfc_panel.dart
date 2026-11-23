@@ -15,14 +15,32 @@ class PassengerNfcPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final highContrast = MediaQuery.highContrastOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(
+          'Pago con NFC',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'El pago con NFC aún no está habilitado. Mientras tanto, puedes '
+          'pagar con el QR del conductor.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: scheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 24),
         Container(
           key: const ValueKey('nfc-card-preview'),
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(26),
             gradient: LinearGradient(
@@ -44,7 +62,7 @@ class PassengerNfcPanel extends StatelessWidget {
                     child: Text(
                       'Mi Pasaje',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
@@ -53,32 +71,32 @@ class PassengerNfcPanel extends StatelessWidget {
                   const SizedBox(width: 12),
                   Icon(
                     Icons.contactless_rounded,
-                    size: 38,
+                    size: 34,
                     color: highContrast ? Colors.white : AppColors.teal,
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               const Icon(
                 Icons.credit_card_rounded,
-                size: 40,
+                size: 32,
                 color: Colors.white,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               const Text(
-                'Tu pasaje, más cerca',
+                'Tu tarjeta de transporte',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               const Text(
-                'Tarjeta de transporte recargable',
+                'Paga con tus recargas',
                 style: TextStyle(color: Colors.white),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -86,15 +104,14 @@ class PassengerNfcPanel extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
-                  'VISTA PREVIA · SIN ACTIVAR',
+                  'Vista previa · Sin activar',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -102,74 +119,58 @@ class PassengerNfcPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline_rounded, color: scheme.primary),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Pago con NFC',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'El pago con NFC aún no está habilitado. Por ahora, paga tu '
-                  'pasaje escaneando el QR del conductor.',
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'La tarjeta física deberá ser emitida y vinculada a tu '
-                  'cuenta por un operador.',
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'Cómo funcionará',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        const Text('Cuando el servicio esté disponible:'),
-        const SizedBox(height: 16),
-        const _NfcStep(
-          icon: Icons.account_balance_wallet_outlined,
-          number: '1',
-          title: 'Recarga tu billetera',
-          description: 'Gestiona tus puntos con el operador.',
-        ),
-        const _NfcStep(
-          icon: Icons.payments_outlined,
-          number: '2',
-          title: 'Revisa el importe',
-          description:
-              'Confirma el monto que muestre la terminal del conductor.',
-        ),
-        const _NfcStep(
-          icon: Icons.contactless_outlined,
-          number: '3',
-          title: 'Acerca tu tarjeta',
-          description: 'Espera la confirmación del cobro antes de retirarla.',
-        ),
-        const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: onPayWithQr,
+          style: FilledButton.styleFrom(
+            backgroundColor: highContrast
+                ? scheme.primary
+                : AppColors.primaryDark,
+            minimumSize: const Size(0, 56),
+          ),
           icon: const Icon(Icons.qr_code_scanner),
-          label: const Text('PAGAR CON QR', textAlign: TextAlign.center),
+          label: const Text('Pagar con QR', textAlign: TextAlign.center),
+        ),
+        const SizedBox(height: 20),
+        Theme(
+          data: theme.copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            expansionAnimationStyle: MediaQuery.disableAnimationsOf(context)
+                ? AnimationStyle.noAnimation
+                : null,
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(top: 8),
+            title: const Text(
+              'Cómo funcionará tu tarjeta',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            children: const [
+              _NfcStep(
+                icon: Icons.account_balance_wallet_outlined,
+                number: '1',
+                title: 'Recarga tu billetera',
+                description: 'Gestiona tus puntos con el operador.',
+              ),
+              _NfcStep(
+                icon: Icons.payments_outlined,
+                number: '2',
+                title: 'Revisa el importe',
+                description: 'Confirma el monto en la terminal del conductor.',
+              ),
+              _NfcStep(
+                icon: Icons.contactless_outlined,
+                number: '3',
+                title: 'Acerca tu tarjeta',
+                description: 'Espera la confirmación antes de retirarla.',
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'La tarjeta física deberá ser emitida y vinculada a tu '
+                  'cuenta por un operador cuando el servicio esté disponible.',
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
@@ -181,11 +182,13 @@ class PassengerNfcPanel extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           'Consulta sobre emisión, vinculación o pérdida de tu tarjeta.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
