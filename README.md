@@ -4,7 +4,7 @@ Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con la app Fl
 
 ## Web, Provincias y terminal POS
 
-La web en `website/dist` consulta el catálogo y permite calcular grupos. Su
+La web de **Mi Pasaje** en `website/dist` consulta el catálogo y permite calcular grupos. Su
 simulador POS usa saldo ficticio y no accede a cuentas. El catálogo fuente es
 `shared/province_routes.json`: 29 destinos de las 15 provincias de Santa Cruz.
 Todos los municipios muestran «Tarifa por verificar», incluidos La Guardia y
@@ -31,9 +31,13 @@ El identificador instalado `com.transita.bolivia`, el paquete Dart
 `transita_bolivia` y la configuración de Firebase se conservan para actualizar
 las instalaciones existentes y mantener sus datos y conexiones.
 
-La web utiliza `logo_transitabolivia_transparente.png`, derivado del original
-`logo_transitabolivia.png` con la herramienta integrada `image_gen` para quitar
-únicamente el fondo y preservar símbolo, colores, texto y proporciones.
+La web utiliza el icono actual de Mi Pasaje, tipografía local y un favicon
+con fondo blanco. El servidor Node consulta el catálogo en Supabase con una
+clave publicable guardada fuera del directorio público y de Git. Las tablas
+del catálogo tienen RLS y acceso público de solo lectura a rutas publicadas;
+las cuentas y saldos de la app siguen en Firebase y en su backend existente.
+Para abrirla: `npm ci --prefix website` y `npm start --prefix website`, en
+http://127.0.0.1:4173. Ver [configuración y pruebas de la web](website/README.md).
 La portada recorre automáticamente las 15 provincias cada tres segundos, con
 fundido de 650 ms y precarga de la siguiente fotografía para evitar parpadeos,
 pausa manual y respeto por la preferencia de movimiento reducido. Incluye
@@ -43,9 +47,9 @@ Las fuentes revisadas están en `website/photo_sources.json`; ejecutar
 sus atribuciones. La página `credits.html` enlaza cada autor, archivo y licencia.
 
 Ejecutar `python tools/generate_routes.py` después de editar el catálogo;
-sincroniza Flutter, web y Functions. PHP publica `GET /catalog/routes` y valida
-los importes provinciales al cobrar. La app muestra Provincias en pasajero y
-conductor, admite grupos y conserva los cobros urbanos y personalizados.
+sincroniza Flutter, web, Functions y la semilla SQL de Supabase. PHP publica `GET /catalog/routes` y valida
+los importes provinciales al cobrar. El pasajero consulta Rutas; el conductor
+conserva Provincias, grupos y los cobros urbanos y personalizados.
 
 El POS NFC es de circuito cerrado con saldo de recargas, sin cuentas bancarias.
 Las pantallas y el backend están preparados, pero los cobros están desactivados

@@ -6,6 +6,30 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def supabase_seed(raw):
+    if '$catalog$' in raw:
+        raise ValueError('Separador SQL no permitido en el catálogo')
+    return '''-- Generado por tools/generate_routes.py desde shared/province_routes.json.
+-- Importar explícitamente al inicializar el catálogo. No modifica saldos ni cuentas.
+begin;
+with source as (select $catalog$''' + raw.strip() + '''$catalog$::jsonb as data)
+insert into public.web_catalog_meta (id, version, origin, currency, notice)
+select true, data->>'version', data->>'origin', data->>'currency', data->>'notice' from source
+on conflict (id) do update set version=excluded.version, origin=excluded.origin,
+currency=excluded.currency, notice=excluded.notice;
+
+with source as (select $catalog$''' + raw.strip() + '''$catalog$::jsonb as data)
+insert into public.web_routes (id, destination, province, fare_cents, status, sort_order, published)
+select entry->>'id', entry->>'destination', entry->>'province',
+(entry->>'fare_cents')::integer, entry->>'status', position::integer, true
+from source, jsonb_array_elements(data->'routes') with ordinality as routes(entry, position)
+on conflict (id) do update set destination=excluded.destination, province=excluded.province,
+fare_cents=excluded.fare_cents, status=excluded.status, sort_order=excluded.sort_order,
+published=excluded.published;
+commit;
+'''
+
+
 def generate(check=False):
     raw = (ROOT / 'shared/province_routes.json').read_text(encoding='utf-8')
     data = json.loads(raw)
@@ -34,12 +58,13 @@ def generate(check=False):
         ROOT / 'transita_bolivia/lib/data/province_routes.dart': dart,
         ROOT / 'website/dist/routes.json': raw,
         ROOT / 'transita_bolivia/functions/province_routes.json': raw,
+        ROOT / 'website/supabase/seed.sql': supabase_seed(raw),
     }
     for path, content in outputs.items():
         if check:
             # dart format puede cambiar comillas y espacios; el contenido JSON
             # se verifica por separado y los modelos se validan en Flutter.
-            if path.suffix == '.json' and (not path.exists() or path.read_text(encoding='utf-8') != content):
+            if path.suffix in ('.json', '.sql') and (not path.exists() or path.read_text(encoding='utf-8') != content):
                 raise SystemExit('Catálogo web desactualizado; ejecutar tools/generate_routes.py')
         else:
             path.parent.mkdir(parents=True, exist_ok=True)

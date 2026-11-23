@@ -10,7 +10,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-HEADERS = {'User-Agent': 'TransitaBolivia/1.0 (educational transport project)'}
+HEADERS = {'User-Agent': 'MiPasaje/1.0 (educational transport project)'}
 
 
 def request(url):
@@ -88,8 +88,8 @@ def main():
                     '<a href="{license_url}" rel="noopener noreferrer">{license}</a>.</p>'
                     '<p>{presentation}</p></article>'.format(**escaped))
     page = '<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    page += '<title>Créditos de fotografías · Transita Bolivia</title><link rel="stylesheet" href="styles.css">'
-    page += '<main class="section"><a href="index.html">← Volver a Transita Bolivia</a><h1>Créditos de fotografías</h1>'
+    page += '<title>Créditos de fotografías · Mi Pasaje</title><link rel="stylesheet" href="styles.css">'
+    page += '<main class="section wrap credits-page"><a href="index.html">Volver a Mi Pasaje</a><h1>Créditos de fotografías</h1>'
     page += '<p>Las fotografías representan lugares de cada provincia. Cada autor conserva los derechos y la licencia indicada.</p>'
     page += ''.join(rows) + '</main></html>'
     (ROOT / 'website/dist/credits.html').write_text(page + '\n', encoding='utf-8')

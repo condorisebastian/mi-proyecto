@@ -35,3 +35,5 @@ __pycache__/
 *.py[cod]
 **/node_modules/
 website/.openai/local/
+.playwright-cli/
+/output/playwright/
