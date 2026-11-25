@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'widgets/app_bootstrap.dart';
+import 'services/profile_photo_store.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -33,10 +36,10 @@ Future<void> _ensureFirebaseIdentity() async {
     if (FirebaseAuth.instance.currentUser == null) {
       await FirebaseAuth.instance.signInAnonymously();
     }
-  } catch (e) {
+  } catch (_) {
     // El proyecto puede tener el proveedor Anonymous deshabilitado; entonces
     // las reglas no lo exigen. El login PIN funciona igual.
-    debugPrint('Alerta: signInAnonymously no disponible ($e)');
+    debugPrint('La identidad de Firebase no pudo verificarse por ahora.');
   }
 }
 
@@ -51,37 +54,74 @@ Future<T> _boot<T>(Future<T> Function() fn, T fallback) async {
   }
 }
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await _boot(AppPreferences.instance.load, null);
-
-  await _boot(
-    () =>
-        Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
-    null,
-  );
-  await _boot(_ensureFirebaseIdentity, null);
-
-  if (AppConfig.useFirebase) {
-    await _boot(() => fb.FirebaseService.instance.ensureAdminUser(), null);
-    await _boot(() => fb.FirebaseService.instance.seedTestData(), null);
-  }
-
   final auth = AuthService();
-  await auth.restoreSession().timeout(
-    const Duration(seconds: 3),
-    onTimeout: () {},
-  );
-  ApiService.tokenProvider = () => auth.token;
-
   final driverAuth = DriverAuthService();
-  await driverAuth.restoreSession();
+  final adminAuth = AdminAuthService();
+  ApiService.tokenProvider = () => auth.token;
   DriverApiService.tokenProvider = () => driverAuth.token;
 
-  final adminAuth = AdminAuthService();
-  await adminAuth.restoreSession();
-
-  runApp(MiPasajeApp(auth: auth, driverAuth: driverAuth, adminAuth: adminAuth));
+  runApp(
+    AppBootstrap(
+      initialize: () async {
+        await Future.wait<void>([
+          _boot(AppPreferences.instance.load, null),
+          if (AppConfig.useFirebase)
+            Future<void>(() async {
+              if (Firebase.apps.isEmpty) {
+                await Firebase.initializeApp(
+                  options: DefaultFirebaseOptions.currentPlatform,
+                );
+              }
+            }).timeout(const Duration(seconds: 8)),
+        ]);
+        await Future.wait<void>([
+          auth.restoreSession().timeout(
+            const Duration(seconds: 3),
+            onTimeout: () {},
+          ),
+          driverAuth.restoreSession().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () {},
+          ),
+          adminAuth.restoreSession().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () {},
+          ),
+        ]);
+      },
+      onReady: () {
+        final user = auth.currentUser;
+        if (user != null) {
+          unawaited(
+            ProfilePhotoStore.instance.recoverPendingSelection(user.id),
+          );
+        }
+        // Ninguna operación de red ni siembra bloquea el primer fotograma.
+        if (AppConfig.useFirebase) {
+          unawaited(_boot(_ensureFirebaseIdentity, null));
+          const seedDemo = bool.fromEnvironment(
+            'SEED_DEMO_DATA',
+            defaultValue: false,
+          );
+          if (seedDemo) {
+            unawaited(
+              _boot(() => fb.FirebaseService.instance.ensureAdminUser(), null),
+            );
+            unawaited(
+              _boot(() => fb.FirebaseService.instance.seedTestData(), null),
+            );
+          }
+        }
+      },
+      child: MiPasajeApp(
+        auth: auth,
+        driverAuth: driverAuth,
+        adminAuth: adminAuth,
+      ),
+    ),
+  );
 }
 
 class MiPasajeApp extends StatelessWidget {

@@ -1,4 +1,4 @@
-import '../../widgets/brand_logo.dart';
+import '../../widgets/login_role_icon.dart';
 import '../../widgets/login_progress_indicator.dart';
 import '../../services/login_preferences.dart';
 import 'package:flutter/material.dart';
@@ -66,7 +66,7 @@ class _DriverLoginScreenState extends State<DriverLoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const BrandLogo(),
+                  const LoginRoleIcon(role: 'conductor'),
                   const SizedBox(height: 20),
                   const Text(
                     'Mi Pasaje',

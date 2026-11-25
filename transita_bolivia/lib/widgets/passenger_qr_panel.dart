@@ -11,11 +11,13 @@ class PassengerQrPanel extends StatelessWidget {
     required this.user,
     required this.onScan,
     this.isProcessing = false,
+    this.onShowQr,
   });
 
   final User? user;
   final VoidCallback onScan;
   final bool isProcessing;
+  final VoidCallback? onShowQr;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +98,13 @@ class PassengerQrPanel extends StatelessWidget {
                   isProcessing ? 'Procesando pago…' : 'Escanear QR',
                   textAlign: TextAlign.center,
                 ),
+              ),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                key: const ValueKey('show-passenger-qr'),
+                onPressed: isProcessing ? null : onShowQr,
+                icon: const Icon(Icons.qr_code_2_rounded),
+                label: const Text('Mostrar mi QR', textAlign: TextAlign.center),
               ),
               const SizedBox(height: 14),
               Text(

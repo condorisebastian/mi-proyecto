@@ -8,6 +8,7 @@ import '../../services/api_service.dart';
 import '../../models/trip_qr.dart';
 import '../../widgets/amount_speaker_button.dart';
 import 'history_screen.dart';
+import 'passenger_qr_screen.dart';
 import '../../widgets/passenger_nfc_panel.dart';
 import '../../widgets/passenger_qr_panel.dart';
 import '../soporte/support_screen.dart';
@@ -61,6 +62,15 @@ class _PayTripScreenState extends State<PayTripScreen> {
                       user: user,
                       isProcessing: _isProcessing,
                       onScan: _showQRScanner,
+                      onShowQr: user == null
+                          ? null
+                          : () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    PassengerQrScreen(userId: user.id),
+                              ),
+                            ),
                     ),
             ),
           ),

@@ -35,6 +35,7 @@ class PassengerWalletCard extends StatelessWidget {
     required IconData icon,
     required String label,
     required VoidCallback? onPressed,
+    required Color iconColor,
     Key? iconKey,
   }) => TextButton(
     key: key,
@@ -45,7 +46,10 @@ class PassengerWalletCard extends StatelessWidget {
       minimumSize: const Size.fromHeight(48),
       alignment: Alignment.centerLeft,
     ),
-    child: _row(Icon(icon, key: iconKey, size: 24), Text(label)),
+    child: _row(
+      Icon(icon, key: iconKey, size: 28, color: iconColor),
+      Text(label),
+    ),
   );
 
   @override
@@ -76,6 +80,7 @@ class PassengerWalletCard extends StatelessWidget {
                   Icons.account_balance_wallet_outlined,
                   key: const ValueKey('wallet-title-icon'),
                   color: secondaryText,
+                  size: 28,
                 ),
                 const Text(
                   'Tu billetera',
@@ -91,10 +96,10 @@ class PassengerWalletCard extends StatelessWidget {
                 Image.asset(
                   'assets/images/icono_saldo.png',
                   key: const ValueKey('wallet-points-icon'),
-                  width: 36,
-                  height: 36,
+                  width: 28,
+                  height: 28,
                   fit: BoxFit.contain,
-                  color: Colors.white,
+                  color: secondaryText,
                   colorBlendMode: BlendMode.srcIn,
                   semanticLabel: 'Puntos de tu billetera',
                 ),
@@ -149,6 +154,7 @@ class PassengerWalletCard extends StatelessWidget {
                 iconKey: const ValueKey('wallet-history-icon'),
                 label: 'Ver movimientos',
                 onPressed: onHistory,
+                iconColor: secondaryText,
               ),
               if (!balanceHidden)
                 ListenableBuilder(

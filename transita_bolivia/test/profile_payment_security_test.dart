@@ -177,7 +177,7 @@ void main() {
   );
 
   testWidgets(
-    'Perfil conserva ocho opciones sin biometría y el cambio de clave prepara soporte',
+    'Perfil conserva sus opciones sin biometría y el cambio de clave prepara soporte',
     (tester) async {
       final db = FakeFirebaseFirestore();
       await fixture.openPassenger(tester, db, fixture.PassengerAuth());
@@ -186,6 +186,7 @@ void main() {
       expect(find.byIcon(Icons.fingerprint_rounded), findsNothing);
       for (final label in [
         'Mis datos',
+        'Foto de perfil',
         'Puntos de atención',
         'Establecer montos límites',
         'Cambiar mi clave',

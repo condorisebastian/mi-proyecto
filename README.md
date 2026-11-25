@@ -317,10 +317,9 @@ ni activa la terminal NFC.
 
 La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar**, **Rutas** y **Perfil**.
 Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Tarjeta NFC**.
-Su icono utiliza `icono_pagar.png`, preparado con `image_gen` desde la imagen
-proporcionada. La versión `img_transitabolivia/icono_pagar_centrado.png` tiene
-lienzo cuadrado, márgenes equilibrados y transparencia; se representa en blanco
-sobre el botón azul. El original y el prompt se conservan en esa carpeta.
+Su icono utiliza la imagen proporcionada `qr_nfc_centrado.png`, conservada
+en `img_transitabolivia/` y copiada a los assets de la app. Se representa en
+blanco sobre el botón azul con ajuste de centrado visual.
 QR conserva el escaneo y la confirmación del importe; tarjeta muestra su
 estado NFC no habilitado, sin simular cobros.
 
@@ -329,6 +328,26 @@ separados del importe definitivo que llega del conductor. Explica el pago
 grupal y conserva la revisión antes de confirmar. Ambas formas de pago tienen
 contenido desplazable, ancho limitado en tabletas y ayuda accesible desde la
 cabecera. La guía de NFC se despliega bajo su tarjeta de vista previa.
+
+**Mostrar mi QR** genera al instante un código de identificación de prueba
+para la ESP32-CAM. Caduca aproximadamente en 15 segundos y se oculta al pasar
+a segundo plano o cambiar de cuenta. No contiene PIN, CI, nombre ni saldo y
+no autoriza cobros. El protocolo y la preparación del cobro real se explican
+en `hardware/terminal_pos/PASSENGER_QR.md`; el lector físico aún no se flasheó.
+
+**Foto de perfil**, dentro de Perfil, permite elegir una imagen de la galería,
+cambiarla o quitarla. La foto se muestra en Inicio y Perfil y se conserva en
+el almacenamiento privado del teléfono, por cuenta y modo de backend. No se
+sube a Firebase ni a Supabase. El selector limita resolución y tamaño, valida
+la imagen y no reemplaza una foto anterior si la nueva no es válida.
+
+El arranque dibuja una pantalla de preparación antes de esperar por Firebase.
+Las preferencias y Firebase se preparan en paralelo, las sesiones tienen esperas
+acotadas y la identidad remota se verifica después de mostrar la app. La siembra
+de cuentas de prueba es opcional con `--dart-define=SEED_DEMO_DATA=true` y se
+ejecuta en segundo plano, sin bloquear el inicio. No se modifican los PIN de
+las cuentas ya existentes. Los logins de pasajero y conductor usan iconos de
+su categoría en lugar de la imagen de marca.
 
 **Mi carnet** presenta `student_card_updated.png`, copia de la imagen proporcionada
 `Mi Pasaje student card update.png`. El botón **Pantalla completa** y la imagen

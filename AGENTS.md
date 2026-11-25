@@ -62,9 +62,10 @@ No dejar nunca cambios sin commitear al finalizar una tarea.
   `request.auth != null`; acceso read/create abierto en demo, update restringido
   por lista de campos y delete prohibido). Si se habilita en consola Firebase,
   se pueden volver a las reglas estrictas `request.auth != null`.
-- La app siembra los usuarios/conductores de prueba (PINs `1234`..`6789`) en
-  Firestore al arrancar si no existen (`seedTestData` en `firebase_service.dart`,
-  llamado en `main.dart`). Índice compuesto `usuarios(pin, rol)` necesario para
+- La siembra de usuarios/conductores de prueba (PINs `1234`..`6789`) es opcional
+  con `--dart-define=SEED_DEMO_DATA=true`: `seedTestData` en `firebase_service.dart`
+  se ejecuta en segundo plano desde `main.dart`, sin bloquear el arranque.
+  Las cuentas ya existentes se conservan. Índice compuesto `usuarios(pin, rol)` necesario para
   el login por PIN.
 - **Centro de atención (call center)**: pasajeros y conductores reportan
   incidencias desde la app ("Ayuda / Soporte"); el panel admin (PIN `0000`,

@@ -22,6 +22,7 @@ import 'receipt_screen.dart';
 import '../../widgets/passenger_navigation_bar.dart';
 import '../../widgets/passenger_wallet_card.dart';
 import '../../widgets/discover_section.dart';
+import '../../widgets/profile_photo_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -250,14 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: scheme.primaryContainer,
-                        child: Icon(
-                          Icons.person_outline_rounded,
-                          color: scheme.onPrimaryContainer,
-                        ),
-                      ),
+                      ProfilePhotoAvatar(userId: user.id, radius: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

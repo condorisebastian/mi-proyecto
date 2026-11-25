@@ -10,7 +10,7 @@ class PassengerNavigationBar extends StatelessWidget {
 
   final int currentIndex;
   final ValueChanged<int> onSelected;
-  static const payIconAsset = 'assets/images/icono_pagar.png';
+  static const payIconAsset = 'assets/images/qr_nfc_centrado.png';
 
   static const _labels = ['Inicio', 'Mi carnet', 'Pagar', 'Rutas', 'Perfil'];
   static const _icons = [
@@ -67,17 +67,21 @@ class PassengerNavigationBar extends StatelessWidget {
                                           : null,
                                     ),
                                     child: Center(
-                                      child: Image.asset(
-                                        payIconAsset,
-                                        key: const ValueKey(
-                                          'passenger-pay-icon',
+                                      child: Transform.translate(
+                                        // Compensa el margen inferior del arte proporcionado.
+                                        offset: const Offset(0, -2),
+                                        child: Image.asset(
+                                          payIconAsset,
+                                          key: const ValueKey(
+                                            'passenger-pay-icon',
+                                          ),
+                                          width: 52,
+                                          height: 52,
+                                          fit: BoxFit.contain,
+                                          color: scheme.onPrimary,
+                                          colorBlendMode: BlendMode.srcIn,
+                                          excludeFromSemantics: true,
                                         ),
-                                        width: 52,
-                                        height: 52,
-                                        fit: BoxFit.contain,
-                                        color: scheme.onPrimary,
-                                        colorBlendMode: BlendMode.srcIn,
-                                        excludeFromSemantics: true,
                                       ),
                                     ),
                                   )

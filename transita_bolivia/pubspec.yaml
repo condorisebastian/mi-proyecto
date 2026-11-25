@@ -24,6 +24,8 @@ dependencies:
   flutter_tts: ^4.2.5
   cloud_functions: ^6.5.0
   firebase_app_check: ^0.4.8
+  image_picker: 1.2.4
+  path_provider: 2.1.6
 
 dev_dependencies:
   fake_cloud_firestore: ^4.3.0
@@ -40,6 +42,7 @@ flutter:
     - assets/images/student_card_updated.png
     - assets/images/icono_saldo.png
     - assets/images/icono_pagar.png
+    - assets/images/qr_nfc_centrado.png
     - assets/images/descubre_recarga.png
     - assets/images/descubre_recarga_otros.png
     - assets/images/descubre_saldo.png

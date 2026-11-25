@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/user.dart';
 import 'profile_options_screen.dart';
+import 'profile_photo_screen.dart';
+import '../../widgets/profile_photo_avatar.dart';
 
 class PassengerProfileScreen extends StatelessWidget {
   const PassengerProfileScreen({
@@ -33,13 +35,13 @@ class PassengerProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: scheme.primaryContainer,
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        size: 32,
-                        color: scheme.onPrimaryContainer,
+                    Semantics(
+                      button: true,
+                      label: 'Cambiar foto de perfil',
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => open(ProfilePhotoScreen(userId: user.id)),
+                        child: ProfilePhotoAvatar(userId: user.id),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -74,6 +76,11 @@ class PassengerProfileScreen extends StatelessWidget {
                     title: 'Mis datos',
                     icon: Icons.person_outline_rounded,
                     onTap: () => open(PersonalDataScreen(user: user)),
+                  ),
+                  _ProfileOption(
+                    title: 'Foto de perfil',
+                    icon: Icons.add_a_photo_outlined,
+                    onTap: () => open(ProfilePhotoScreen(userId: user.id)),
                   ),
                   _ProfileOption(
                     title: 'Puntos de atención',
