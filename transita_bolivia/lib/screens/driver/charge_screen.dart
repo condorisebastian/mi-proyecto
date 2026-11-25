@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../models/trip_qr.dart';
+import '../../theme.dart';
 import '../../services/driver_auth_service.dart';
 import '../province_routes_screen.dart';
 import 'pos_screen.dart';
@@ -44,7 +45,7 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cobrar con QR')),
+      appBar: AppBar(title: const Text('Cobrar pasajes')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -90,11 +91,13 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                       children: [
                         Icon(Icons.payments_outlined),
                         SizedBox(width: 8),
-                        Text(
-                          'Pago',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Preparar cobro',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -208,7 +211,9 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   children: _labels.entries.map((entry) {
                     final selected = _tipo == entry.key;
-                    final color = Theme.of(context).colorScheme.primary;
+                    final color = MediaQuery.highContrastOf(context)
+                        ? Theme.of(context).colorScheme.primary
+                        : AppColors.primaryDark;
                     return Semantics(
                       selected: selected,
                       button: true,
@@ -260,9 +265,9 @@ class _DriverChargeScreenState extends State<DriverChargeScreen> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Toca un tipo de pasajero para mostrar el QR automáticamente. '
-              'El pasajero lo escanea y confirma el pago. '
-              'Recibirás un aviso y un sonido cuando el pago sea confirmado.',
+              'Toca una categoría para preparar su QR. La lectura del QR del '
+              'pasajero con ESP32-CAM aún está en prueba. Un cobro se considera '
+              'confirmado cuando llega su aviso.',
               textAlign: TextAlign.center,
             ),
           ],

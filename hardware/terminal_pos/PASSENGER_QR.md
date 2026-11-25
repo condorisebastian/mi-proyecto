@@ -3,7 +3,12 @@
 La app ofrece **Pagar → Con QR → Mostrar mi QR**. La imagen se genera sin
 esperar una consulta de red y permanece visible aproximadamente 15 segundos.
 Al vencer, cambiar de cuenta o pasar la app a segundo plano, deja de mostrarse.
-El pasajero puede generar otro frente al lector. No se renueva en segundo plano.
+El pasajero solo puede generar otro al terminar la ventana completa de 15 segundos.
+El plazo se conserva localmente por cuenta y backend: cerrar la pantalla o abrirla
+de nuevo no permite adelantar la generación. Si el código sigue vigente se muestra
+el mismo; si se ocultó por pasar a segundo plano, se espera a que venza el plazo.
+No se renueva en segundo plano. La pantalla del pasajero ya no ofrece escanear el
+QR del conductor.
 
 Quince segundos es el valor inicial de diseño: cinco dejan poco margen para
 alinear el teléfono, enfocar y leer con una ESP32-CAM. Debe ajustarse tras medir
@@ -22,6 +27,8 @@ MP-ID1:D:<backend>:<id_pasajero>:<vence_unix_segundos>:<nonce_hex_32>
 - La fecha de vencimiento usa UTC. El lector necesita hora sincronizada para
   comprobar la ventana; cambiar el reloj del teléfono no constituye autorización.
 - `PassengerQr.tryParse` documenta y prueba la estructura y el vencimiento.
+- `PassengerQrWindowStore` evita generaciones simultáneas y conserva el plazo
+  local; no constituye un límite de servidor ni protección contra otro dispositivo.
 
 Este código no está firmado: un lector no debe confiar en el ID recibido para
 descontar saldo. El prefijo difiere del QR de cobro del conductor y de la prueba

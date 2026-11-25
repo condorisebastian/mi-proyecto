@@ -15,6 +15,7 @@ import 'package:transita_bolivia/screens/passenger/login_screen.dart';
 import 'package:transita_bolivia/screens/passenger/passenger_qr_screen.dart';
 import 'package:transita_bolivia/services/auth_service.dart';
 import 'package:transita_bolivia/services/profile_photo_store.dart';
+import 'package:transita_bolivia/services/passenger_qr_window_store.dart';
 import 'package:transita_bolivia/widgets/app_bootstrap.dart';
 import 'package:transita_bolivia/widgets/brand_logo.dart';
 import 'package:transita_bolivia/widgets/login_role_icon.dart';
@@ -101,15 +102,27 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<AuthService>.value(
         value: auth,
-        child: const MaterialApp(home: PassengerQrScreen(userId: 42)),
+        child: MaterialApp(
+          home: PassengerQrScreen(
+            userId: 42,
+            store: PassengerQrWindowStore(
+              clock: () => tester.binding.clock.now(),
+            ),
+          ),
+        ),
       ),
     );
+    await tester.pumpAndSettle();
     expect(find.byType(QrImageView), findsOneWidget);
-    await tester.pump(const Duration(seconds: 16));
+    final button = find.byKey(const ValueKey('regenerate-passenger-qr'));
+    expect(tester.widget<FilledButton>(button).onPressed, isNull);
+    await tester.pump(const Duration(seconds: 14));
+    expect(tester.widget<FilledButton>(button).onPressed, isNull);
+    await tester.pump(const Duration(seconds: 2));
     expect(find.byType(QrImageView), findsNothing);
     expect(find.text('QR vencido'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('regenerate-passenger-qr')));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byType(QrImageView), findsOneWidget);
     expect(auth.currentUser!.puntos, 42.50);
     await auth.logout();
@@ -123,12 +136,28 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<AuthService>.value(
         value: fixture.PassengerAuth(),
-        child: const MaterialApp(home: PassengerQrScreen(userId: 42)),
+        child: MaterialApp(
+          home: PassengerQrScreen(
+            userId: 42,
+            store: PassengerQrWindowStore(
+              clock: () => tester.binding.clock.now(),
+            ),
+          ),
+        ),
       ),
     );
+    await tester.pumpAndSettle();
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     await tester.pump();
     expect(find.byType(QrImageView), findsNothing);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('regenerate-passenger-qr')),
+          )
+          .onPressed,
+      isNull,
+    );
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpWidget(const SizedBox.shrink());
   });

@@ -43,6 +43,7 @@ flutter:
     - assets/images/icono_saldo.png
     - assets/images/icono_pagar.png
     - assets/images/qr_nfc_centrado.png
+    - assets/images/fondo.png
     - assets/images/descubre_recarga.png
     - assets/images/descubre_recarga_otros.png
     - assets/images/descubre_saldo.png

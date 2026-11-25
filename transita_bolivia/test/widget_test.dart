@@ -11,6 +11,7 @@ import 'package:transita_bolivia/main.dart';
 import 'package:transita_bolivia/screens/passenger/pay_trip_screen.dart';
 import 'package:transita_bolivia/screens/driver/charge_screen.dart';
 import 'package:transita_bolivia/screens/passenger/user_type_screen.dart';
+import 'passenger_navigation_test.dart' as fixture;
 
 void main() {
   testWidgets('selección de perfil cabe en teléfono virtual de 320 por 568', (
@@ -93,7 +94,7 @@ void main() {
   });
 
   testWidgets(
-    'PayTripScreen: boton ESCANEAR QR no se desborda en ancho estrecho',
+    'PayTripScreen: Mostrar mi QR cabe en ancho estrecho sin escáner',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1.0;
@@ -113,14 +114,15 @@ void main() {
 
       await tester.pumpWidget(
         ChangeNotifierProvider<AuthService>(
-          create: (_) => AuthService(),
+          create: (_) => fixture.PassengerAuth(),
           child: const MaterialApp(home: PayTripScreen()),
         ),
       );
       await tester.pump();
       FlutterError.onError = oldOnError;
       expect(tester.takeException(), isNull);
-      expect(find.text('Escanear QR'), findsOneWidget);
+      expect(find.text('Escanear QR'), findsNothing);
+      expect(find.text('Mostrar mi QR'), findsOneWidget);
       final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
       expect(button.onPressed, isNotNull);
     },

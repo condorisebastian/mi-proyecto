@@ -179,10 +179,11 @@ misma categoría mediante un solo QR. Los cálculos se hacen en centavos enteros
 los campos existentes `puntos` siguen representando bolivianos y admiten
 valores decimales en Firebase, JSON y MySQL (`DECIMAL`). Los saldos enteros
 anteriores siguen siendo válidos. Recargas y retiros también admiten centavos.
-En **Cobrar → Pago**, el conductor puede escribir la cantidad de pasajes y el
+En **Cobrar → Preparar cobro**, el conductor puede escribir la cantidad de pasajes y el
 monto total acordado (por ejemplo, 3 pasajes por Bs 7.50), y pulsar **MOSTRAR QR**.
 El importe ingresado ya es el total: no se multiplica de nuevo por la cantidad.
-El pasajero ve que es un monto personalizado y lo confirma antes del descuento.
+El formato del QR distingue los montos personalizados; se conserva para la
+integración de cobro. El pasajero ya no tiene un botón para escanear al conductor.
 Las cuatro categorías conservan sus tarifas y generan el QR automáticamente.
 
 El acceso precarga el carnet del perfil de prueba y recuerda el último CI de
@@ -245,11 +246,14 @@ sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
    confirma el pago verificado; entonces se acreditan los puntos una sola vez.
 5. En el Tecno, elegir **Cobrar**, escribir la cantidad de pasajes y tocar
    **Estudiante** para usar la tarifa fija. Para un cobro personalizado, escribir
-   también el **Monto total (Bs)** en **Pago** y pulsar **MOSTRAR QR**.
-6. En el Samsung, elegir **Pagar → Escanear QR del conductor → Pagar**.
-7. El Samsung muestra el comprobante y el nuevo saldo. El Tecno emite dos tonos,
-   vibra y muestra **PAGO EXITOSO** sobre el QR, con el importe y el pasajero.
-   El historial y el resumen se actualizan en vivo.
+   también el **Monto total (Bs)** en **Preparar cobro** y pulsar **MOSTRAR QR**.
+6. En el Samsung, elegir **Pagar → Con QR → Mostrar mi QR**. Es una prueba de
+   identificación para la futura lectura mediante ESP32-CAM: no descuenta saldo
+   ni lee el QR del conductor. No permite generar otro código durante 15 segundos,
+   aunque se cierre y vuelva a abrir esa pantalla.
+7. El aviso **PAGO EXITOSO**, los tonos y el resumen del conductor solo reaccionan
+   a operaciones confirmadas del backend. Mostrar un QR de prueba no debe
+   producir ese aviso ni generar un comprobante.
 
 En el chat del conductor se muestra su recaudación diaria disponible, lo reservado
 y lo retirado. El calendario permite consultar días anteriores y solicitar su
@@ -290,7 +294,7 @@ Los PIN están en `database/transporte_db.sql` (backend PHP) y en Firestore
 
 ### Accesibilidad, favoritos y comprobantes
 
-Desde el icono de accesibilidad del inicio de conductor se puede activar
+Desde **Opciones del conductor → Accesibilidad** se puede activar
 texto grande, alto contraste y botones para escuchar
 importes. El texto grande respeta un tamaño superior elegido en Android. La
 voz se inicia al pulsar el botón; necesita un motor con voz española disponible
@@ -320,20 +324,29 @@ Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Tarj
 Su icono utiliza la imagen proporcionada `qr_nfc_centrado.png`, conservada
 en `img_transitabolivia/` y copiada a los assets de la app. Se representa en
 blanco sobre el botón azul con ajuste de centrado visual.
-QR conserva el escaneo y la confirmación del importe; tarjeta muestra su
-estado NFC no habilitado, sin simular cobros.
-
-La vista QR destaca **Escanear QR**, con saldo disponible y tarifa individual
-separados del importe definitivo que llega del conductor. Explica el pago
-grupal y conserva la revisión antes de confirmar. Ambas formas de pago tienen
+La vista QR ofrece únicamente **Mostrar mi QR**, con saldo disponible y tarifa
+individual como referencia. El escáner del pasajero se retiró de esta pantalla;
+tarjeta muestra su estado NFC no habilitado, sin simular cobros. Ambas vistas tienen
 contenido desplazable, ancho limitado en tabletas y ayuda accesible desde la
 cabecera. La guía de NFC se despliega bajo su tarjeta de vista previa.
 
 **Mostrar mi QR** genera al instante un código de identificación de prueba
 para la ESP32-CAM. Caduca aproximadamente en 15 segundos y se oculta al pasar
-a segundo plano o cambiar de cuenta. No contiene PIN, CI, nombre ni saldo y
+a segundo plano o cambiar de cuenta. Solo permite una generación cada 15 segundos
+por cuenta y backend: cerrar la pantalla, reabrirla o tocar repetidamente no
+reinicia el plazo. Si el código sigue visible y vigente se recupera el mismo;
+si se ocultó al pasar a segundo plano, se espera al vencimiento para emitir otro.
+Este control es local al prototipo; no sustituye una autorización del servidor.
+No contiene PIN, CI, nombre ni saldo y
 no autoriza cobros. El protocolo y la preparación del cobro real se explican
 en `hardware/terminal_pos/PASSENGER_QR.md`; el lector físico aún no se flasheó.
+
+Los cuatro tipos de pasajero comparten esta navegación, foto de perfil,
+billetera, carnet y QR. Las tarifas se mantienen: civil Bs 3.50 y las demás Bs 1.00.
+La bienvenida usa `fondo.png`, el título **¿Cómo usarás Mi Pasaje?** y accesos a
+ayuda y cobertura de referencia, sin consultar GPS. El conductor tiene un botón
+principal **Cobrar pasajes**, resumen en vivo y desglose de las cuatro categorías;
+las pestañas secundarias se crean al visitarlas.
 
 **Foto de perfil**, dentro de Perfil, permite elegir una imagen de la galería,
 cambiarla o quitarla. La foto se muestra en Inicio y Perfil y se conserva en

@@ -4,18 +4,16 @@ import '../models/money.dart';
 import '../models/user.dart';
 import '../theme.dart';
 
-/// Acceso al escáner; el importe definitivo se confirma después de leer el QR.
+/// Presentación del QR del pasajero para la prueba del lector.
 class PassengerQrPanel extends StatelessWidget {
   const PassengerQrPanel({
     super.key,
     required this.user,
-    required this.onScan,
     this.isProcessing = false,
     this.onShowQr,
   });
 
   final User? user;
-  final VoidCallback onScan;
   final bool isProcessing;
   final VoidCallback? onShowQr;
 
@@ -31,7 +29,7 @@ class PassengerQrPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Escanea el QR del conductor',
+          'Tu QR de pasajero',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w800,
             color: scheme.onSurface,
@@ -40,7 +38,7 @@ class PassengerQrPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Revisa el importe y confirma tu pasaje desde aquí.',
+          'Presenta tu código frente al lector ESP32-CAM.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: scheme.onSurfaceVariant,
             height: 1.5,
@@ -68,7 +66,7 @@ class PassengerQrPanel extends StatelessWidget {
                       borderRadius: BorderRadius.circular(26),
                     ),
                     child: Icon(
-                      Icons.qr_code_scanner_rounded,
+                      Icons.qr_code_2_rounded,
                       size: 66,
                       color: scheme.onPrimaryContainer,
                     ),
@@ -76,39 +74,20 @@ class PassengerQrPanel extends StatelessWidget {
                 ),
               ),
               ElevatedButton.icon(
-                key: const ValueKey('scan-driver-qr'),
-                onPressed: isProcessing ? null : onScan,
+                key: const ValueKey('show-passenger-qr'),
+                onPressed: isProcessing ? null : onShowQr,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: actionColor,
                   foregroundColor: scheme.onPrimary,
                   minimumSize: const Size(0, 56),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
                   elevation: 0,
                 ),
-                icon: isProcessing
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.camera_alt_outlined),
-                label: Text(
-                  isProcessing ? 'Procesando pago…' : 'Escanear QR',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 14),
-              OutlinedButton.icon(
-                key: const ValueKey('show-passenger-qr'),
-                onPressed: isProcessing ? null : onShowQr,
                 icon: const Icon(Icons.qr_code_2_rounded),
                 label: const Text('Mostrar mi QR', textAlign: TextAlign.center),
               ),
               const SizedBox(height: 14),
               Text(
-                'La cámara se abre al tocar el botón.',
+                'Cada código dura 15 segundos. Podrás generar otro al vencer.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
@@ -144,8 +123,8 @@ class PassengerQrPanel extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '¿Viajan en grupo? Pide al conductor un QR con el total de '
-                'los pasajes. Verás el monto antes de pagar.',
+                'Para un pago en grupo, la terminal deberá mostrar el total de '
+                'los pasajes antes de confirmar el cobro.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                   height: 1.5,

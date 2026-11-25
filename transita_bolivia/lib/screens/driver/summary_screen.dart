@@ -1,40 +1,55 @@
-import '../../models/money.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:share_plus/share_plus.dart';
-import '../../theme.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../config.dart';
+import '../../models/money.dart';
 import '../../services/driver_auth_service.dart';
 import '../../services/driver_api_service.dart';
 import '../../services/firebase_service.dart';
-import '../../config.dart';
+import '../../theme.dart';
 
 class DriverSummaryScreen extends StatefulWidget {
-  const DriverSummaryScreen({super.key});
-
+  const DriverSummaryScreen({super.key, this.firebaseService});
+  final FirebaseService? firebaseService;
   @override
   State<DriverSummaryScreen> createState() => DriverSummaryScreenState();
 }
 
 class DriverSummaryScreenState extends State<DriverSummaryScreen> {
   final DriverApiService _apiService = DriverApiService();
+  FirebaseService get _firebase =>
+      widget.firebaseService ?? FirebaseService.instance;
   Map<String, dynamic> _summary = {};
   StreamSubscription<Map<String, dynamic>>? _liveSub;
+  bool _loading = true, _failed = false;
 
   @override
   void initState() {
     super.initState();
-    final authService = Provider.of<DriverAuthService>(context, listen: false);
-    if (AppConfig.useFirebase && authService.currentConductor != null) {
-      _liveSub = FirebaseService.instance
-          .dailySummaryStream(authService.currentConductor!.id)
-          .listen((summary) {
-            if (mounted) {
-              setState(() {
-                _summary = summary;
-              });
-            }
-          }, onError: (_) {});
+    final conductor = context.read<DriverAuthService>().currentConductor;
+    if (AppConfig.useFirebase && conductor != null) {
+      _liveSub = _firebase
+          .dailySummaryStream(conductor.id)
+          .listen(
+            (summary) {
+              if (mounted) {
+                setState(() {
+                  _summary = summary;
+                  _loading = false;
+                  _failed = false;
+                });
+              }
+            },
+            onError: (_) {
+              if (mounted) {
+                setState(() {
+                  _loading = false;
+                  _failed = true;
+                });
+              }
+            },
+          );
     } else {
       _loadSummary();
     }
@@ -49,209 +64,173 @@ class DriverSummaryScreenState extends State<DriverSummaryScreen> {
   Future<void> reload() => _loadSummary();
 
   Future<void> _loadSummary() async {
-    final authService = Provider.of<DriverAuthService>(context, listen: false);
-    if (authService.currentConductor != null) {
-      final summary = await _apiService.getDailySummary(
-        authService.currentConductor!.id,
-      );
-      if (!mounted) return;
+    final conductor = context.read<DriverAuthService>().currentConductor;
+    if (conductor == null) {
       setState(() {
-        _summary = summary;
+        _loading = false;
+        _failed = true;
       });
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    try {
+      final summary = AppConfig.useFirebase
+          ? await _firebase.dailySummaryStream(conductor.id).first
+          : await _apiService.getDailySummary(conductor.id);
+      if (mounted) {
+        setState(() {
+          _summary = summary;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _failed = true;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<DriverAuthService>(context);
-    final conductor = authService.currentConductor;
-
+    final conductor = context.watch<DriverAuthService>().currentConductor;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final ready = !_loading && !_failed;
+    final now = DateTime.now();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Resumen del Día'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.background],
-            stops: [0.0, 0.3],
-          ),
-        ),
-        child: SafeArea(
-          child: RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: _loadSummary,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+      appBar: AppBar(title: const Text('Resumen del día')),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadSummary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '${now.day}/${now.month}/${now.year}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'RESUMEN DIARIO',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        Text(
-                          'Placa: ${conductor?.licencia ?? ''}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primary,
-                                AppColors.primaryDark,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'COBRADO HOY',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${Money.format(_summary['total_puntos'] ?? 0)} PUNTOS',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '= Bs ${Money.format(_summary['total_puntos'] ?? 0)}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _buildStatRow(
-                          'Total pasajeros',
-                          '${_summary['total_pasajeros'] ?? 0}',
-                          Icons.people,
-                        ),
-                        const Divider(),
-                        _buildStatRow(
-                          'Estudiantes',
-                          '${_summary['estudiantes'] ?? 0}',
-                          Icons.school,
-                        ),
-                        const Divider(),
-                        _buildStatRow(
-                          'Civiles',
-                          '${_summary['civiles'] ?? 0}',
-                          Icons.person,
-                        ),
-                        const Divider(),
-                        _buildStatRow(
-                          'Adultos Mayores',
-                          '${_summary['mayores'] ?? 0}',
-                          Icons.elderly,
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              _shareSummary();
-                            },
-                            icon: const Icon(Icons.share),
-                            label: const Text('COMPARTIR RESUMEN'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(
-                                color: AppColors.primary,
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${conductor?.nombre ?? ''} ${conductor?.apellido ?? ''}'
+                          .trim(),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: MediaQuery.highContrastOf(context)
+                            ? Colors.black
+                            : AppColors.navy,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Recaudación confirmada',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Text(
+                            ready
+                                ? 'Bs ${Money.format(_summary['total_puntos'] ?? 0)}'
+                                : '—',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _loading
+                                ? 'Consultando los cobros…'
+                                : _failed
+                                ? 'No pudimos actualizar el resumen.'
+                                : 'Cobros exitosos de hoy',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 24),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      elevation: 0,
+                      child: Column(
+                        children: [
+                          for (final item in const [
+                            (
+                              'Total de pasajeros',
+                              'total_pasajeros',
+                              Icons.groups_outlined,
+                            ),
+                            (
+                              'Estudiantes',
+                              'estudiantes',
+                              Icons.school_outlined,
+                            ),
+                            ('Civiles', 'civiles', Icons.person_outline),
+                            ('Adultos mayores', 'mayores', Icons.elderly),
+                            (
+                              'Personas con discapacidad',
+                              'discapacitados',
+                              Icons.accessible,
+                            ),
+                          ])
+                            ListTile(
+                              leading: Icon(item.$3, color: scheme.primary),
+                              title: Text(item.$1),
+                              trailing: Text(
+                                ready ? '${_summary[item.$2] ?? 0}' : '—',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: ready ? _shareSummary : null,
+                      icon: const Icon(Icons.ios_share_rounded),
+                      label: const Text('Compartir resumen'),
+                    ),
+                    if (_failed) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _loadSummary,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reintentar'),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 24),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
-          ),
-        ],
       ),
     );
   }

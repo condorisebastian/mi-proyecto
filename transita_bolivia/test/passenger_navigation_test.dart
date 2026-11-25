@@ -364,7 +364,8 @@ void main() {
     (tester) async {
       await openPassenger(tester, db, auth);
       await selectTab(tester, 2);
-      expect(find.text('Escanear QR'), findsOneWidget);
+      expect(find.text('Mostrar mi QR'), findsOneWidget);
+      expect(find.text('Escanear QR'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('pay-method-card')));
       await tester.pumpAndSettle();
       expect(find.text('Pago con NFC'), findsOneWidget);
@@ -377,11 +378,11 @@ void main() {
       await selectTab(tester, 0);
       await selectTab(tester, 2);
       expect(find.text('Pago con NFC'), findsOneWidget);
-      await tester.ensureVisible(find.text('Pagar con QR'));
+      await tester.ensureVisible(find.text('Ir a QR'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Pagar con QR'));
+      await tester.tap(find.text('Ir a QR'));
       await tester.pumpAndSettle();
-      expect(find.text('Escanear QR'), findsOneWidget);
+      expect(find.text('Mostrar mi QR'), findsOneWidget);
       expect(auth.currentUser!.puntos, 42.50);
       expect((await db.collection('transacciones').get()).docs, isEmpty);
       expect(tester.takeException(), isNull);

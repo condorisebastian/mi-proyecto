@@ -5,23 +5,27 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../config.dart';
-import '../../models/passenger_qr.dart';
+import '../../services/passenger_qr_window_store.dart';
 import '../../services/auth_service.dart';
 
 class PassengerQrScreen extends StatefulWidget {
-  const PassengerQrScreen({super.key, required this.userId});
+  const PassengerQrScreen({super.key, required this.userId, this.store});
   final int userId;
+  final PassengerQrWindowStore? store;
   @override
   State<PassengerQrScreen> createState() => _PassengerQrScreenState();
 }
 
 class _PassengerQrScreenState extends State<PassengerQrScreen>
     with WidgetsBindingObserver {
-  PassengerQr? _qr;
-  Timer? _expiry;
+  PassengerQrWindowStore get _store =>
+      widget.store ?? PassengerQrWindowStore.instance;
+  PassengerQrWindow? _window;
   Timer? _ticker;
   int _remaining = 0;
+  bool _busy = false;
+  bool _visible = true;
+  String? _error;
 
   @override
   void initState() {
@@ -30,53 +34,56 @@ class _PassengerQrScreenState extends State<PassengerQrScreen>
     _generate();
   }
 
-  void _generate() {
-    if (context.read<AuthService>().currentUser?.id != widget.userId) return;
-    _expiry?.cancel();
-    _ticker?.cancel();
-    final qr = PassengerQr.create(
-      widget.userId,
-      backend: AppConfig.useFirebase ? 'F' : 'P',
-    );
+  Future<void> _generate() async {
+    if (_busy ||
+        _remaining > 0 ||
+        context.read<AuthService>().currentUser?.id != widget.userId) {
+      return;
+    }
     setState(() {
-      _qr = qr;
-      _remaining = 15;
+      _busy = true;
+      _error = null;
     });
-    _expiry = Timer(PassengerQr.lifetime, _invalidate);
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || _qr == null) return;
-      final remaining =
-          ((qr.expiresAt.difference(DateTime.now()).inMilliseconds + 999) ~/
-                  1000)
-              .clamp(0, 15);
-      if (remaining == 0) {
-        _invalidate();
-        return;
+    try {
+      final window = await _store.issue(widget.userId);
+      if (!mounted) return;
+      setState(() {
+        _window = window;
+        _remaining = window.remaining(_store.now);
+      });
+      _ticker?.cancel();
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'No se pudo preparar tu QR. Inténtalo nuevamente.',
+        );
       }
-      setState(() => _remaining = remaining);
-    });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
-  void _invalidate() {
-    _expiry?.cancel();
-    _ticker?.cancel();
-    if (mounted) {
-      setState(() {
-        _qr = null;
-        _remaining = 0;
-      });
-    }
+  void _tick() {
+    if (!mounted || _window == null) return;
+    final remaining = _window!.remaining(_store.now);
+    if (remaining == 0) _ticker?.cancel();
+    setState(() => _remaining = remaining);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) _invalidate();
+    if (state != AppLifecycleState.resumed) {
+      setState(() => _visible = false);
+      unawaited(_store.hide(widget.userId));
+    } else {
+      _tick();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _expiry?.cancel();
     _ticker?.cancel();
     super.dispose();
   }
@@ -86,7 +93,15 @@ class _PassengerQrScreenState extends State<PassengerQrScreen>
     final theme = Theme.of(context);
     final user = context.watch<AuthService>().currentUser;
     final ownSession = user?.id == widget.userId;
-    final qr = ownSession ? _qr : null;
+    final ticket = _window?.qr;
+    final qr =
+        ownSession &&
+            _visible &&
+            ticket != null &&
+            ticket.expiresAt.isAfter(_store.now)
+        ? ticket
+        : null;
+    final canGenerate = ownSession && !_busy && _remaining == 0;
     return Scaffold(
       appBar: AppBar(title: const Text('Mi QR')),
       body: SafeArea(
@@ -130,9 +145,13 @@ class _PassengerQrScreenState extends State<PassengerQrScreen>
                               Semantics(
                                 liveRegion: true,
                                 child: Text(
-                                  ownSession
-                                      ? 'QR vencido'
-                                      : 'La sesión cambió',
+                                  !ownSession
+                                      ? 'La sesión cambió'
+                                      : _busy
+                                      ? 'Preparando tu QR…'
+                                      : _remaining > 0
+                                      ? 'QR oculto'
+                                      : 'QR vencido',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.black,
@@ -162,7 +181,9 @@ class _PassengerQrScreenState extends State<PassengerQrScreen>
                 const SizedBox(height: 16),
                 Text(
                   qr == null
-                      ? 'Genera otro cuando estés frente al lector.'
+                      ? _remaining > 0
+                            ? 'Espera $_remaining s para generar otro.'
+                            : 'Genera otro cuando estés frente al lector.'
                       : 'Vence en $_remaining s',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium,
@@ -170,12 +191,29 @@ class _PassengerQrScreenState extends State<PassengerQrScreen>
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   key: const ValueKey('regenerate-passenger-qr'),
-                  onPressed: ownSession ? _generate : null,
+                  onPressed: canGenerate
+                      ? () {
+                          _visible = true;
+                          _generate();
+                        }
+                      : null,
                   icon: const Icon(Icons.refresh_rounded),
                   label: Text(
-                    qr == null ? 'Generar otro QR' : 'Generar nuevo QR',
+                    _busy
+                        ? 'Preparando QR…'
+                        : _remaining > 0
+                        ? 'Disponible en $_remaining s'
+                        : 'Generar otro QR',
                   ),
                 ),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
                 const SizedBox(height: 24),
                 const Text(
                   'Prueba de lectura · No autoriza cobros',
@@ -185,8 +223,7 @@ class _PassengerQrScreenState extends State<PassengerQrScreen>
                 const SizedBox(height: 8),
                 Text(
                   'Este QR no contiene tu PIN, carnet ni saldo. El cobro mediante '
-                  'ESP32-CAM necesitará validación y confirmación en el servidor. '
-                  'Para pagar ahora, escanea el QR del conductor.',
+                  'ESP32-CAM necesitará validación y confirmación en el servidor.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),

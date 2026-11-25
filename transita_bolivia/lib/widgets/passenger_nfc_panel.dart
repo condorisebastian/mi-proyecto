@@ -30,8 +30,8 @@ class PassengerNfcPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'El pago con NFC aún no está habilitado. Mientras tanto, puedes '
-          'pagar con el QR del conductor.',
+          'El pago con NFC aún no está habilitado. En Con QR puedes mostrar '
+          'tu identificación de prueba para el lector.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: scheme.onSurfaceVariant,
             height: 1.5,
@@ -128,7 +128,7 @@ class PassengerNfcPanel extends StatelessWidget {
             minimumSize: const Size(0, 56),
           ),
           icon: const Icon(Icons.qr_code_scanner),
-          label: const Text('Pagar con QR', textAlign: TextAlign.center),
+          label: const Text('Ir a QR', textAlign: TextAlign.center),
         ),
         const SizedBox(height: 20),
         Theme(
