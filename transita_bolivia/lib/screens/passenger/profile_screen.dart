@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/user.dart';
 import 'profile_options_screen.dart';
 
@@ -9,6 +10,7 @@ class PassengerProfileScreen extends StatelessWidget {
     required this.onLogout,
     required this.onSupport,
   });
+
   final User user;
   final VoidCallback onLogout;
   final ProfileSupport onSupport;
@@ -17,7 +19,8 @@ class PassengerProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     void open(Widget page) =>
         Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil')),
       body: Center(
@@ -26,99 +29,192 @@ class PassengerProfileScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              CircleAvatar(
-                radius: 34,
-                backgroundColor: scheme.primaryContainer,
-                child: Icon(
-                  Icons.person_outline,
-                  size: 38,
-                  color: scheme.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '${user.nombre} ${user.apellido}'.trim(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(user.tipoDisplay, textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              _option(
-                'Mis datos',
-                Icons.person_outline_rounded,
-                () => open(PersonalDataScreen(user: user)),
-              ),
-              _option(
-                'Puntos de atención',
-                Icons.location_on_outlined,
-                () => open(AttentionPointsScreen(onSupport: onSupport)),
-              ),
-              const SizedBox(height: 12),
-              _option(
-                'Establecer montos límites',
-                Icons.tune_rounded,
-                () => open(PaymentLimitScreen(userId: user.id)),
-              ),
-              _option(
-                'Biometría digital',
-                Icons.fingerprint_rounded,
-                () => open(BiometricSettingsScreen(userId: user.id)),
-              ),
-              _option(
-                'Cambiar mi clave',
-                Icons.lock_reset_rounded,
-                () => open(ChangeAccessScreen(onSupport: onSupport)),
-              ),
-              const SizedBox(height: 12),
-              _option(
-                'Versión de la app',
-                Icons.info_outline_rounded,
-                () => open(const AppVersionScreen()),
-              ),
-              _option(
-                'Términos y condiciones',
-                Icons.description_outlined,
-                () => open(const LegalInformationScreen()),
-              ),
-              _option(
-                'Política de privacidad',
-                Icons.privacy_tip_outlined,
-                () => open(const LegalInformationScreen(privacy: true)),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  key: const ValueKey('profile-logout'),
-                  leading: Icon(Icons.logout, color: scheme.error),
-                  title: Text(
-                    'Cerrar sesión',
-                    style: TextStyle(
-                      color: scheme.error,
-                      fontWeight: FontWeight.w600,
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: scheme.primaryContainer,
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        size: 32,
+                        color: scheme.onPrimaryContainer,
+                      ),
                     ),
-                  ),
-                  onTap: onLogout,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${user.nombre} ${user.apellido}'.trim(),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            user.tipoDisplay,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 24),
+              _ProfileGroup(
+                title: 'Tu cuenta',
+                children: [
+                  _ProfileOption(
+                    title: 'Mis datos',
+                    icon: Icons.person_outline_rounded,
+                    onTap: () => open(PersonalDataScreen(user: user)),
+                  ),
+                  _ProfileOption(
+                    title: 'Puntos de atención',
+                    icon: Icons.support_agent_rounded,
+                    onTap: () =>
+                        open(AttentionPointsScreen(onSupport: onSupport)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _ProfileGroup(
+                title: 'Pagos y acceso',
+                children: [
+                  _ProfileOption(
+                    title: 'Establecer montos límites',
+                    icon: Icons.tune_rounded,
+                    onTap: () => open(PaymentLimitScreen(userId: user.id)),
+                  ),
+                  _ProfileOption(
+                    title: 'Cambiar mi clave',
+                    icon: Icons.lock_reset_rounded,
+                    onTap: () => open(ChangeAccessScreen(onSupport: onSupport)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _ProfileGroup(
+                title: 'Acerca de Mi Pasaje',
+                children: [
+                  _ProfileOption(
+                    title: 'Versión de la app',
+                    icon: Icons.info_outline_rounded,
+                    onTap: () => open(const AppVersionScreen()),
+                  ),
+                  _ProfileOption(
+                    title: 'Términos y condiciones',
+                    icon: Icons.description_outlined,
+                    onTap: () => open(const LegalInformationScreen()),
+                  ),
+                  _ProfileOption(
+                    title: 'Política de privacidad',
+                    icon: Icons.privacy_tip_outlined,
+                    onTap: () =>
+                        open(const LegalInformationScreen(privacy: true)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                key: const ValueKey('profile-logout'),
+                onPressed: onLogout,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 56),
+                  foregroundColor: scheme.error,
+                  backgroundColor: scheme.surface,
+                  side: BorderSide(color: scheme.error),
+                ),
+                icon: const Icon(Icons.logout_rounded),
+                label: const Text('Cerrar sesión', textAlign: TextAlign.center),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _option(String title, IconData icon, VoidCallback action) => Card(
-    margin: const EdgeInsets.only(bottom: 8),
-    child: ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-      leading: Icon(icon),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: action,
-    ),
-  );
+class _ProfileGroup extends StatelessWidget {
+  const _ProfileGroup({required this.title, required this.children});
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                if (index > 0)
+                  const Divider(height: 1, indent: 72, endIndent: 16),
+                children[index],
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileOption extends StatelessWidget {
+  const _ProfileOption({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      minVerticalPadding: 14,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: CircleAvatar(
+        radius: 20,
+        backgroundColor: scheme.primaryContainer,
+        child: Icon(icon, size: 22, color: scheme.onPrimaryContainer),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: scheme.onSurfaceVariant,
+        size: 22,
+      ),
+      onTap: onTap,
+    );
+  }
 }

@@ -4,20 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transita_bolivia/services/payment_preferences.dart';
+import 'package:transita_bolivia/services/app_info.dart';
+import 'package:transita_bolivia/screens/passenger/profile_options_screen.dart';
 import 'package:transita_bolivia/screens/soporte/support_screen.dart';
 import 'package:transita_bolivia/screens/passenger/student_card_screen.dart';
 import 'passenger_navigation_test.dart' as fixture;
-
-class _Biometrics extends PaymentBiometrics {
-  _Biometrics(this.result);
-  final bool result;
-  int calls = 0;
-  @override
-  Future<bool> confirm() async {
-    calls++;
-    return result;
-  }
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,56 +34,33 @@ void main() {
   );
 
   test(
-    'otra cuenta no hereda límites ni biometría y quitar el límite se persiste',
+    'otra cuenta no hereda límites y quitar el límite se persiste',
     () async {
       final first = PaymentPreferences(42);
       await first.setLimit(5);
-      await first.setBiometric(true);
       final other = PaymentPreferences(43);
       await other.load();
       expect(other.limitCents, isNull);
-      expect(other.biometricEnabled, isFalse);
       expect((await PaymentAuthorization(other).authorize(20)).ok, isTrue);
       await first.setLimit(null);
       final restored = PaymentPreferences(42);
       await restored.load();
       expect(restored.limitCents, isNull);
-      expect(restored.biometricEnabled, isTrue);
     },
   );
 
   test(
-    'biometría cancelada bloquea el pago y una confirmación permite continuar',
+    'una preferencia biométrica antigua no bloquea pagos ni elimina el límite',
     () async {
+      final storage = await SharedPreferences.getInstance();
+      await storage.setBool('payments.firebase.42.biometric', true);
       final prefs = PaymentPreferences(42);
-      await prefs.setBiometric(true);
-      final denied = _Biometrics(false);
-      expect(
-        (await PaymentAuthorization(
-          prefs,
-          biometrics: denied,
-        ).authorize(3.5)).ok,
-        isFalse,
-      );
-      expect(denied.calls, 1);
-      final accepted = _Biometrics(true);
-      expect(
-        (await PaymentAuthorization(
-          prefs,
-          biometrics: accepted,
-        ).authorize(3.5)).ok,
-        isTrue,
-      );
-      expect(accepted.calls, 1);
-      await prefs.setBiometric(false);
-      expect(
-        (await PaymentAuthorization(
-          prefs,
-          biometrics: denied,
-        ).authorize(3.5)).ok,
-        isTrue,
-      );
-      expect(denied.calls, 1);
+      await prefs.setLimit(3.50);
+      final authorization = PaymentAuthorization(prefs);
+      expect((await authorization.authorize(3.50)).ok, isTrue);
+      expect((await authorization.authorize(4)).ok, isFalse);
+      expect(storage.containsKey('payments.firebase.42.biometric'), isFalse);
+      expect(storage.getInt('payments.firebase.42.limit_cents'), 350);
     },
   );
 
@@ -105,27 +73,25 @@ void main() {
     );
   });
 
-  test(
-    'la verificación biométrica usa la respuesta del sistema y cancela ante error',
-    () async {
+  testWidgets(
+    'Versión consulta el paquete instalado mediante el canal de información',
+    (tester) async {
+      final calls = <String>[];
       final messenger =
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      messenger.setMockMethodCallHandler(
-        PaymentBiometrics.channel,
-        (call) async => call.method == 'biometricAvailable',
-      );
+      messenger.setMockMethodCallHandler(AppInfo.channel, (call) async {
+        calls.add(call.method);
+        return {'version': '2.3.0', 'build': '17'};
+      });
       addTearDown(
-        () =>
-            messenger.setMockMethodCallHandler(PaymentBiometrics.channel, null),
+        () => messenger.setMockMethodCallHandler(AppInfo.channel, null),
       );
-      final biometrics = PaymentBiometrics();
-      expect(await biometrics.available(), isTrue);
-      expect(await biometrics.confirm(), isFalse);
-      messenger.setMockMethodCallHandler(
-        PaymentBiometrics.channel,
-        (_) async => throw PlatformException(code: 'CANCELLED'),
-      );
-      expect(await biometrics.confirm(), isFalse);
+      await tester.pumpWidget(const MaterialApp(home: AppVersionScreen()));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Versión 2.3.0'), findsOneWidget);
+      expect(find.textContaining('Compilación 17'), findsOneWidget);
+      expect(calls, ['appVersion']);
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -211,16 +177,17 @@ void main() {
   );
 
   testWidgets(
-    'Perfil contiene las nueve opciones y el cambio de clave abre soporte con borrador sin enviarlo',
+    'Perfil conserva ocho opciones sin biometría y el cambio de clave prepara soporte',
     (tester) async {
       final db = FakeFirebaseFirestore();
       await fixture.openPassenger(tester, db, fixture.PassengerAuth());
       await fixture.selectTab(tester, 4);
+      expect(find.text('Biometría digital'), findsNothing);
+      expect(find.byIcon(Icons.fingerprint_rounded), findsNothing);
       for (final label in [
         'Mis datos',
         'Puntos de atención',
         'Establecer montos límites',
-        'Biometría digital',
         'Cambiar mi clave',
         'Versión de la app',
         'Términos y condiciones',

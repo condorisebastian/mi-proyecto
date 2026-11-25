@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
@@ -9,7 +8,6 @@ class PaymentPreferences {
   PaymentPreferences(this.userId);
   final int userId;
   int? limitCents;
-  bool biometricEnabled = false;
   String get _prefix =>
       'payments.${AppConfig.useFirebase ? 'firebase' : 'api'}.$userId';
 
@@ -19,7 +17,10 @@ class PaymentPreferences {
     if (limitCents != null && limitCents! <= 0) {
       throw StateError('Límite inválido');
     }
-    biometricEnabled = storage.getBool('$_prefix.biometric') ?? false;
+    // Retira la preferencia obsoleta sin cambiar los límites guardados.
+    if (storage.containsKey('$_prefix.biometric')) {
+      await storage.remove('$_prefix.biometric');
+    }
   }
 
   Future<void> setLimit(num? amount) async {
@@ -34,41 +35,11 @@ class PaymentPreferences {
     if (!saved) throw StateError('No se pudo guardar el límite.');
     limitCents = cents;
   }
-
-  Future<void> setBiometric(bool value) async {
-    final storage = await SharedPreferences.getInstance();
-    if (!await storage.setBool('$_prefix.biometric', value)) {
-      throw StateError('No se pudo guardar la preferencia.');
-    }
-    biometricEnabled = value;
-  }
-}
-
-class PaymentBiometrics {
-  static const channel = MethodChannel('com.transita.bolivia/device_security');
-
-  Future<bool> available() async {
-    try {
-      return await channel.invokeMethod<bool>('biometricAvailable') ?? false;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> confirm() async {
-    try {
-      return await channel.invokeMethod<bool>('authenticate') ?? false;
-    } catch (_) {
-      return false;
-    }
-  }
 }
 
 class PaymentAuthorization {
-  PaymentAuthorization(this.preferences, {PaymentBiometrics? biometrics})
-    : biometrics = biometrics ?? PaymentBiometrics();
+  PaymentAuthorization(this.preferences);
   final PaymentPreferences preferences;
-  final PaymentBiometrics biometrics;
 
   Future<({bool ok, String message})> authorize(num amount) async {
     if (!Money.valid(amount) || amount <= 0) {
@@ -83,12 +54,6 @@ class PaymentAuthorization {
           message:
               'Este pago supera tu límite de Bs ${Money.format(limit / 100)}. '
               'Puedes revisarlo en Perfil → Establecer montos límites.',
-        );
-      }
-      if (preferences.biometricEnabled && !await biometrics.confirm()) {
-        return (
-          ok: false,
-          message: 'No se confirmó tu identidad. No se realizó el pago.',
         );
       }
       return (ok: true, message: 'Autorizado');

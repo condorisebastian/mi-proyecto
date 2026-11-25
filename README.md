@@ -346,23 +346,22 @@ columna izquierda. El ojo permanece a la derecha del saldo y conserva la
 preferencia para ocultarlo.
 
 **Perfil** incluye Mis datos, Puntos de atención, Establecer montos límites,
-Biometría digital, Cambiar mi clave, Versión de la app, Términos y condiciones,
+Cambiar mi clave, Versión de la app, Términos y condiciones,
 Política de privacidad y Cerrar sesión. ID y CI están dentro de Mis datos.
 Atención consulta el canal existente; no se inventan sedes ni horarios.
 El cambio de clave prepara una incidencia de tipo PIN para el operador,
 sin enviarla automáticamente ni pedir claves dentro del mensaje.
 
 Los límites se guardan en centavos por cuenta, modo de backend y teléfono.
-Antes de pagar por QR se valida el máximo por operación y, si está activada,
-la confirmación biométrica nativa. Cancelar o fallar la verificación impide
-continuar con el descuento; un cambio de cuenta invalida el intento pendiente.
+Antes de pagar por QR se valida el máximo por operación y se solicita confirmar
+el importe. Un cambio de cuenta invalida el intento pendiente.
 Son controles adicionales del cliente, no límites centrales del servidor.
 
-La biometría utiliza BiometricPrompt en Android 9+ y LocalAuthentication en
-iOS, sin dependencias nuevas ni acceso a plantillas biométricas. El diálogo
-debe confirmarse para activar o desactivar la preferencia. Android cancela
-la solicitud al pasar al segundo plano. La versión se consulta al paquete
-instalado, no se fija a mano. La integración iOS requiere validación con Xcode.
+Perfil organiza las opciones en Tu cuenta, Pagos y acceso y Acerca de Mi Pasaje.
+La opción de biometría y los permisos de huella/Face ID se retiraron; una
+preferencia biométrica antigua no condiciona los pagos ni modifica los límites.
+La versión se consulta al paquete instalado, sin solicitar permisos del teléfono.
+La integración iOS requiere validación con Xcode.
 Los textos de condiciones y privacidad describen el alcance de demostración.
 
 **Tarjeta NFC** presenta una tarjeta Mi Pasaje identificada como vista previa

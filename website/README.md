@@ -18,6 +18,10 @@ npm start
 Abrir http://127.0.0.1:4173. No hace falta compilar HTML/CSS/JS. La tipografía
 Manrope se sirve localmente con su licencia OFL. El favicon conserva fondo blanco.
 
+React y React DOM están instalados como dependencias disponibles para futuras
+mejoras. La web conserva su implementación actual de HTML/CSS/JavaScript;
+no se ha migrado el sitio ni la app Flutter a otra tecnología.
+
 ## Supabase
 
 El navegador consulta `GET /api/routes` en el mismo servidor. El servidor usa

@@ -235,191 +235,205 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeTab(User user) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primaryDark, AppColors.background],
-          stops: [0.0, 0.45],
-        ),
-      ),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Hola, ${user.nombre} ${user.tipoDisplay}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: scheme.primaryContainer,
+                        child: Icon(
+                          Icons.person_outline_rounded,
+                          color: scheme.onPrimaryContainer,
+                        ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Hola, ${user.nombre} ${user.tipoDisplay}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Contactar al call center',
+                        icon: const Icon(Icons.support_agent),
+                        onPressed: () => _openSupport(user),
+                        style: IconButton.styleFrom(
+                          backgroundColor: scheme.surface,
+                          foregroundColor: scheme.primary,
+                          side: BorderSide(color: scheme.outlineVariant),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  PassengerWalletCard(
+                    key: _walletKey,
+                    points: user.puntos,
+                    balanceHidden: _balanceHidden ?? true,
+                    onToggleVisibility: _balanceHidden == null
+                        ? null
+                        : _toggleBalanceVisibility,
+                    onHistory: _openHistory,
+                  ),
+                  const SizedBox(height: 20),
+                  DiscoverSection(
+                    onRecharge: () => _openRechargeChat(user),
+                    onRechargeAnother: () =>
+                        _openRechargeChat(user, forAnotherPerson: true),
+                    onCheckBalance: () {
+                      final target = _walletKey.currentContext;
+                      if (target != null) {
+                        Scrollable.ensureVisible(
+                          target,
+                          duration: const Duration(milliseconds: 500),
+                          alignment: 0.15,
+                        );
+                      }
+                    },
+                    onPayWithCard: () {
+                      _selectTab(2);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _paymentKey.currentState?.selectCard();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Últimos viajes',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Contactar al call center',
-                    icon: const Icon(Icons.support_agent, color: Colors.white),
-                    onPressed: () => _openSupport(user),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.12),
-                    ),
+                  const SizedBox(height: 10),
+                  StreamBuilder<List<Transaction>>(
+                    stream: _recentTrips,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return const Text(
+                          'No pudimos cargar tus viajes. Inténtalo de nuevo más tarde.',
+                        );
+                      }
+
+                      final transactions = snapshot.data ?? [];
+                      final recentTrips = transactions
+                          .where((t) => t.tipo == 'cobro_viaje')
+                          .take(5)
+                          .toList();
+
+                      if (recentTrips.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'No hay viajes recientes',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: recentTrips.map((trip) {
+                          return Container(
+                            key: ValueKey('recent-trip-${trip.id}'),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: InkWell(
+                              onTap: () =>
+                                  openTransactionReceipt(context, trip),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.directions_bus,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${trip.fecha.day}/${trip.fecha.month}/${trip.fecha.year}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          trip.metodoPagoDisplay,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '-${Money.format(trip.puntos)} pts',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              PassengerWalletCard(
-                key: _walletKey,
-                points: user.puntos,
-                balanceHidden: _balanceHidden ?? true,
-                onToggleVisibility: _balanceHidden == null
-                    ? null
-                    : _toggleBalanceVisibility,
-                onHistory: _openHistory,
-              ),
-              const SizedBox(height: 20),
-              DiscoverSection(
-                onRecharge: () => _openRechargeChat(user),
-                onRechargeAnother: () =>
-                    _openRechargeChat(user, forAnotherPerson: true),
-                onCheckBalance: () {
-                  final target = _walletKey.currentContext;
-                  if (target != null) {
-                    Scrollable.ensureVisible(
-                      target,
-                      duration: const Duration(milliseconds: 500),
-                      alignment: 0.15,
-                    );
-                  }
-                },
-                onPayWithCard: () {
-                  _selectTab(2);
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) _paymentKey.currentState?.selectCard();
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Últimos viajes',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              StreamBuilder<List<Transaction>>(
-                stream: _recentTrips,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return const Text(
-                      'No pudimos cargar tus viajes. Inténtalo de nuevo más tarde.',
-                    );
-                  }
-
-                  final transactions = snapshot.data ?? [];
-                  final recentTrips = transactions
-                      .where((t) => t.tipo == 'cobro_viaje')
-                      .take(5)
-                      .toList();
-
-                  if (recentTrips.isEmpty) {
-                    return Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No hay viajes recientes',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return Column(
-                    children: recentTrips.map((trip) {
-                      return Container(
-                        key: ValueKey('recent-trip-${trip.id}'),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: InkWell(
-                          onTap: () => openTransactionReceipt(context, trip),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.directions_bus,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${trip.fecha.day}/${trip.fecha.month}/${trip.fecha.year}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      trip.metodoPagoDisplay,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                '-${Money.format(trip.puntos)} pts',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              ),
-            ],
+            ),
           ),
         ),
       ),

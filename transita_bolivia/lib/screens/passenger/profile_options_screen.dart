@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/money.dart';
 import '../../models/user.dart';
 import '../../services/payment_preferences.dart';
+import '../../services/app_info.dart';
 
 typedef ProfileSupport = void Function(String type, String description);
 
@@ -284,124 +285,6 @@ class _PaymentLimitScreenState extends State<PaymentLimitScreen> {
   );
 }
 
-class BiometricSettingsScreen extends StatefulWidget {
-  const BiometricSettingsScreen({super.key, required this.userId});
-  final int userId;
-  @override
-  State<BiometricSettingsScreen> createState() =>
-      _BiometricSettingsScreenState();
-}
-
-class _BiometricSettingsScreenState extends State<BiometricSettingsScreen> {
-  late final _preferences = PaymentPreferences(widget.userId);
-  final _biometrics = PaymentBiometrics();
-  bool _enabled = false, _available = false, _busy = true;
-  String? _message;
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      await _preferences.load();
-      final available = await _biometrics.available();
-      if (mounted) {
-        setState(() {
-          _available = available;
-          _enabled = _preferences.biometricEnabled;
-          _busy = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _message = 'No se pudo leer la configuración.';
-          _busy = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _change(bool value) async {
-    setState(() {
-      _busy = true;
-      _message = null;
-    });
-    try {
-      if (!await _biometrics.confirm()) {
-        if (mounted) {
-          setState(
-            () => _message =
-                'No se confirmó tu identidad. La configuración no cambió.',
-          );
-        }
-        return;
-      }
-      await _preferences.setBiometric(value);
-      if (mounted) {
-        setState(() {
-          _enabled = value;
-          _message = 'Preferencia guardada.';
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _message = 'No se pudo guardar la preferencia.');
-      }
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => ProfileDetailScreen(
-    title: 'Biometría digital',
-    children: [
-      const Icon(Icons.fingerprint_rounded, size: 80),
-      const SizedBox(height: 20),
-      const Text(
-        'Confirma tus pagos con tu huella',
-        style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 12),
-      const Text(
-        'Usa la huella o biometría registrada en el teléfono antes de cada pago QR. Mi Pasaje no recibe ni guarda tu huella.',
-      ),
-      const SizedBox(height: 20),
-      SwitchListTile(
-        key: const ValueKey('biometric-payment-toggle'),
-        title: const Text('Confirmación biométrica'),
-        subtitle: Text(
-          _available
-              ? 'Protección adicional para esta cuenta y teléfono.'
-              : 'Configura una huella compatible en los ajustes del teléfono y vuelve a comprobar.',
-        ),
-        value: _enabled,
-        onChanged: _busy || (!_available && !_enabled) ? null : _change,
-      ),
-      if (_busy) const Center(child: CircularProgressIndicator()),
-      if (_message != null)
-        Padding(padding: const EdgeInsets.all(12), child: Text(_message!)),
-      const SizedBox(height: 16),
-      const Text(
-        'Para activar o desactivar esta opción debes confirmar tu identidad. Si cambias la biometría del teléfono, revísala en los ajustes del sistema antes de pagar.',
-      ),
-      const SizedBox(height: 16),
-      OutlinedButton(
-        onPressed: _busy
-            ? null
-            : () {
-                setState(() => _busy = true);
-                _load();
-              },
-        child: const Text('Comprobar disponibilidad'),
-      ),
-    ],
-  );
-}
-
 class AppVersionScreen extends StatefulWidget {
   const AppVersionScreen({super.key});
   @override
@@ -409,9 +292,7 @@ class AppVersionScreen extends StatefulWidget {
 }
 
 class _AppVersionScreenState extends State<AppVersionScreen> {
-  late final _info = PaymentBiometrics.channel.invokeMapMethod<String, dynamic>(
-    'appVersion',
-  );
+  late final _info = AppInfo.version();
   @override
   Widget build(BuildContext context) => ProfileDetailScreen(
     title: 'Versión de la app',
@@ -460,8 +341,7 @@ class LegalInformationScreen extends StatelessWidget {
       Text(
         privacy
             ? 'Datos que utilizamos\nNombre, carnet, tipo de pasajero y datos de cuenta; saldo, pagos, recargas e incidencias para prestar el servicio.\n\n'
-                  'Gestión de los datos\nLa cuenta y las operaciones se gestionan en el servicio configurado para la app: Firebase o el backend del operador. Las preferencias de saldo oculto, límite por pago y biometría se guardan en este teléfono.\n\n'
-                  'Biometría\nEl sistema del teléfono realiza la verificación. Mi Pasaje recibe su resultado y no almacena huellas ni imágenes biométricas.\n\n'
+                  'Gestión de los datos\nLa cuenta y las operaciones se gestionan en el servicio configurado para la app: Firebase o el backend del operador. Las preferencias de saldo oculto y límite por pago se guardan en este teléfono.\n\n'
                   'Carnet de muestra\nLa imagen incluida contiene datos ficticios y no representa un documento personal emitido al usuario.\n\n'
                   'Consultas\nSolicita revisión o corrección de tus datos y consulta su conservación desde Ayuda y soporte. No envíes tu PIN en los mensajes.'
             : 'Uso de tu cuenta\nRevisa tus datos y protege tu PIN. Confirma el conductor, la cantidad de pasajes y el importe antes de autorizar un pago.\n\n'
