@@ -1,6 +1,85 @@
-# Sistema de Cobro de Transporte
+# Mi Pasaje - Sistema de Cobro de Transporte
 
-Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con una app Flutter unificada y un backend PHP + MySQL/MariaDB servido por XAMPP.
+Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con la app Flutter Mi Pasaje y un backend PHP + MySQL/MariaDB servido por XAMPP.
+
+## Portal de operadores y call center
+
+**Mi Pasaje Atención**, en `operator_portal/`, ofrece cuentas individuales,
+registro de clientes ficticios, revisión de carnet/matrícula/ID estudiantil,
+recargas de puntos con comprobante, bloqueos, casos y auditoría. Supervisión
+administra las cuentas de operadores. Usa Supabase Auth y tablas privadas con RLS.
+
+Ejecutar `npm start --prefix operator_portal` y abrir http://127.0.0.1:4174/.
+Los accesos se guardan únicamente en `.transita-private/operator-demo-accounts.json`.
+Esta demostración usa puntos ficticios y un padrón académico de prueba; todavía
+no sincroniza los saldos ni las cuentas del portal con la app móvil en Firebase.
+Ver [funcionamiento, preparación y pruebas](operator_portal/README.md).
+
+## Web, Provincias y terminal POS
+
+La web de **Mi Pasaje** en `website/dist` consulta el catálogo y permite calcular grupos. Su
+simulador POS usa saldo ficticio y no accede a cuentas. El catálogo fuente es
+`shared/province_routes.json`: 29 destinos de las 15 provincias de Santa Cruz.
+Todos los municipios muestran «Tarifa por verificar», incluidos La Guardia y
+El Torno. No se generan cobros provinciales hasta verificar sus importes.
+No se presentan precios históricos del Decreto 494 como tarifas actuales.
+
+La app se llama **Mi Pasaje** en Android, iOS, accesos y comprobantes. Usa
+`img_transitabolivia/logo_app_new.png`, copiado sin modificar a
+`transita_bolivia/assets/images/logo_app_new.png`. La billetera usa de forma
+independiente `assets/images/icono_saldo.png`, con transparencia real. El símbolo
+de barras y moneda Bs se preparó con la herramienta integrada de imágenes;
+la app lo representa en blanco, sin recuadro detrás. El JPG original se
+conserva en `img_transitabolivia` y el prompt del recurso final está en
+`img_transitabolivia/icono_saldo_sin_fondo.prompt.txt`. Se retiró la moneda azul
+anterior de la app.
+
+Para regenerar los iconos, ejecutar `dart run ../tools/regenerate_app_icons.dart`
+desde `transita_bolivia/`. El comando prepara un recorte cuadrado centrado del
+logo horizontal (sin estirar la ilustración), genera los iconos Android/iOS y
+conserva los booleanos de Xcode que el generador 0.14.4 puede alterar. El logo
+original sigue intacto. Los comprobantes esperan cargarlo antes de exportar.
+
+El identificador instalado `com.transita.bolivia`, el paquete Dart
+`transita_bolivia` y la configuración de Firebase se conservan para actualizar
+las instalaciones existentes y mantener sus datos y conexiones.
+
+La web utiliza el icono actual de Mi Pasaje, tipografía local y un favicon
+con fondo blanco. El servidor Node consulta el catálogo en Supabase con una
+clave publicable guardada fuera del directorio público y de Git. Las tablas
+del catálogo tienen RLS y acceso público de solo lectura a rutas publicadas;
+las cuentas y saldos de la app siguen en Firebase y en su backend existente.
+Para abrirla: `npm ci --prefix website` y `npm start --prefix website`, en
+http://127.0.0.1:4173. Ver [configuración y pruebas de la web](website/README.md).
+La portada recorre automáticamente las 15 provincias cada tres segundos, con
+fundido de 650 ms y precarga de la siguiente fotografía para evitar parpadeos,
+pausa manual y respeto por la preferencia de movimiento reducido. Incluye
+fotografías locales, controles accesibles, selección de provincia y créditos.
+Las fuentes revisadas están en `website/photo_sources.json`; ejecutar
+`python tools/download_destination_photos.py` para recuperar las imágenes y
+sus atribuciones. La página `credits.html` enlaza cada autor, archivo y licencia.
+
+Ejecutar `python tools/generate_routes.py` después de editar el catálogo;
+sincroniza Flutter, web, Functions y la semilla SQL de Supabase. PHP publica `GET /catalog/routes` y valida
+los importes provinciales al cobrar. El pasajero consulta Rutas; el conductor
+conserva Provincias, grupos y los cobros urbanos y personalizados.
+
+El POS NFC es de circuito cerrado con saldo de recargas, sin cuentas bancarias.
+Las pantallas y el backend están preparados, pero los cobros están desactivados
+hasta cerrar las reglas de demostración, activar identidades/terminales,
+desplegar Functions y emitir tarjetas. La web también identifica NFC como
+funcionalidad en preparación. No se modificaron las reglas de producción.
+
+Ver [circuito, conexiones y requisitos de activación](hardware/terminal_pos/README.md).
+El circuito de Tinkercad, el hardware físico y la depuración en teléfono siguen
+pendientes de acceso y pruebas; preparar archivos no equivale a simularlos allí.
+
+Comprobaciones adicionales:
+
+```text
+python tools/generate_routes.py --check
+node --test transita_bolivia/functions/test/payments.test.js website/test/fare_math.test.mjs
+```
 
 ## Arquitectura
 
@@ -23,11 +102,17 @@ mi-proyecto/
 ## Configuración del backend
 
 1. Importar `database/transporte_db.sql` desde phpMyAdmin (crea la BD `proyecto_cobros` con datos de prueba).
+   - Si ya tenías la BD creada con el esquema anterior (sin PIN), importar en su
+     lugar `database/migration_pin.sql`, que agrega la columna `pin` sin borrar datos.
 2. Publicar la API en `htdocs` (junction recomendado, sirve directo desde el repo):
    ```
    mklink /J C:\xampp\htdocs\transporte_api <ruta-del-repo>\api
    ```
-3. Credenciales de BD en `api/config/database.php` (por defecto: root sin clave).
+3. Para desarrollo local, ejecutar `php api/migrate_private_config.php --development`.
+   La configuración privada queda en `.transita-private/`, fuera de `api/` e
+   ignorada por Git. El modo local conserva la compatibilidad con XAMPP.
+   En producción usar `APP_ENV=production`, un usuario limitado de BD con clave
+   y un secreto JWT de al menos 32 bytes, suministrados por el servidor.
 4. Verificar: `http://localhost/transporte_api/health`
 
 ### Endpoints principales
@@ -40,18 +125,83 @@ mi-proyecto/
 | POST   | `/auth/login-conductor`           | Login de conductor                 |
 | GET    | `/users/{id}`                     | Datos/saldo de un usuario          |
 | POST   | `/transactions/pay`               | Cobrar un viaje                    |
-| POST   | `/transactions/recharge`          | Recargar saldo                     |
+| POST   | `/transactions/recharge`          | Bloqueado hasta verificación de recarga |
 | GET    | `/transactions/user/{userId}`     | Historial del usuario              |
 | GET    | `/transactions/summary/{conductorId}` | Resumen diario del conductor   |
 | GET    | `/transactions/history/{conductorId}` | Historial diario del conductor |
 | GET    | `/health`                         | Health check                       |
 
+## Seguridad: primera etapa
+
+La primera etapa protege el backend PHP y añade verificaciones automáticas.
+No convierte el entorno Firebase de demostración en una instalación de producción.
+
+- Apache bloquea configuración, archivos ocultos, código interno, pruebas y
+  scripts de mantenimiento. Los scripts de configuración solo admiten CLI.
+- JWT y credenciales SQL se leen de variables del proceso o de un directorio
+  privado fuera del directorio publicado. `api/.env.example` enumera las
+  variables; copiar ese archivo no configura automáticamente Apache/PHP.
+- Producción es el modo predeterminado: requiere un secreto configurado y
+  rechaza el usuario SQL root y las contraseñas vacías. El entorno local se
+  habilita explícitamente con la migración indicada arriba.
+- Un conductor no puede descontar el saldo de un pasajero. El pago PHP requiere
+  el token del propio pasajero. La recarga directa PHP devuelve 403: aún falta
+  implementar su verificación por operador/proveedor. El chat financiero de
+  demostración sigue usando Firebase; no acredita la base de datos SQL.
+- Los errores de acceso no reproducen el PIN, el CI ni el perfil de la cuenta.
+- Gitleaks revisa los archivos versionables y el historial Git. La salida se
+  limita a ubicación y regla, sin imprimir claves ni coincidencias. Solo se
+  exceptúa el identificador público de Firebase en sus archivos de cliente;
+  las claves privadas dentro de esos archivos siguen detectándose.
+- CI comprueba autorización HTTP, configuración privada y las restricciones
+  sobre un Apache real, además de las pruebas funcionales Flutter y PHP.
+
+Para ejecutar las verificaciones locales:
+
+```powershell
+php api/tests/security_test.php
+php api/tests/money_test.php
+python tools/security/test_api_http.py
+# Configurar GITLEAKS_BIN con la ruta del ejecutable Gitleaks 8.30.1 verificado.
+python tools/security/test_secret_scan.py
+python tools/security/scan_secrets.py
+python tools/security/scan_secrets.py --history
+# Con Apache local iniciado y api/ publicado en /transporte_api:
+python tools/security/test_apache_access.py http://localhost/transporte_api
+```
+
+Pendiente para producción: autenticar cada cuenta con Firebase Authentication,
+asignar roles desde el servidor, trasladar la autorización financiera a un
+backend confiable, restringir Firestore por propietario, proteger las sesiones,
+exigir HTTPS y configurar firma de producción y App Check. Las reglas actuales
+siguen siendo de demostración. La migración debe instalar y probar los clientes
+compatibles antes de retirar ese acceso; no desplegar reglas incompatibles sobre
+los teléfonos actuales.
+
 ## App Flutter (transita_bolivia)
 
 App unificada para pasajeros y conductores con selección de rol al iniciar:
 
-- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, recarga, pago de viaje (QR/NFC), tarjeta, historial.
-- **Conductor**: login/registro por licencia, cobro de viajes (QR/NFC), resumen diario, historial.
+- **Pasajero**: 4 tipos (estudiante, civil, adulto mayor, discapacitado), registro, chat de recargas con el operador, pago individual o grupal por QR e historial.
+- **Conductor**: login/registro por PIN, cobro por QR con cuadrícula de categorías e iconos, cantidad de pasajes editable, alerta sonora y visual, resumen y chat de retiros diarios. El QR aparece al tocar una categoría. Solo la sección **Pago** tiene un campo de monto total personalizado y el botón **MOSTRAR QR**.
+- **Administrador**: bandeja Chats, conversación en vivo y confirmación/rechazo de solicitudes de recarga y retiro. Su acceso no se muestra en la selección principal de roles.
+
+Tarifas del prototipo: civil **Bs 3.50**; estudiante, adulto mayor y persona
+con discapacidad **Bs 1.00**. Una persona puede pagar hasta 50 pasajes de una
+misma categoría mediante un solo QR. Los cálculos se hacen en centavos enteros;
+los campos existentes `puntos` siguen representando bolivianos y admiten
+valores decimales en Firebase, JSON y MySQL (`DECIMAL`). Los saldos enteros
+anteriores siguen siendo válidos. Recargas y retiros también admiten centavos.
+En **Cobrar → Preparar cobro**, el conductor puede escribir la cantidad de pasajes y el
+monto total acordado (por ejemplo, 3 pasajes por Bs 7.50), y pulsar **MOSTRAR QR**.
+El importe ingresado ya es el total: no se multiplica de nuevo por la cantidad.
+El formato del QR distingue los montos personalizados; se conserva para la
+integración de cobro. El pasajero ya no tiene un botón para escanear al conductor.
+Las cuatro categorías conservan sus tarifas y generan el QR automáticamente.
+
+El acceso precarga el carnet del perfil de prueba y recuerda el último CI de
+cada perfil tras un acceso correcto, sin guardar el PIN. El usuario puede
+editar el carnet para acceder con otra cuenta.
 
 Con Apache corriendo y la API publicada:
 
@@ -74,14 +224,235 @@ Si cambia la IP de la PC, actualizar el `defaultValue` en
 `transita_bolivia/lib/config.dart`, o compilar con
 `--dart-define=API_URL=http://<nueva-ip>/transporte_api`.
 
+## Modo Firebase (predeterminado)
+
+La app usa Cloud Firestore por defecto para sincronizar los dos teléfonos
+(login/registro por PIN, recargas, pagos, resumen diario y soporte).
+El modo PHP/MySQL se selecciona con `--dart-define=USE_FIREBASE=false`.
+Ambos modos almacenan datos por separado; no hay sincronización entre ellos.
+
+```
+cd transita_bolivia
+flutter run --dart-define=USE_FIREBASE=true
+```
+
+La app intenta crear una identidad anónima de Firebase Auth si el proveedor está
+habilitado; el acceso de la aplicación sigue siendo por PIN. Las reglas actuales
+son para demostración y deben reforzarse antes de producción. Están versionadas y se despliegan desde
+`transita_bolivia/`:
+
+```
+firebase deploy --only firestore --project transita-bolivia
+```
+
+Archivos: `transita_bolivia/firestore.rules` y `firestore.indexes.json`. Para
+sembrar los PIN de prueba en Firestore: `node tools/firebase/seed_pins.js`
+(requiere `GOOGLE_APPLICATION_CREDENTIALS`).
+
+### Prueba en dos teléfonos
+
+1. Instalar la misma compilación Firebase en ambos equipos, con acceso a internet.
+2. Samsung A70 (`R58M54T79VR`): pasajero estudiante, PIN `1234`.
+3. Tecno BG7 (`11424153CR013112`): conductor, PIN `5678`.
+4. Comprobar que el pasajero tenga saldo. En **Chat → Solicitar recarga**, enviar
+   monto y referencia. En **Administración → Chats**, el operador responde y
+   confirma el pago verificado; entonces se acreditan los puntos una sola vez.
+5. En el Tecno, elegir **Cobrar**, escribir la cantidad de pasajes y tocar
+   **Estudiante** para usar la tarifa fija. Para un cobro personalizado, escribir
+   también el **Monto total (Bs)** en **Preparar cobro** y pulsar **MOSTRAR QR**.
+6. En el Samsung, elegir **Pagar → Con QR → Mostrar mi QR**. Es una prueba de
+   identificación para la futura lectura mediante ESP32-CAM: no descuenta saldo
+   ni lee el QR del conductor. No permite generar otro código durante 15 segundos,
+   aunque se cierre y vuelva a abrir esa pantalla.
+7. El aviso **PAGO EXITOSO**, los tonos y el resumen del conductor solo reaccionan
+   a operaciones confirmadas del backend. Mostrar un QR de prueba no debe
+   producir ese aviso ni generar un comprobante.
+
+En el chat del conductor se muestra su recaudación diaria disponible, lo reservado
+y lo retirado. El calendario permite consultar días anteriores y solicitar su
+saldo pendiente, sin perderlo al cambiar de día. **Solicitar retiro** reserva el monto; el operador confirma solo
+después de entregar el dinero. Rechazar libera la reserva. Los retiros no pueden
+superar los cobros exitosos disponibles de ese conductor y día. La confirmación
+registra la operación; la app no ejecuta transferencias bancarias.
+
+Los chats usan `chats/{id}/mensajes`, `solicitudes_financieras` y `liquidaciones`.
+Desplegar las reglas antes de probar la nueva sección:
+`firebase deploy --only firestore:rules --project transita-bolivia`.
+No requieren índices compuestos nuevos. Las solicitudes tienen estados
+`pendiente`, `aprobada` y `rechazada`, con respuesta y registro de la operación.
+
+Para usar el cobro grupal en el backend PHP/MariaDB existente, ejecutar una vez
+`database/migration_pago_grupal.sql`; una instalación nueva ya incluye la columna.
+
+Mantener la app del conductor abierta y el volumen multimedia audible. Este aviso
+es una alarma dentro de la app; no usa notificaciones push con la aplicación cerrada.
+Un pasajero solo puede pagar una vez cada QR: para otro viaje, cerrar el QR y
+generar uno nuevo. Los reintentos no descuentan otra vez y el historial antiguo
+no provoca alarmas al abrir la app. El pago requiere conexión y confirmación del
+servidor; no se anuncia como exitoso un pago pendiente sin internet.
+
 ## Credenciales de prueba
 
-Todas las contraseñas de usuarios y conductores son `123456` (definidas en `database/transporte_db.sql`).
+El acceso es por **PIN único de 4 dígitos** (ya no se usa CI ni contraseña).
+Los PIN están en `database/transporte_db.sql` (backend PHP) y en Firestore
+(`usuarios`/`conductores`, campo `pin`) para el modo Firebase.
 
-- Pasajero de prueba (CI): `1234567`
-- Conductor de prueba (licencia): `LIC-12345`
+- Pasajero estudiante: `1234` (Sebastian)
+- Pasajero civil: `2345` (Maria) / `4567` (Ana)
+- Pasajero adulto mayor: `3456` (Pedro)
+- Conductor: `5678` (Juan) / `6789` (Carlos)
+- Administrador: `0000`
 
 ## Tests
+
+### Accesibilidad, favoritos y comprobantes
+
+Desde **Opciones del conductor → Accesibilidad** se puede activar
+texto grande, alto contraste y botones para escuchar
+importes. El texto grande respeta un tamaño superior elegido en Android. La
+voz se inicia al pulsar el botón; necesita un motor con voz española disponible
+en el teléfono. Los ajustes se guardan en el dispositivo. La selección inicial
+de pasajero o conductor ya no muestra el botón de accesibilidad.
+
+En **Provincias** del conductor, la estrella guarda o quita un destino; el filtro **Favoritos**
+muestra los destinos guardados, que aparecen primero al consultar todos.
+Los favoritos no habilitan tarifas pendientes ni modifican importes.
+
+En **Movimientos → Ver comprobante**, el pasajero puede compartir una imagen PNG
+o copiar los datos de una operación confirmada. El recibo incluye ID, fecha,
+importe, método y, para viajes, conductor y cantidad de pasajes; no incluye
+carnet, PIN ni saldo. Las escrituras pendientes de confirmación del servidor y
+las operaciones rechazadas no generan comprobantes compartibles. Después de
+pagar, **Ver comprobantes** abre ese historial.
+
+Las preferencias y los favoritos usan almacenamiento local; cambiar de cuenta
+en el mismo dispositivo conserva esos ajustes. Las imágenes se entregan al
+menú de compartir del sistema. Esta entrega no cambia las reglas financieras
+ni activa la terminal NFC.
+
+### Navegación del pasajero
+
+La barra inferior reúne **Inicio**, **Mi carnet**, **Pagar**, **Rutas** y **Perfil**.
+Pagar ocupa el centro como botón principal y permite elegir **Con QR** o **Tarjeta NFC**.
+Su icono utiliza la imagen proporcionada `qr_nfc_centrado.png`, conservada
+en `img_transitabolivia/` y copiada a los assets de la app. Se representa en
+blanco sobre el botón azul con ajuste de centrado visual.
+La vista QR ofrece únicamente **Mostrar mi QR**, con saldo disponible y tarifa
+individual como referencia. El escáner del pasajero se retiró de esta pantalla;
+tarjeta muestra su estado NFC no habilitado, sin simular cobros. Ambas vistas tienen
+contenido desplazable, ancho limitado en tabletas y ayuda accesible desde la
+cabecera. La guía de NFC se despliega bajo su tarjeta de vista previa.
+
+**Mostrar mi QR** genera al instante un código de identificación de prueba
+para la ESP32-CAM. Caduca aproximadamente en 15 segundos y se oculta al pasar
+a segundo plano o cambiar de cuenta. Solo permite una generación cada 15 segundos
+por cuenta y backend: cerrar la pantalla, reabrirla o tocar repetidamente no
+reinicia el plazo. Si el código sigue visible y vigente se recupera el mismo;
+si se ocultó al pasar a segundo plano, se espera al vencimiento para emitir otro.
+Este control es local al prototipo; no sustituye una autorización del servidor.
+No contiene PIN, CI, nombre ni saldo y
+no autoriza cobros. El protocolo y la preparación del cobro real se explican
+en `hardware/terminal_pos/PASSENGER_QR.md`; el lector físico aún no se flasheó.
+
+Los cuatro tipos de pasajero comparten esta navegación, foto de perfil,
+billetera, carnet y QR. Las tarifas se mantienen: civil Bs 3.50 y las demás Bs 1.00.
+La bienvenida usa `fondo.png`, el título **¿Cómo usarás Mi Pasaje?** y accesos a
+ayuda y cobertura de referencia, sin consultar GPS. El conductor tiene un botón
+principal **Cobrar pasajes**, resumen en vivo y desglose de las cuatro categorías;
+las pestañas secundarias se crean al visitarlas.
+
+**Foto de perfil**, dentro de Perfil, permite elegir una imagen de la galería,
+cambiarla o quitarla. La foto se muestra en Inicio y Perfil y se conserva en
+el almacenamiento privado del teléfono, por cuenta y modo de backend. No se
+sube a Firebase ni a Supabase. El selector limita resolución y tamaño, valida
+la imagen y no reemplaza una foto anterior si la nueva no es válida.
+
+El arranque dibuja una pantalla de preparación antes de esperar por Firebase.
+Las preferencias y Firebase se preparan en paralelo, las sesiones tienen esperas
+acotadas y la identidad remota se verifica después de mostrar la app. La siembra
+de cuentas de prueba es opcional con `--dart-define=SEED_DEMO_DATA=true` y se
+ejecuta en segundo plano, sin bloquear el inicio. No se modifican los PIN de
+las cuentas ya existentes. Los logins de pasajero y conductor usan iconos de
+su categoría en lugar de la imagen de marca.
+
+**Mi carnet** presenta `student_card_updated.png`, copia de la imagen proporcionada
+`Mi Pasaje student card update.png`. El botón **Pantalla completa** y la imagen
+abren un visor horizontal, sin recortar, con zoom mediante dos dedos. Cerrar o
+volver restaura la orientación automática y las barras del sistema.
+La imagen se identifica como muestra con datos ficticios: no se vincula a la
+identidad de quien inicia sesión ni acredita descuentos, vigencia o emisión.
+
+**Rutas** permite buscar destinos del catálogo desde Santa Cruz de la Sierra y
+guardar favoritos. Las tarifas continúan como **Tarifa por verificar** y el
+pasajero no inicia cobros desde esta sección.
+
+En **Tu billetera**, los iconos de título, puntos y movimientos comparten una
+columna izquierda. El ojo permanece a la derecha del saldo y conserva la
+preferencia para ocultarlo.
+
+**Perfil** incluye Mis datos, Puntos de atención, Establecer montos límites,
+Cambiar mi clave, Versión de la app, Términos y condiciones,
+Política de privacidad y Cerrar sesión. ID y CI están dentro de Mis datos.
+Atención consulta el canal existente; no se inventan sedes ni horarios.
+El cambio de clave prepara una incidencia de tipo PIN para el operador,
+sin enviarla automáticamente ni pedir claves dentro del mensaje.
+
+Los límites se guardan en centavos por cuenta, modo de backend y teléfono.
+Antes de pagar por QR se valida el máximo por operación y se solicita confirmar
+el importe. Un cambio de cuenta invalida el intento pendiente.
+Son controles adicionales del cliente, no límites centrales del servidor.
+
+Perfil organiza las opciones en Tu cuenta, Pagos y acceso y Acerca de Mi Pasaje.
+La opción de biometría y los permisos de huella/Face ID se retiraron; una
+preferencia biométrica antigua no condiciona los pagos ni modifica los límites.
+La versión se consulta al paquete instalado, sin solicitar permisos del teléfono.
+La integración iOS requiere validación con Xcode.
+Los textos de condiciones y privacidad describen el alcance de demostración.
+
+**Tarjeta NFC** presenta una tarjeta Mi Pasaje identificada como vista previa
+sin activar, explica cómo funcionará la recarga y el acercamiento a la
+terminal, y ofrece pagar con QR o pedir ayuda sobre emisión, vinculación o
+pérdida. No muestra saldo, carnet ni números de tarjeta inventados. El acceso
+de ayuda utiliza la identidad de la sesión y no emite ni vincula una tarjeta.
+
+**Tu billetera** muestra el icono de puntos y el saldo. El ojo oculta tanto
+los importes como el botón de lectura de voz; la preferencia se conserva en el
+dispositivo, sin guardar el saldo. **Ver movimientos** abre el historial,
+respetando el saldo oculto. Tocar un movimiento o un viaje reciente abre su
+comprobante registrado; los pendientes y rechazados no se presentan como
+pagos confirmados.
+
+**Descubre más** muestra las ilustraciones originales de `img_transitabolivia`,
+copiadas a los assets de la app: Recárgate puntos, Recarga puntos a otras personas,
+Consulta tu saldo y Paga con tu tarjeta. El carrusel avanza cada tres segundos
+con una transición de 600 ms, permite pausar/reanudar y elegir una imagen por
+sus indicadores. Cada ilustración tiene una franja con icono, acción en español
+y flecha; toda la tarjeta abre la misma acción. Se detiene al salir de Inicio, abrir otra pantalla, arrastrar
+las imágenes o enviar la app al segundo plano; respeta movimiento reducido.
+Las dos imágenes nuevas llevan a la billetera (sin revelar el saldo oculto)
+y a la sección NFC, cuyo cobro todavía no está habilitado.
+**Recárgate puntos** abre el chat habitual;
+**Recarga puntos a otras personas** prepara un mensaje con el ID del beneficiario,
+monto y referencia para el operador. No envía el mensaje automáticamente ni
+crea una solicitud para la cuenta equivocada: la acreditación a otra persona
+requiere verificación del operador. Los borradores se conservan al volver al chat.
+Se retiraron el botón independiente Recargar saldo y las pestañas Recargas y
+Movimientos.
+
+Inicio muestra un saludo compacto, el saldo y los últimos viajes. El icono de
+call center en la cabecera abre Ayuda y soporte. ID, carnet y cierre de sesión
+están en Perfil; se retiraron de Inicio los accesos a Provincias, Mi tarjeta
+NFC y accesibilidad. Las secciones se cargan al abrirlas y conservan su estado
+al cambiar de pestaña.
+
+### Acceso directo
+
+Tras iniciar sesión o registrarse se abre Inicio directamente, tanto para
+pasajeros como para conductores. No se pregunta ciudad ni departamento,
+tampoco se muestra un selector en la cabecera. Se retiraron el formulario,
+la pantalla intermedia y la preferencia de ciudad del código activo; las
+elecciones guardadas por versiones anteriores no se consultan. El tema
+mantiene el texto ampliado del sistema, contraste alto y superficies claras.
 
 ```
 cd transita_bolivia && flutter analyze && flutter test

@@ -11,11 +11,31 @@ require __DIR__ . '/src/db.php';
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 require __DIR__ . '/src/helpers.php';
+set_exception_handler(static function (Throwable $error): void {
+    // Las excepciones pueden contener credenciales o SQL. No registrar su texto.
+    error_log('transita_api: fallo interno de ' . get_class($error));
+    json_out(['error' => 'Error interno del servidor'], 500);
+});
+header('X-Content-Type-Options: nosniff');
+header('Cache-Control: no-store');
+header('Referrer-Policy: no-referrer');
 require __DIR__ . '/src/routes/auth.php';
 require __DIR__ . '/src/routes/users.php';
 require __DIR__ . '/src/routes/transactions.php';
 
-header('Access-Control-Allow-Origin: *');
+// CORS: solo orígenes locales (localhost / red privada 192.168.x, 10.x,
+// 172.16-31.x). Bloquea sitios web externos; la app móvil no requiere CORS.
+$corsOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$corsHost   = parse_url($corsOrigin, PHP_URL_HOST) ?: '';
+$corsLocal  = $corsHost !== ''
+    && (preg_match('/^(localhost|127\.0\.0\.1|::1)$/i', $corsHost)
+        || preg_match('/^192\.168\.\d{1,3}\.\d{1,3}$/', $corsHost)
+        || preg_match('/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $corsHost)
+        || preg_match('/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/', $corsHost));
+if ($corsLocal) {
+    header('Access-Control-Allow-Origin: ' . $corsOrigin);
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 
@@ -42,6 +62,13 @@ if ($seg === [] || $seg[0] === '') {
 }
 
 switch ($seg[0]) {
+    case 'catalog':
+        if ($method !== 'GET' || $seg !== ['catalog', 'routes']) {
+            json_out(['error' => 'Ruta no encontrada'], 404);
+        }
+        require_once __DIR__ . '/src/province_routes.php';
+        json_out(province_catalog());
+        break;
     case 'auth':
         handle_auth($method, $seg);
         break;

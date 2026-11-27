@@ -1,0 +1,15 @@
+title = "Transita Bolivia: escaneo de secretos con salida redactada"
+
+[extend]
+useDefault = true
+
+# Solo se exceptúa la clave pública de identificación de Firebase, en sus
+# archivos oficiales. Las claves privadas y otros tokens siguen detectándose
+# incluso dentro de estos mismos archivos.
+[[allowlists]]
+description = "Identificador público del cliente Firebase"
+targetRules = ["gcp-api-key", "generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)transita_bolivia/(lib/firebase_options\.dart|android/app/google-services\.json|ios/Runner/GoogleService-Info\.plist)$''']
+regexTarget = "secret"
+regexes = ['''^AIza[\w-]{35}$''']

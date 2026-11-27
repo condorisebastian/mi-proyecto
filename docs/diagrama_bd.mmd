@@ -1,0 +1,113 @@
+%% ==========================================================
+%% Diagrama de Base de Datos - Proyecto Cobros (Transita Bolivia)
+%% Motor: MySQL / MariaDB | Esquema: database/transporte_db.sql
+%% Se puede visualizar en GitHub o en https://mermaid.live
+%% ==========================================================
+erDiagram
+    usuarios ||--o| pasajeros : "1:1"
+    usuarios ||--o| conductores : "1:1"
+    pasajeros ||--o{ tarjetas : "1:N"
+    pasajeros ||--|| saldos : "1:1"
+    pasajeros ||--o{ recargas : "1:N"
+    pasajeros ||--o{ cobros : "1:N"
+    conductores ||--o{ cobros : "1:N"
+    vehiculos ||--o{ cobros : "1:N"
+    rutas ||--o{ cobros : "1:N"
+
+    usuarios {
+        int id_usuario PK
+        varchar nombre
+        varchar apellido
+        varchar correo UK
+        varchar telefono
+        varchar password
+        enum rol
+        enum estado
+        datetime fecha_registro
+    }
+    pasajeros {
+        int id_pasajero PK
+        int id_usuario FK
+        varchar ci UK
+        char pin UK
+        enum tipo
+        date fecha_nacimiento
+        varchar direccion
+        enum estado
+    }
+    conductores {
+        int id_conductor PK
+        int id_usuario FK
+        varchar ci UK
+        char pin UK
+        varchar numero_licencia UK
+        date fecha_vencimiento
+        enum estado
+    }
+    vehiculos {
+        int id_vehiculo PK
+        varchar placa UK
+        varchar modelo
+        varchar marca
+        varchar color
+        smallint capacidad
+        enum estado
+    }
+    rutas {
+        int id_ruta PK
+        varchar nombre
+        varchar numero UK
+        varchar descripcion
+        decimal tarifa
+        enum estado
+    }
+    tarjetas {
+        int id_tarjeta PK
+        int id_pasajero FK
+        varchar codigo_qr UK
+        datetime fecha_emision
+        enum estado
+    }
+    saldos {
+        int id_saldo PK
+        int id_pasajero FK
+        decimal saldo_actual
+        datetime fecha_actualizacion
+    }
+    recargas {
+        int id_recarga PK
+        int id_pasajero FK
+        decimal monto
+        varchar metodo_pago
+        datetime fecha
+        enum estado
+    }
+    cobros {
+        int id_cobro PK
+        int id_pasajero FK
+        int id_conductor FK
+        int id_vehiculo FK
+        int id_ruta FK
+        decimal monto
+        varchar metodo_pago
+        varchar tipo_usuario
+        date fecha
+        time hora
+        varchar codigo_transaccion UK
+        enum estado
+    }
+    incidencias {
+        int id_incidencia PK
+        enum canal
+        varchar reportante_clave
+        varchar nombre
+        varchar tipo
+        text descripcion
+        enum prioridad
+        enum estado
+        text respuesta
+        json notas
+        json acciones
+        datetime fecha_creacion
+        datetime fecha_resolucion
+    }

@@ -1,0 +1,6 @@
+{
+  "name": "mi-pasaje-atencion", "version": "1.0.0", "private": true, "type": "module",
+  "engines": {"node": ">=22.13"},
+  "scripts": {"start": "node server.mjs", "prepare-demo": "node scripts/prepare-demo.mjs", "test": "node --test test/*.test.mjs"},
+  "dependencies": {"@supabase/supabase-js": "2.119.2"}
+}

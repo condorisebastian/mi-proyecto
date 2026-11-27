@@ -1,12 +1,18 @@
+import 'money.dart';
+
 class Transaction {
   final int id;
   final int? idUsuario;
   final int idConductor;
-  final int puntos;
+  final num puntos;
   final String tipo;
   final String metodoPago;
   final String estado;
   final DateTime fecha;
+  final int cantidadPasajeros;
+
+  /// Metadato local de Firestore: aún no existe confirmación del servidor.
+  final bool hasPendingWrites;
 
   Transaction({
     required this.id,
@@ -17,6 +23,8 @@ class Transaction {
     required this.metodoPago,
     required this.estado,
     required this.fecha,
+    this.cantidadPasajeros = 1,
+    this.hasPendingWrites = false,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -24,11 +32,12 @@ class Transaction {
       id: json['id'],
       idUsuario: json['id_usuario'],
       idConductor: json['id_conductor'],
-      puntos: json['puntos'],
+      puntos: Money.read(json['puntos']),
       tipo: json['tipo'],
       metodoPago: json['metodo_pago'],
       estado: json['estado'],
       fecha: DateTime.parse(json['fecha']),
+      cantidadPasajeros: (json['cantidad_pasajeros'] as num?)?.toInt() ?? 1,
     );
   }
 
@@ -42,15 +51,20 @@ class Transaction {
       'metodo_pago': metodoPago,
       'estado': estado,
       'fecha': fecha.toIso8601String(),
+      'cantidad_pasajeros': cantidadPasajeros,
     };
   }
 
   String get tipoDisplay {
     switch (tipo) {
       case 'cobro_viaje':
-        return '🚌 Viaje';
+        return cantidadPasajeros > 1
+            ? 'Viaje · $cantidadPasajeros pasajes'
+            : 'Viaje';
       case 'recarga':
-        return '💳 Recarga';
+        return 'Recarga';
+      case 'retiro_conductor':
+        return 'Retiro';
       default:
         return tipo;
     }
@@ -58,14 +72,14 @@ class Transaction {
 
   String get metodoPagoDisplay {
     switch (metodoPago) {
-      case 'tarjeta_nfc':
-        return '📱 NFC';
       case 'qr':
-        return '📷 QR';
+        return 'QR';
       case 'recarga':
-        return '💳 Recarga';
+        return 'Recarga';
+      case 'chat':
+        return 'Chat de atención';
       default:
-        return metodoPago;
+        return 'Otro método';
     }
   }
 }

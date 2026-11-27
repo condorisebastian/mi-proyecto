@@ -1,0 +1,149 @@
+@startuml diagrama_bd
+' ==========================================================
+' Diagrama de Base de Datos - Proyecto Cobros (Transita Bolivia)
+' Motor: MySQL / MariaDB | Esquema: database/transporte_db.sql
+' ==========================================================
+skinparam linetype ortho
+skinparam roundcorner 6
+skinparam nodesep 70
+skinparam ranksep 90
+skinparam classAttributeIconSize 0
+hide circle
+hide empty methods
+
+title "Base de datos proyecto_cobros (MySQL / MariaDB)\nSistema de Cobro para Transporte Publico - Transita Bolivia"
+
+entity "usuarios" as usuarios {
+  * id_usuario <<PK>> : INT UNSIGNED
+  --
+  nombre : VARCHAR(80)
+  apellido : VARCHAR(80)
+  correo <<UK>> : VARCHAR(150)
+  telefono : VARCHAR(20)
+  password : VARCHAR(255)
+  rol : ENUM(PASAJERO, CONDUCTOR, ADMIN)
+  estado : ENUM(activo, inactivo, bloqueado)
+  fecha_registro : DATETIME
+}
+
+entity "pasajeros" as pasajeros {
+  * id_pasajero <<PK>> : INT UNSIGNED
+  --
+  id_usuario <<FK>> : INT UNSIGNED
+  ci <<UK>> : VARCHAR(20)
+  pin <<UK>> : CHAR(4)
+  tipo : ENUM(estudiante, civil, adulto_mayor, discapacitado)
+  fecha_nacimiento : DATE
+  direccion : VARCHAR(150)
+  estado : ENUM(activo, inactivo)
+}
+
+entity "conductores" as conductores {
+  * id_conductor <<PK>> : INT UNSIGNED
+  --
+  id_usuario <<FK>> : INT UNSIGNED
+  ci <<UK>> : VARCHAR(20)
+  pin <<UK>> : CHAR(4)
+  numero_licencia <<UK>> : VARCHAR(30)
+  fecha_vencimiento : DATE
+  estado : ENUM(activo, suspendido, inactivo)
+}
+
+entity "vehiculos" as vehiculos {
+  * id_vehiculo <<PK>> : INT UNSIGNED
+  --
+  placa <<UK>> : VARCHAR(15)
+  modelo : VARCHAR(50)
+  marca : VARCHAR(50)
+  color : VARCHAR(30)
+  capacidad : SMALLINT UNSIGNED
+  estado : ENUM(activo, mantenimiento, baja)
+}
+
+entity "rutas" as rutas {
+  * id_ruta <<PK>> : INT UNSIGNED
+  --
+  nombre : VARCHAR(100)
+  numero <<UK>> : VARCHAR(20)
+  descripcion : VARCHAR(255)
+  tarifa : DECIMAL(6,2)
+  estado : ENUM(activa, inactiva)
+}
+
+entity "tarjetas" as tarjetas {
+  * id_tarjeta <<PK>> : INT UNSIGNED
+  --
+  id_pasajero <<FK>> : INT UNSIGNED
+  codigo_qr <<UK>> : VARCHAR(100)
+  fecha_emision : DATETIME
+  estado : ENUM(activa, bloqueada, vencida)
+}
+
+entity "saldos" as saldos {
+  * id_saldo <<PK>> : INT UNSIGNED
+  --
+  id_pasajero <<FK,UK>> : INT UNSIGNED
+  saldo_actual : DECIMAL(10,2)
+  fecha_actualizacion : DATETIME
+}
+
+entity "recargas" as recargas {
+  * id_recarga <<PK>> : INT UNSIGNED
+  --
+  id_pasajero <<FK>> : INT UNSIGNED
+  monto : DECIMAL(10,2)
+  metodo_pago : VARCHAR(30)
+  fecha : DATETIME
+  estado : ENUM(exitosa, anulada)
+}
+
+entity "cobros" as cobros {
+  * id_cobro <<PK>> : INT UNSIGNED
+  --
+  id_pasajero <<FK>> : INT UNSIGNED (NULL)
+  id_conductor <<FK>> : INT UNSIGNED
+  id_vehiculo <<FK>> : INT UNSIGNED (NULL)
+  id_ruta <<FK>> : INT UNSIGNED (NULL)
+  monto : DECIMAL(10,2)
+  metodo_pago : VARCHAR(30)
+  tipo_usuario : VARCHAR(20)
+  fecha : DATE
+  hora : TIME
+  codigo_transaccion <<UK>> : VARCHAR(50)
+  estado : ENUM(exitoso, anulado, reembolsado)
+}
+
+entity "incidencias" as incidencias {
+  * id_incidencia <<PK>> : INT UNSIGNED
+  --
+  canal : ENUM(pasajero, conductor)
+  reportante_clave : VARCHAR(20)
+  nombre : VARCHAR(160)
+  tipo : VARCHAR(30)
+  descripcion : TEXT
+  prioridad : ENUM(baja, media, alta)
+  estado : ENUM(nueva, en_curso, resuelta, cerrada)
+  respuesta : TEXT
+  notas : JSON
+  acciones : JSON
+  fecha_creacion : DATETIME
+  fecha_resolucion : DATETIME
+}
+
+usuarios ||--o| pasajeros : "1 : 1"
+usuarios ||--o| conductores : "1 : 1"
+pasajeros ||--o{ tarjetas : "1 : N"
+pasajeros ||--|| saldos : "1 : 1"
+pasajeros ||--o{ recargas : "1 : N"
+pasajeros ||--o{ cobros : "1 : N"
+conductores ||--o{ cobros : "1 : N"
+vehiculos ||--o{ cobros : "1 : N"
+rutas ||--o{ cobros : "1 : N"
+
+note bottom of incidencias
+  Tabla independiente (centro de atencion / call center).
+  Relaciona con usuarios/pasajeros/conductores por
+  `reportante_clave` (PIN o CI), sin clave foranea.
+end note
+
+@enduml

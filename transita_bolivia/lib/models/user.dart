@@ -1,3 +1,6 @@
+import 'trip_qr.dart';
+import 'money.dart';
+
 class User {
   final int id;
   final String nombre;
@@ -5,7 +8,7 @@ class User {
   final String ci;
   final String email;
   final String tipo;
-  final int puntos;
+  final num puntos;
   final String estado;
 
   User({
@@ -24,10 +27,10 @@ class User {
       id: json['id'],
       nombre: json['nombre'],
       apellido: json['apellido'],
-      ci: json['ci'],
-      email: json['email'],
+      ci: json['ci'] ?? '',
+      email: json['email'] ?? '',
       tipo: json['tipo'],
-      puntos: json['puntos'],
+      puntos: Money.read(json['puntos']),
       estado: json['estado'],
     );
   }
@@ -48,30 +51,17 @@ class User {
   String get tipoDisplay {
     switch (tipo) {
       case 'estudiante':
-        return '🎓 Estudiante';
+        return 'Estudiante';
       case 'civil':
-        return '👤 Civil';
+        return 'Civil';
       case 'adulto_mayor':
-        return '👴 Adulto Mayor';
+        return 'Adulto Mayor';
       case 'discapacitado':
-        return '♿ Discapacitado';
+        return 'Persona con discapacidad';
       default:
         return tipo;
     }
   }
 
-  int get costoViaje {
-    switch (tipo) {
-      case 'estudiante':
-        return 1;
-      case 'civil':
-        return 3;
-      case 'adulto_mayor':
-        return 1;
-      case 'discapacitado':
-        return 1;
-      default:
-        return 1;
-    }
-  }
+  num get costoViaje => TripQr.fares[tipo] ?? 1;
 }

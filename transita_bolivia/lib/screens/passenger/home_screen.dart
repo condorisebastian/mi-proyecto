@@ -1,16 +1,40 @@
+import '../../models/money.dart';
 import 'package:flutter/material.dart';
+import '../../theme.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
+import '../../services/firebase_service.dart';
+import '../../config.dart';
 import '../../models/transaction.dart';
-import 'recharge_screen.dart';
-import 'pay_trip_screen.dart';
+import '../../models/financial_chat.dart';
+import '../../models/user.dart';
+import '../../services/financial_chat_service.dart';
+import '../../services/app_preferences.dart';
+import '../chat/financial_chat_screen.dart';
+import 'payment_hub_screen.dart';
+import 'student_card_screen.dart';
+import '../province_routes_screen.dart';
 import 'history_screen.dart';
-import 'card_screen.dart';
+import '../soporte/support_screen.dart';
+import 'profile_screen.dart';
+import 'receipt_screen.dart';
+import '../../widgets/passenger_navigation_bar.dart';
+import '../../widgets/passenger_wallet_card.dart';
+import '../../widgets/discover_section.dart';
+import '../../widgets/profile_photo_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.firebaseService,
+    this.financialChatService,
+    this.preferences,
+  });
+
+  final FirebaseService? firebaseService;
+  final FinancialChatService? financialChatService;
+  final AppPreferences? preferences;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,10 +42,48 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final Set<int> _visitedTabs = {0};
   final ApiService _apiService = ApiService();
+  int? _recentUserId;
+  Stream<List<Transaction>>? _recentTrips;
+  bool? _balanceHidden;
+  final Map<bool, String> _chatDrafts = {};
+  final _walletKey = GlobalKey();
+  final _paymentKey = GlobalKey<PaymentHubScreenState>();
 
-  final GlobalKey<HistoryScreenState> _historyKey =
-      GlobalKey<HistoryScreenState>();
+  AppPreferences get _preferences =>
+      widget.preferences ?? AppPreferences.instance;
+
+  FirebaseService get _firebase =>
+      widget.firebaseService ?? FirebaseService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBalanceVisibility();
+  }
+
+  Future<void> _loadBalanceVisibility() async {
+    await _preferences.load();
+    if (mounted) setState(() => _balanceHidden = _preferences.balanceHidden);
+  }
+
+  Future<void> _toggleBalanceVisibility() async {
+    final hidden = !(_balanceHidden ?? true);
+    setState(() => _balanceHidden = hidden);
+    try {
+      await _preferences.setBalanceHidden(hidden);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'El cambio se aplicó, pero no se pudo guardar para la próxima vez.',
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,351 +91,343 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = authService.currentUser;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_recentUserId != user.id) {
+      _recentUserId = user.id;
+      _loadRecentTrips(user.id);
     }
 
     return Scaffold(
+      // Cada sección con Scaffold ajusta su propio contenido al teclado.
+      resizeToAvoidBottomInset: false,
       body: IndexedStack(
         index: _currentIndex,
-        children: [
-          _buildHomeTab(user, authService),
-          const RechargeScreen(),
-          const PayTripScreen(),
-          HistoryScreen(key: _historyKey),
-        ],
+        children:
+            <Widget>[
+              _buildHomeTab(user),
+              if (_visitedTabs.contains(1))
+                const StudentCardScreen()
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(2))
+                PaymentHubScreen(
+                  key: _paymentKey,
+                  onSupport: () => _openSupport(user),
+                )
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(3))
+                ProvinceRoutesScreen(title: 'Rutas', preferences: _preferences)
+              else
+                const SizedBox.shrink(),
+              if (_visitedTabs.contains(4))
+                PassengerProfileScreen(
+                  user: user,
+                  onLogout: () => _confirmLogout(context, authService),
+                  onSupport: (type, description) => _openSupport(
+                    user,
+                    initialType: type,
+                    initialDescription: description,
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+            ].indexed.map((tab) {
+              return MediaQuery.removeViewInsets(
+                context: context,
+                removeBottom: tab.$1 != _currentIndex,
+                child: TickerMode(
+                  enabled: tab.$1 == _currentIndex,
+                  child: tab.$2,
+                ),
+              );
+            }).toList(),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          if (index == 0) {
-            authService.refreshUser();
-          } else if (index == 3) {
-            _historyKey.currentState?.reload();
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF1E88E5),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
+      bottomNavigationBar: MediaQuery.viewInsetsOf(context).bottom > 0
+          ? null
+          : PassengerNavigationBar(
+              currentIndex: _currentIndex,
+              onSelected: _selectTab,
+            ),
+    );
+  }
+
+  void _loadRecentTrips(int userId) {
+    _recentTrips = AppConfig.useFirebase
+        ? _firebase.transactionHistoryStream(userId)
+        : Stream.fromFuture(_apiService.getTransactionHistory(userId));
+  }
+
+  void _selectTab(int index) {
+    final authService = context.read<AuthService>();
+    setState(() {
+      _currentIndex = index;
+      _visitedTabs.add(index);
+      if (index == 0 && !AppConfig.useFirebase) {
+        final user = authService.currentUser;
+        if (user != null) _loadRecentTrips(user.id);
+      }
+    });
+    if (index == 0) {
+      authService.refreshUser();
+    }
+  }
+
+  Future<void> _openHistory() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => HistoryScreen(
+          firebaseService: _firebase,
+          balanceHidden: _balanceHidden ?? true,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    final user = context.read<AuthService>().currentUser;
+    if (user != null && !AppConfig.useFirebase) {
+      setState(() => _loadRecentTrips(user.id));
+    }
+  }
+
+  void _openRechargeChat(User user, {bool forAnotherPerson = false}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => FinancialChatScreen(
+          owner: ChatIdentity(
+            canal: 'pasajero',
+            id: user.id,
+            nombre: '${user.nombre} ${user.apellido}',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_card),
-            label: 'Recargar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'Pagar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
-          ),
-        ],
+          service: widget.financialChatService,
+          rechargeForAnother: forAnotherPerson,
+          initialDraft:
+              _chatDrafts[forAnotherPerson] ??
+              (forAnotherPerson
+                  ? 'Quiero recargar puntos a otra persona.\nID del beneficiario: \nMonto en Bs: \nReferencia de pago: '
+                  : ''),
+          onDraftChanged: (value) => _chatDrafts[forAnotherPerson] = value,
+        ),
       ),
     );
   }
 
-  Widget _buildHomeTab(dynamic user, AuthService authService) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF1E88E5),
-            Color(0xFFF5F5F5),
-          ],
-          stops: [0.0, 0.3],
+  void _openSupport(
+    User user, {
+    String initialType = 'saldo',
+    String initialDescription = '',
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => SupportScreen(
+          canal: 'pasajero',
+          id: user.id,
+          nombre: '${user.nombre} ${user.apellido}',
+          firebaseService: _firebase,
+          initialType: initialType,
+          initialDescription: initialDescription,
         ),
       ),
+    );
+  }
+
+  Widget _buildHomeTab(User user) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Hola, ${user.nombre} ${user.tipoDisplay}',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      ProfilePhotoAvatar(userId: user.id, radius: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Hola, ${user.nombre} ${user.tipoDisplay}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Contactar al call center',
+                        icon: const Icon(Icons.support_agent),
+                        onPressed: () => _openSupport(user),
+                        style: IconButton.styleFrom(
+                          backgroundColor: scheme.surface,
+                          foregroundColor: scheme.primary,
+                          side: BorderSide(color: scheme.outlineVariant),
                         ),
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    onPressed: () {
-                      _confirmLogout(context, authService);
+                  const SizedBox(height: 20),
+                  PassengerWalletCard(
+                    key: _walletKey,
+                    points: user.puntos,
+                    balanceHidden: _balanceHidden ?? true,
+                    onToggleVisibility: _balanceHidden == null
+                        ? null
+                        : _toggleBalanceVisibility,
+                    onHistory: _openHistory,
+                  ),
+                  const SizedBox(height: 20),
+                  DiscoverSection(
+                    onRecharge: () => _openRechargeChat(user),
+                    onRechargeAnother: () =>
+                        _openRechargeChat(user, forAnotherPerson: true),
+                    onCheckBalance: () {
+                      final target = _walletKey.currentContext;
+                      if (target != null) {
+                        Scrollable.ensureVisible(
+                          target,
+                          duration: const Duration(milliseconds: 500),
+                          alignment: 0.15,
+                        );
+                      }
+                    },
+                    onPayWithCard: () {
+                      _selectTab(2);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _paymentKey.currentState?.selectCard();
+                      });
                     },
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'TUS PUNTOS',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${user.puntos}',
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E88E5),
-                      ),
-                    ),
-                    Text(
-                      '(= Bs ${user.puntos}.00)',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RechargeScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Últimos viajes',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_card, size: 24),
-                      SizedBox(width: 12),
-                      Text(
-                        'RECARGAR PUNTOS',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CardScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.nfc, size: 20),
-                        label: const Text(
-                          'MI TARJETA',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
-                          side: const BorderSide(
-                            color: Color(0xFF1E88E5),
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 56,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          _showMyQR(context);
-                        },
-                        icon: const Icon(Icons.qr_code, size: 20),
-                        label: const Text(
-                          'MI QR',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF1E88E5),
-                          side: const BorderSide(
-                            color: Color(0xFF1E88E5),
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Últimos viajes',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 10),
-              FutureBuilder<List<Transaction>>(
-                future: _apiService.getTransactionHistory(user.id),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+                  const SizedBox(height: 10),
+                  StreamBuilder<List<Transaction>>(
+                    stream: _recentTrips,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                  final transactions = snapshot.data ?? [];
-                  final recentTrips = transactions
-                      .where((t) => t.tipo == 'cobro_viaje')
-                      .take(5)
-                      .toList();
+                      if (snapshot.hasError) {
+                        return const Text(
+                          'No pudimos cargar tus viajes. Inténtalo de nuevo más tarde.',
+                        );
+                      }
 
-                  if (recentTrips.isEmpty) {
-                    return Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No hay viajes recientes',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    );
-                  }
+                      final transactions = snapshot.data ?? [];
+                      final recentTrips = transactions
+                          .where((t) => t.tipo == 'cobro_viaje')
+                          .take(5)
+                          .toList();
 
-                  return Column(
-                    children: recentTrips.map((trip) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
+                      if (recentTrips.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'No hay viajes recientes',
+                              style: TextStyle(color: Colors.grey),
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.directions_bus,
-                                color: Colors.orange,
-                              ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: recentTrips.map((trip) {
+                          return Container(
+                            key: ValueKey('recent-trip-${trip.id}'),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            child: InkWell(
+                              onTap: () =>
+                                  openTransactionReceipt(context, trip),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    '${trip.fecha.day}/${trip.fecha.month}/${trip.fecha.year}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.directions_bus,
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${trip.fecha.day}/${trip.fecha.month}/${trip.fecha.year}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          trip.metodoPagoDisplay,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   Text(
-                                    trip.metodoPagoDisplay,
+                                    '-${Money.format(trip.puntos)} pts',
                                     style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            Text(
-                              '-${trip.puntos} pts',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        }).toList(),
                       );
-                    }).toList(),
-                  );
-                },
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -381,7 +435,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _confirmLogout(
-      BuildContext context, AuthService authService) async {
+    BuildContext context,
+    AuthService authService,
+  ) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -395,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: const Text('SALIR'),
@@ -410,87 +466,5 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, '/');
       }
     }
-  }
-
-  void _showMyQR(BuildContext context) {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user == null) return;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'Mi código QR',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: QrImageView(
-                    data: 'PASAJERO:${user.id}:${user.ci}',
-                    version: QrVersions.auto,
-                    size: 250,
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Muestra este código al conductor para pagar',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${user.nombre} ${user.apellido}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('CERRAR'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 }
