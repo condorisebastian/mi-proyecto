@@ -2,6 +2,19 @@
 
 Sistema de cobro para el transporte público (Santa Cruz, Bolivia) con la app Flutter Mi Pasaje y un backend PHP + MySQL/MariaDB servido por XAMPP.
 
+## Portal de operadores y call center
+
+**Mi Pasaje Atención**, en `operator_portal/`, ofrece cuentas individuales,
+registro de clientes ficticios, revisión de carnet/matrícula/ID estudiantil,
+recargas de puntos con comprobante, bloqueos, casos y auditoría. Supervisión
+administra las cuentas de operadores. Usa Supabase Auth y tablas privadas con RLS.
+
+Ejecutar `npm start --prefix operator_portal` y abrir http://127.0.0.1:4174/.
+Los accesos se guardan únicamente en `.transita-private/operator-demo-accounts.json`.
+Esta demostración usa puntos ficticios y un padrón académico de prueba; todavía
+no sincroniza los saldos ni las cuentas del portal con la app móvil en Firebase.
+Ver [funcionamiento, preparación y pruebas](operator_portal/README.md).
+
 ## Web, Provincias y terminal POS
 
 La web de **Mi Pasaje** en `website/dist` consulta el catálogo y permite calcular grupos. Su
